@@ -40,19 +40,21 @@ type (
 		logr.Logger
 		vcs.Subscriber
 
-		GithubAppService    *github.Service
-		GithubHostname      string
-		GitlabHostname      string
-		SkipTLSVerification bool
+		GithubAppService        *github.Service
+		GithubHostname          string
+		GitlabHostname          string
+		BitbucketServerHostname string
+		SkipTLSVerification     bool
 	}
 )
 
 func NewService(opts Options) *Service {
 	factory := factory{
-		githubapps:          opts.GithubAppService,
-		githubHostname:      opts.GithubHostname,
-		gitlabHostname:      opts.GitlabHostname,
-		skipTLSVerification: opts.SkipTLSVerification,
+		githubapps:              opts.GithubAppService,
+		githubHostname:          opts.GithubHostname,
+		bitbucketServerHostname: opts.BitbucketServerHostname,
+		gitlabHostname:          opts.GitlabHostname,
+		skipTLSVerification:     opts.SkipTLSVerification,
 	}
 	svc := Service{
 		Logger:          opts.Logger,

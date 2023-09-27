@@ -26,6 +26,7 @@ jobs:
           command: manifest
   release:
     runs-on: ubuntu-latest
+    container: gcr.io/k8s-skaffold/skaffold:v2.10.1
     needs: [release-please]
     if: needs.release-please.outputs.release_created
     steps:
@@ -45,7 +46,7 @@ jobs:
       - name: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
-        run: ko build . --base-import-paths -t ${{ needs.release-please.outputs.tag_name }}
+        run: skaffold build --push
       # - uses: goreleaser/goreleaser-action@v2
       #   with:
       #     args: release --clean --skip-sign --skip-validate
