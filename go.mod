@@ -49,7 +49,7 @@ require (
 	github.com/xanzy/go-gitlab v0.95.0
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	golang.org/x/mod v0.11.0
-	golang.org/x/net v0.10.0
+	golang.org/x/net v0.17.0
 	golang.org/x/oauth2 v0.7.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/api v0.118.0
