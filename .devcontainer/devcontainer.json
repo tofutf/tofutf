@@ -2,8 +2,7 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/go-postgres
 {
 	"name": "otf",
-	"dockerComposeFile": "docker-compose.yml",
-	"service": "app",
+	"image": "mcr.microsoft.com/devcontainers/go:1.21",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"customizations": {
 		"vscode": {
