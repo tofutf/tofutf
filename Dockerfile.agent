@@ -4,6 +4,6 @@ FROM alpine:3.19.1
 # the git protocol
 RUN apk add --no-cache bubblewrap git
 
-COPY otf-agent /usr/local/bin/otf-agent
+COPY tofutf-agent /usr/local/bin/tofutf-agent
 
-ENTRYPOINT ["/usr/local/bin/otf-agent"]
+ENTRYPOINT ["/usr/local/bin/tofutf-agent"]

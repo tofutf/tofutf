@@ -4,6 +4,6 @@ FROM alpine:3.19.1
 # the git protocol
 RUN apk add --no-cache bubblewrap git
 
-COPY otfd /usr/local/bin/otfd
+COPY tofutfd /usr/local/bin/tofutfd
 
-ENTRYPOINT ["/usr/local/bin/otfd"]
+ENTRYPOINT ["/usr/local/bin/tofutfd"]
