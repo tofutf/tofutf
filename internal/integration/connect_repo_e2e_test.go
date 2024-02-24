@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/testutils"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/testutils"
 )
 
 // TestConnectRepoE2E demonstrates connecting a workspace to a VCS repository, pushing a

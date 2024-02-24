@@ -9,9 +9,9 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/vcs"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/vcs"
 )
 
 const (

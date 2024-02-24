@@ -12,10 +12,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/authenticator"
-	otfhttp "github.com/leg100/otf/internal/http"
-	"github.com/leg100/otf/internal/vcs"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/authenticator"
+	otfhttp "github.com/tofutf/tofutf/internal/http"
+	"github.com/tofutf/tofutf/internal/vcs"
 	"github.com/xanzy/go-gitlab"
 	"golang.org/x/oauth2"
 )

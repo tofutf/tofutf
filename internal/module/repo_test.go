@@ -3,8 +3,8 @@ package module
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal"
 )
 
 func TestRepo_Split(t *testing.T) {

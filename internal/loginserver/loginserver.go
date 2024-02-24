@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal/http/html"
-	"github.com/leg100/otf/internal/user"
+	"github.com/tofutf/tofutf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/user"
 )
 
 const (

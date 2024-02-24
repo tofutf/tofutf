@@ -9,13 +9,13 @@ import (
 
 	"github.com/antchfx/htmlquery"
 	"github.com/google/uuid"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/html/paths"
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/testutils"
 )
 
 func TestWeb_NewHandler(t *testing.T) {

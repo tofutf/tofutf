@@ -8,13 +8,13 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/notifications"
-	otfrun "github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/testutils"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/notifications"
+	otfrun "github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // TestIntegration_NotificationGCPPubSub demonstrates run events triggering the

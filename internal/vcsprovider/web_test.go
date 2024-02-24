@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	gogithub "github.com/google/go-github/v55/github"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/testutils"
 )
 
 func TestVCSProvider_newPersonalToken(t *testing.T) {

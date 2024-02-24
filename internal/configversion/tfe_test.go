@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	otfhttp "github.com/leg100/otf/internal/http"
-	"github.com/leg100/otf/internal/logr"
+	otfhttp "github.com/tofutf/tofutf/internal/http"
+	"github.com/tofutf/tofutf/internal/logr"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"

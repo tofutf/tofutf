@@ -5,9 +5,9 @@
         "url": "https://api.github.com/repos/leg100/otf/pulls/664",
         "id": 1637171304,
         "node_id": "PR_kwDOFjzmAM5hlUBo",
-        "html_url": "https://github.com/leg100/otf/pull/664",
-        "diff_url": "https://github.com/leg100/otf/pull/664.diff",
-        "patch_url": "https://github.com/leg100/otf/pull/664.patch",
+        "html_url": "https://github.com/tofutf/tofutf/pull/664",
+        "diff_url": "https://github.com/tofutf/tofutf/pull/664.diff",
+        "patch_url": "https://github.com/tofutf/tofutf/pull/664.patch",
         "issue_url": "https://api.github.com/repos/leg100/otf/issues/664",
         "number": 664,
         "state": "open",
@@ -33,7 +33,7 @@
             "type": "Bot",
             "site_admin": false
         },
-        "body": ":robot: I have created a release *beep* *boop*\n---\n\n\n## [0.2.2](https://github.com/leg100/otf/compare/v0.2.1...v0.2.2) (2023-12-10)\n\n\n### Bug Fixes\n\n* allocator restarting unnecessarily ([#666](https://github.com/leg100/otf/issues/666)) ([47f8e6f](https://github.com/leg100/otf/commit/47f8e6f74cd7fb36bf2b5eb3885bbd995bcf81c0))\n* log max config size exceeded ([#663](https://github.com/leg100/otf/issues/663)) ([e196837](https://github.com/leg100/otf/commit/e196837fe88fc41b3b908537766db0b66530d281)), closes [#652](https://github.com/leg100/otf/issues/652)\n\n---\nThis PR was generated with [Release Please](https://github.com/googleapis/release-please). See [documentation](https://github.com/googleapis/release-please#release-please).",
+        "body": ":robot: I have created a release *beep* *boop*\n---\n\n\n## [0.2.2](https://github.com/tofutf/tofutf/compare/v0.2.1...v0.2.2) (2023-12-10)\n\n\n### Bug Fixes\n\n* allocator restarting unnecessarily ([#666](https://github.com/tofutf/tofutf/issues/666)) ([47f8e6f](https://github.com/tofutf/tofutf/commit/47f8e6f74cd7fb36bf2b5eb3885bbd995bcf81c0))\n* log max config size exceeded ([#663](https://github.com/tofutf/tofutf/issues/663)) ([e196837](https://github.com/tofutf/tofutf/commit/e196837fe88fc41b3b908537766db0b66530d281)), closes [#652](https://github.com/tofutf/tofutf/issues/652)\n\n---\nThis PR was generated with [Release Please](https://github.com/googleapis/release-please). See [documentation](https://github.com/googleapis/release-please#release-please).",
         "created_at": "2023-12-09T09:47:38Z",
         "updated_at": "2023-12-10T16:23:38Z",
         "closed_at": null,
@@ -117,7 +117,7 @@
                     "type": "User",
                     "site_admin": false
                 },
-                "html_url": "https://github.com/leg100/otf",
+                "html_url": "https://github.com/tofutf/tofutf",
                 "description": "An open source alternative to terraform enterprise.",
                 "fork": false,
                 "url": "https://api.github.com/repos/leg100/otf",
@@ -160,10 +160,10 @@
                 "created_at": "2021-06-02T08:06:39Z",
                 "updated_at": "2023-12-08T21:06:11Z",
                 "pushed_at": "2023-12-10T16:23:38Z",
-                "git_url": "git://github.com/leg100/otf.git",
+                "git_url": "git://github.com/tofutf/tofutf.git",
                 "ssh_url": "git@github.com:leg100/otf.git",
-                "clone_url": "https://github.com/leg100/otf.git",
-                "svn_url": "https://github.com/leg100/otf",
+                "clone_url": "https://github.com/tofutf/tofutf.git",
+                "svn_url": "https://github.com/tofutf/tofutf",
                 "homepage": "https://docs.otf.ninja",
                 "size": 56211,
                 "stargazers_count": 459,
@@ -261,7 +261,7 @@
                     "type": "User",
                     "site_admin": false
                 },
-                "html_url": "https://github.com/leg100/otf",
+                "html_url": "https://github.com/tofutf/tofutf",
                 "description": "An open source alternative to terraform enterprise.",
                 "fork": false,
                 "url": "https://api.github.com/repos/leg100/otf",
@@ -304,10 +304,10 @@
                 "created_at": "2021-06-02T08:06:39Z",
                 "updated_at": "2023-12-08T21:06:11Z",
                 "pushed_at": "2023-12-10T16:23:38Z",
-                "git_url": "git://github.com/leg100/otf.git",
+                "git_url": "git://github.com/tofutf/tofutf.git",
                 "ssh_url": "git@github.com:leg100/otf.git",
-                "clone_url": "https://github.com/leg100/otf.git",
-                "svn_url": "https://github.com/leg100/otf",
+                "clone_url": "https://github.com/tofutf/tofutf.git",
+                "svn_url": "https://github.com/tofutf/tofutf",
                 "homepage": "https://docs.otf.ninja",
                 "size": 56211,
                 "stargazers_count": 459,
@@ -360,7 +360,7 @@
                 "href": "https://api.github.com/repos/leg100/otf/pulls/664"
             },
             "html": {
-                "href": "https://github.com/leg100/otf/pull/664"
+                "href": "https://github.com/tofutf/tofutf/pull/664"
             },
             "issue": {
                 "href": "https://api.github.com/repos/leg100/otf/issues/664"
@@ -399,7 +399,7 @@
     },
     "changes": {
         "body": {
-            "from": ":robot: I have created a release *beep* *boop*\n---\n\n\n## [0.2.2](https://github.com/leg100/otf/compare/v0.2.1...v0.2.2) (2023-12-09)\n\n\n### Bug Fixes\n\n* log max config size exceeded ([#663](https://github.com/leg100/otf/issues/663)) ([e196837](https://github.com/leg100/otf/commit/e196837fe88fc41b3b908537766db0b66530d281)), closes [#652](https://github.com/leg100/otf/issues/652)\n\n---\nThis PR was generated with [Release Please](https://github.com/googleapis/release-please). See [documentation](https://github.com/googleapis/release-please#release-please)."
+            "from": ":robot: I have created a release *beep* *boop*\n---\n\n\n## [0.2.2](https://github.com/tofutf/tofutf/compare/v0.2.1...v0.2.2) (2023-12-09)\n\n\n### Bug Fixes\n\n* log max config size exceeded ([#663](https://github.com/tofutf/tofutf/issues/663)) ([e196837](https://github.com/tofutf/tofutf/commit/e196837fe88fc41b3b908537766db0b66530d281)), closes [#652](https://github.com/tofutf/tofutf/issues/652)\n\n---\nThis PR was generated with [Release Please](https://github.com/googleapis/release-please). See [documentation](https://github.com/googleapis/release-please#release-please)."
         }
     },
     "repository": {
@@ -428,7 +428,7 @@
             "type": "User",
             "site_admin": false
         },
-        "html_url": "https://github.com/leg100/otf",
+        "html_url": "https://github.com/tofutf/tofutf",
         "description": "An open source alternative to terraform enterprise.",
         "fork": false,
         "url": "https://api.github.com/repos/leg100/otf",
@@ -471,10 +471,10 @@
         "created_at": "2021-06-02T08:06:39Z",
         "updated_at": "2023-12-08T21:06:11Z",
         "pushed_at": "2023-12-10T16:23:38Z",
-        "git_url": "git://github.com/leg100/otf.git",
+        "git_url": "git://github.com/tofutf/tofutf.git",
         "ssh_url": "git@github.com:leg100/otf.git",
-        "clone_url": "https://github.com/leg100/otf.git",
-        "svn_url": "https://github.com/leg100/otf",
+        "clone_url": "https://github.com/tofutf/tofutf.git",
+        "svn_url": "https://github.com/tofutf/tofutf",
         "homepage": "https://docs.otf.ninja",
         "size": 56211,
         "stargazers_count": 459,

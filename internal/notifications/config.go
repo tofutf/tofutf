@@ -10,8 +10,8 @@ import (
 
 	"slices"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/run"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/run"
 )
 
 const (

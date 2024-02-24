@@ -4,9 +4,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	otfhtml "github.com/leg100/otf/internal/http/html"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	otfhtml "github.com/tofutf/tofutf/internal/http/html"
 	"golang.org/x/net/html"
 )
 

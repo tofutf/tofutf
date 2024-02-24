@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/html"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/html"
 )
 
 const (

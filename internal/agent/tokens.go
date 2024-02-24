@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/tokens"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/tokens"
 )
 
 const (

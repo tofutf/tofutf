@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/DataDog/jsonapi"
-	"github.com/leg100/otf/internal/resource"
+	"github.com/tofutf/tofutf/internal/resource"
 )
 
 const mediaType = "application/vnd.api+json"

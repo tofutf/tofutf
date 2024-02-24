@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/html"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/html"
 )
 
 func TestNewAuthenticatorService(t *testing.T) {

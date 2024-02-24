@@ -10,11 +10,11 @@ import (
 
 	"github.com/google/go-github/v55/github"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/testutils"
-	"github.com/leg100/otf/internal/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/user"
 )
 
 func TestWebHandlers_new(t *testing.T) {

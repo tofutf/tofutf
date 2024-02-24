@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/team"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/team"
 )
 
 // TestWeb is a random walkthrough of the Web UI

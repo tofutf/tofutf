@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/leg100/otf/internal"
 	"github.com/natefinch/atomic"
+	"github.com/tofutf/tofutf/internal"
 )
 
 // download represents a current download of a version of terraform

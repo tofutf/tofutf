@@ -9,10 +9,10 @@ import (
 
 	"log/slog"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/gitlab"
-	"github.com/leg100/otf/internal/vcs"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/gitlab"
+	"github.com/tofutf/tofutf/internal/vcs"
 )
 
 type (

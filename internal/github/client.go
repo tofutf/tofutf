@@ -16,10 +16,10 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/google/go-github/v55/github"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/authenticator"
-	otfhttp "github.com/leg100/otf/internal/http"
-	"github.com/leg100/otf/internal/vcs"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/authenticator"
+	otfhttp "github.com/tofutf/tofutf/internal/http"
+	"github.com/tofutf/tofutf/internal/vcs"
 	"golang.org/x/oauth2"
 )
 

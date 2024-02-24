@@ -6,15 +6,15 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/html"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/sql"
-	"github.com/leg100/otf/internal/sql/pggen"
-	"github.com/leg100/otf/internal/tfeapi"
-	"github.com/leg100/otf/internal/tokens"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/sql"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal/tfeapi"
+	"github.com/tofutf/tofutf/internal/tokens"
 )
 
 type (

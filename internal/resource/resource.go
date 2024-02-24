@@ -5,7 +5,7 @@ package resource
 import (
 	"regexp"
 
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 )
 
 // A regular expression used to validate resource name.

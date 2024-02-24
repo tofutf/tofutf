@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/http/html"
-	"github.com/leg100/otf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/pubsub"
 )
 
 type (

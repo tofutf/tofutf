@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 )
 
 type (

@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
 	"golang.org/x/exp/maps"
 )
 

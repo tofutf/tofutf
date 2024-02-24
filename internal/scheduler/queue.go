@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	otfrun "github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/workspace"
+	otfrun "github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type (

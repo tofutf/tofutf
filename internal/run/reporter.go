@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/configversion"
-	"github.com/leg100/otf/internal/http/html/paths"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/vcs"
-	"github.com/leg100/otf/internal/workspace"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/configversion"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // ReporterLockID is a unique ID guaranteeing only one reporter on a cluster is running at any time.

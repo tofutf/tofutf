@@ -6,13 +6,13 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/organization"
-	"github.com/leg100/otf/internal/sql"
-	"github.com/leg100/otf/internal/sql/pggen"
-	"github.com/leg100/otf/internal/vcs"
-	"github.com/leg100/otf/internal/vcsprovider"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/organization"
+	"github.com/tofutf/tofutf/internal/sql"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/vcsprovider"
 )
 
 type (

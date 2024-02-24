@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal/authenticator"
-	"github.com/leg100/otf/internal/daemon"
+	"github.com/tofutf/tofutf/internal/authenticator"
+	"github.com/tofutf/tofutf/internal/daemon"
 )
 
 // TestIntegration_OIDC demonstrates logging in using OIDC

@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/connections"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/user"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/connections"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/user"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 func TestWorkspace(t *testing.T) {

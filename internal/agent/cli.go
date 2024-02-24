@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	otfapi "github.com/leg100/otf/internal/api"
+	otfapi "github.com/tofutf/tofutf/internal/api"
 
 	"github.com/spf13/cobra"
 )

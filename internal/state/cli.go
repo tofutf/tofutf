@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/leg100/otf/internal"
-	otfapi "github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/spf13/cobra"
+	"github.com/tofutf/tofutf/internal"
+	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type CLI struct {

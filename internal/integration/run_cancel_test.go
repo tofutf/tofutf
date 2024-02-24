@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/releases"
-	"github.com/leg100/otf/internal/variable"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/releases"
+	"github.com/tofutf/tofutf/internal/variable"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // TestIntegration_RunCancel demonstrates a run being canceled mid-flow.

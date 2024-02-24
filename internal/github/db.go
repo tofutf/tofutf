@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jackc/pgtype"
-	"github.com/leg100/otf/internal/sql"
-	"github.com/leg100/otf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal/sql"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
 )
 
 type (

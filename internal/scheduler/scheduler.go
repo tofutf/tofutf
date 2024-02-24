@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/workspace"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // LockID guarantees only one scheduler on a cluster is running at any

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 func TestIntegration_TagService(t *testing.T) {

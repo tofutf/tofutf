@@ -10,7 +10,7 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 )
 
 const hashicorpReleasesHost = "releases.hashicorp.com"

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/leg100/otf/internal/team"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/team"
 )
 
 func TestUserNewCommand(t *testing.T) {

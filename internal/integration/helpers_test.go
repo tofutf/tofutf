@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/leg100/otf/internal/user"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/user"
 )
 
 func integrationTest(t *testing.T) {

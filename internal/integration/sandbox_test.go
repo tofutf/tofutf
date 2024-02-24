@@ -5,10 +5,10 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/daemon"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/daemon"
 )
 
 // TestSandbox demonstrates the sandbox feature, whereby terraform apply is run

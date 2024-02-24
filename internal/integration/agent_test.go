@@ -3,12 +3,12 @@ package integration
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	agentpkg "github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/testutils"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	agentpkg "github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // TestIntegration_Agents demonstrates the use of pooled agents

@@ -3,10 +3,10 @@ package workspace
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/rbac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/rbac"
 )
 
 func TestWorkspace_Lock(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/leg100/otf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/http/html"
 )
 
 // TokenFlashMessage is a helper for rendering a flash message with an

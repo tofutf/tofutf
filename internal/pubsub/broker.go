@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
-	"github.com/leg100/otf/internal/sql"
+	"github.com/tofutf/tofutf/internal/sql"
 )
 
 const (

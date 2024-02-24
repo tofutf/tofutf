@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/leg100/otf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
 )
 
 const (

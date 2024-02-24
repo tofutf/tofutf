@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/user"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/user"
 )
 
 // Lock locks the workspace. A workspace can only be locked on behalf of a run or a

@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/http/html"
-	"github.com/leg100/otf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
 )
 
 func (h *webHandlers) addTagHandlers(r *mux.Router) {

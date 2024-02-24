@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 
-	"github.com/leg100/otf/internal/team"
+	"github.com/tofutf/tofutf/internal/team"
 )
 
 type fakeService struct {

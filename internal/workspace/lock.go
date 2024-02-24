@@ -1,9 +1,9 @@
 package workspace
 
 import (
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/html/paths"
-	"github.com/leg100/otf/internal/rbac"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/rbac"
 )
 
 const (

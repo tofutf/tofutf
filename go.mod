@@ -1,4 +1,4 @@
-module github.com/leg100/otf
+module github.com/tofutf/tofutf
 
 go 1.21
 

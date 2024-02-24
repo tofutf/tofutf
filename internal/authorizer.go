@@ -3,7 +3,7 @@ package internal
 import (
 	"context"
 
-	"github.com/leg100/otf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/rbac"
 )
 
 // Authorizer is capable of granting or denying access to resources based on the

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/logr"
-	"github.com/leg100/otf/internal/semver"
-	"github.com/leg100/otf/internal/sql"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/semver"
+	"github.com/tofutf/tofutf/internal/sql"
 )
 
 const (

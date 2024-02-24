@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/http/html"
 )
 
 type webHandlers struct {

@@ -3,12 +3,12 @@ package integration
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/organization"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/organization"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // TestIntegration_OrganizationTokens demonstrates the use of an organization

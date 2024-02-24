@@ -7,16 +7,16 @@ import (
 	"os/signal"
 	"syscall"
 
-	cmdutil "github.com/leg100/otf/cmd"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/authenticator"
-	"github.com/leg100/otf/internal/daemon"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/gitlab"
-	"github.com/leg100/otf/internal/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	cmdutil "github.com/tofutf/tofutf/cmd"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/authenticator"
+	"github.com/tofutf/tofutf/internal/daemon"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/gitlab"
+	"github.com/tofutf/tofutf/internal/logr"
 )
 
 const (

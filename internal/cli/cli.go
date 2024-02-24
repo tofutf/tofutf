@@ -6,18 +6,18 @@ import (
 	"io"
 	"os"
 
-	cmdutil "github.com/leg100/otf/cmd"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/organization"
-	"github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/state"
-	"github.com/leg100/otf/internal/team"
-	"github.com/leg100/otf/internal/user"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	cmdutil "github.com/tofutf/tofutf/cmd"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/organization"
+	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/state"
+	"github.com/tofutf/tofutf/internal/team"
+	"github.com/tofutf/tofutf/internal/user"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // CLI is the `otf` cli application

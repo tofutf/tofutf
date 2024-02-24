@@ -5,11 +5,11 @@ import (
 	"io"
 	"net/http"
 
-	otfapi "github.com/leg100/otf/internal/api"
+	otfapi "github.com/tofutf/tofutf/internal/api"
 
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/decode"
 )
 
 type api struct {

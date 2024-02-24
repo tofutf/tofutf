@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-retryablehttp"
-	otfapi "github.com/leg100/otf/internal/api"
+	otfapi "github.com/tofutf/tofutf/internal/api"
 )
 
 const agentIDHeader = "otf-agent-id"

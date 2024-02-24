@@ -5,12 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/html/paths"
-	"github.com/leg100/otf/internal/testutils"
-	"github.com/leg100/otf/internal/user"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/user"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 func TestListRunsHandler(t *testing.T) {

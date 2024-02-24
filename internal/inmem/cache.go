@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/allegro/bigcache"
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 )
 
 type CacheConfig struct {

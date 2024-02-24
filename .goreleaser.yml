@@ -2,9 +2,9 @@ builds:
   - id: otfd
     ldflags:
     - -s -w
-    - -X github.com/leg100/otf/internal.Version={{.Version}}
-    - -X github.com/leg100/otf/internal.Commit={{.Commit}}
-    - -X github.com/leg100/otf/internal.Built={{.Date}}
+    - -X github.com/tofutf/tofutf/internal.Version={{.Version}}
+    - -X github.com/tofutf/tofutf/internal.Commit={{.Commit}}
+    - -X github.com/tofutf/tofutf/internal.Built={{.Date}}
     main: ./cmd/otfd
     binary: otfd
     env:
@@ -18,9 +18,9 @@ builds:
   - id: otf-agent
     ldflags:
     - -s -w
-    - -X github.com/leg100/otf/internal.Version={{.Version}}
-    - -X github.com/leg100/otf/internal.Commit={{.Commit}}
-    - -X github.com/leg100/otf/internal.Built={{.Date}}
+    - -X github.com/tofutf/tofutf/internal.Version={{.Version}}
+    - -X github.com/tofutf/tofutf/internal.Commit={{.Commit}}
+    - -X github.com/tofutf/tofutf/internal.Built={{.Date}}
     main: ./cmd/otf-agent
     binary: otf-agent
     env:
@@ -34,9 +34,9 @@ builds:
   - id: otf
     ldflags:
     - -s -w
-    - -X github.com/leg100/otf/internal.Version={{.Version}}
-    - -X github.com/leg100/otf/internal.Commit={{.Commit}}
-    - -X github.com/leg100/otf/internal.Built={{.Date}}
+    - -X github.com/tofutf/tofutf/internal.Version={{.Version}}
+    - -X github.com/tofutf/tofutf/internal.Commit={{.Commit}}
+    - -X github.com/tofutf/tofutf/internal.Built={{.Date}}
     main: ./cmd/otf
     binary: otf
     env:
@@ -70,8 +70,8 @@ dockers:
   ids:
   - otfd
   image_templates:
-  - "leg100/otfd:latest-amd64"
-  - "leg100/otfd:{{ .Version }}-amd64"
+  - "ghcr.io/tofutf/tofutfd:latest-amd64"
+  - "ghcr.io/tofutf/tofutfd:{{ .Version }}-amd64"
   skip_push: auto
   dockerfile: Dockerfile
   use: buildx
@@ -83,8 +83,8 @@ dockers:
   ids:
   - otfd
   image_templates:
-  - "leg100/otfd:latest-arm64"
-  - "leg100/otfd:{{ .Version }}-arm64"
+  - "ghcr.io/tofutf/tofutfd:latest-arm64"
+  - "ghcr.io/tofutf/tofutfd:{{ .Version }}-arm64"
   skip_push: auto
   dockerfile: Dockerfile
   use: buildx
@@ -96,8 +96,8 @@ dockers:
   ids:
   - otf-agent
   image_templates:
-  - "leg100/otf-agent:latest-amd64"
-  - "leg100/otf-agent:{{ .Version }}-amd64"
+  - "ghcr.io/tofutf/tofutf-agent:latest-amd64"
+  - "ghcr.io/tofutf/tofutf-agent:{{ .Version }}-amd64"
   skip_push: auto
   dockerfile: Dockerfile.agent
   use: buildx
@@ -109,8 +109,8 @@ dockers:
   ids:
   - otf-agent
   image_templates:
-  - "leg100/otf-agent:latest-arm64"
-  - "leg100/otf-agent:{{ .Version }}-arm64"
+  - "ghcr.io/tofutf/tofutf-agent:latest-arm64"
+  - "ghcr.io/tofutf/tofutf-agent:{{ .Version }}-arm64"
   skip_push: auto
   dockerfile: Dockerfile.agent
   use: buildx
@@ -118,28 +118,28 @@ dockers:
   - "--pull"
   - "--platform=linux/arm64"
 docker_manifests:
-- name_template: 'leg100/otfd:latest'
+- name_template: 'ghcr.io/tofutf/tofutfd:latest'
   image_templates:
-  - "leg100/otfd:latest-amd64"
-  - "leg100/otfd:latest-arm64"
-- name_template: 'leg100/otfd:{{ .Version }}'
+  - "ghcr.io/tofutf/tofutfd:latest-amd64"
+  - "ghcr.io/tofutf/tofutfd:latest-arm64"
+- name_template: 'ghcr.io/tofutf/tofutfd:{{ .Version }}'
   image_templates:
-  - "leg100/otfd:{{ .Version }}-amd64"
-  - "leg100/otfd:{{ .Version }}-arm64"
-- name_template: 'leg100/otf-agent:latest'
+  - "ghcr.io/tofutf/tofutfd:{{ .Version }}-amd64"
+  - "ghcr.io/tofutf/tofutfd:{{ .Version }}-arm64"
+- name_template: 'ghcr.io/tofutf/tofutf-agent:latest'
   image_templates:
-  - "leg100/otf-agent:latest-amd64"
-  - "leg100/otf-agent:latest-arm64"
-- name_template: 'leg100/otf-agent:{{ .Version }}'
+  - "ghcr.io/tofutf/tofutf-agent:latest-amd64"
+  - "ghcr.io/tofutf/tofutf-agent:latest-arm64"
+- name_template: 'ghcr.io/tofutf/tofutf-agent:{{ .Version }}'
   image_templates:
-  - "leg100/otf-agent:{{ .Version }}-amd64"
-  - "leg100/otf-agent:{{ .Version }}-arm64"
+  - "ghcr.io/tofutf/tofutf-agent:{{ .Version }}-amd64"
+  - "ghcr.io/tofutf/tofutf-agent:{{ .Version }}-arm64"
 release:
   footer: |
     ## Docker images
 
-    * `leg100/otfd:{{ .Version }}`
-    * `leg100/otf-agent:{{ .Version }}`
+    * `ghcr.io/tofutf/tofutfd:{{ .Version }}`
+    * `ghcr.io/tofutf/tofutf-agent:{{ .Version }}`
 checksum:
   name_template: 'checksums.txt'
 snapshot:

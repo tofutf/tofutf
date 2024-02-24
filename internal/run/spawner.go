@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/gobwas/glob"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/configversion"
-	"github.com/leg100/otf/internal/vcs"
-	"github.com/leg100/otf/internal/workspace"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/configversion"
+	"github.com/tofutf/tofutf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type (

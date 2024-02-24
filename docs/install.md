@@ -15,7 +15,7 @@ There are three components that can be downloaded:
 * `otf` - the client CLI
 * `otf-agent` - the agent daemon
 
-Download them from [Github releases](https://github.com/leg100/otf/releases).
+Download them from [Github releases](https://github.com/tofutf/tofutf/releases).
 
 The server and agent components are also available as docker images:
 
@@ -24,7 +24,7 @@ The server and agent components are also available as docker images:
 
 ## Install helm chart
 
-You can install an `otfd` cluster on Kubernetes using the helm chart. See the [helm chart repository](https://github.com/leg100/otf-charts) for further information.
+You can install an `otfd` cluster on Kubernetes using the helm chart. See the [helm chart repository](https://github.com/tofutf/tofutf-charts) for further information.
 
 ## Install from source
 
@@ -33,7 +33,7 @@ You'll need [Go](https://golang.org/doc/install).
 Clone the repo, then build and install using the make task:
 
 ```bash
-git clone https://github.com/leg100/otf
+git clone https://github.com/tofutf/tofutf
 cd otf
 make install
 ```

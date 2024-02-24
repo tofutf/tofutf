@@ -3,8 +3,8 @@ package integration
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal/rbac"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/rbac"
 )
 
 // TestIntegration_MinimumPermissions demonstrates that once a user is

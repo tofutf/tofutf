@@ -3,7 +3,7 @@ package html
 import (
 	"net/http"
 
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 )
 
 const (

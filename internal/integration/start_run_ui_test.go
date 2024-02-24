@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal/run"
+	"github.com/tofutf/tofutf/internal/run"
 )
 
 // TestStartRunUI tests starting a run via the Web UI before confirming and

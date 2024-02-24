@@ -5,7 +5,7 @@ import (
 
 	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal/daemon"
+	"github.com/tofutf/tofutf/internal/daemon"
 )
 
 // TestSiteAdminUI demonstrates signing into the UI as a site admin

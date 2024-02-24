@@ -7,13 +7,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	cmdutil "github.com/leg100/otf/cmd"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/agent"
-	otfapi "github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	cmdutil "github.com/tofutf/tofutf/cmd"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/agent"
+	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/logr"
 )
 
 func main() {

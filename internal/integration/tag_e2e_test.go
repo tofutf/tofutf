@@ -8,10 +8,10 @@ import (
 	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 	expect "github.com/google/goexpect"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // TestIntegration_TagsE2E demonstrates end-to-end usage of workspace tags.

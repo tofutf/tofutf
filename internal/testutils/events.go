@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leg100/otf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/pubsub"
 )
 
 // Wait for an event to arrive satisfying the condition within a 10 second timeout.

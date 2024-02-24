@@ -6,9 +6,9 @@ import (
 
 	"log/slog"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/tokens"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/tokens"
 )
 
 const TeamTokenKind tokens.Kind = "team_token"

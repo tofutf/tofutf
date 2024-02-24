@@ -5,10 +5,10 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/sql"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/sql"
 )
 
 type (

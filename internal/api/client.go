@@ -14,8 +14,8 @@ import (
 
 	"github.com/DataDog/jsonapi"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
-	"github.com/leg100/otf/internal"
-	otfhttp "github.com/leg100/otf/internal/http"
+	"github.com/tofutf/tofutf/internal"
+	otfhttp "github.com/tofutf/tofutf/internal/http"
 )
 
 type (

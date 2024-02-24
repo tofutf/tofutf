@@ -7,9 +7,9 @@ import (
 
 	"log/slog"
 
-	"github.com/leg100/otf/internal/http/html/paths"
-	"github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/workspace"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // notification furnishes information for sending a notification to a third

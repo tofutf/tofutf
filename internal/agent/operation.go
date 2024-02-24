@@ -16,12 +16,12 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/logr"
-	"github.com/leg100/otf/internal/logs"
-	"github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/state"
-	"github.com/leg100/otf/internal/variable"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/logs"
+	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/state"
+	"github.com/tofutf/tofutf/internal/variable"
 )
 
 const (

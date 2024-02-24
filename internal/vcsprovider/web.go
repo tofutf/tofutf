@@ -5,13 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/http/html"
-	"github.com/leg100/otf/internal/http/html/paths"
-	"github.com/leg100/otf/internal/organization"
-	"github.com/leg100/otf/internal/vcs"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/organization"
+	"github.com/tofutf/tofutf/internal/vcs"
 )
 
 type webHandlers struct {

@@ -3,11 +3,11 @@ package integration
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/daemon"
-	"github.com/leg100/otf/internal/sql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/daemon"
+	"github.com/tofutf/tofutf/internal/sql"
 )
 
 // TestCluster is an end-to-end test of the clustering capabilities, i.e.

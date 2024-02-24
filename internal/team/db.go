@@ -5,9 +5,9 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/jackc/pgtype"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/sql"
-	"github.com/leg100/otf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/sql"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
 )
 
 // TeamRow represents the result of a database query for a team.

@@ -12,14 +12,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
-	otfhttp "github.com/leg100/otf/internal/http"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/tfeapi"
-	"github.com/leg100/otf/internal/tfeapi/types"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/leg100/surl"
+	"github.com/tofutf/tofutf/internal"
+	otfhttp "github.com/tofutf/tofutf/internal/http"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/tfeapi"
+	"github.com/tofutf/tofutf/internal/tfeapi/types"
+	"github.com/tofutf/tofutf/internal/workspace"
 	"golang.org/x/exp/maps"
 )
 
@@ -57,7 +57,7 @@ func (a *tfe) addHandlers(r *mux.Router) {
 	// which they mean a state using a well documented, public, schema rather than their
 	// internal schema). OTF doesn't do anything yet with the JSON version but
 	// in order to avoid breaking terraform (see
-	// https://github.com/leg100/otf/issues/626) OTF accepts the upload but does
+	// https://github.com/tofutf/tofutf/issues/626) OTF accepts the upload but does
 	// nothing with it.
 	signed.HandleFunc("/state-versions/{id}/upload/json", func(http.ResponseWriter, *http.Request) {})
 

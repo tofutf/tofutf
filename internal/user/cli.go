@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	otfapi "github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/team"
 	"github.com/spf13/cobra"
+	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/team"
 )
 
 type userCLI struct {

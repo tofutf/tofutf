@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
-	otfapi "github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/tfeapi"
+	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/tfeapi"
 )
 
 type api struct {

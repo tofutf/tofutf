@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/url"
 
-	otfapi "github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/http"
-	"github.com/leg100/otf/internal/resource"
+	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/http"
+	"github.com/tofutf/tofutf/internal/resource"
 )
 
 type Client struct {

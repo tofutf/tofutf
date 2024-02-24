@@ -3,7 +3,7 @@ package module
 import (
 	"strings"
 
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 )
 
 // Repo is the path of repository for a module. It is expected to follow a

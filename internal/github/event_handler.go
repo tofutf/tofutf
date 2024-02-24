@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v55/github"
-	"github.com/leg100/otf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/vcs"
 )
 
 func HandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) {

@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/leg100/otf/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
 	"golang.org/x/oauth2"
 )
 

@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/leg100/otf/internal/vcs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/vcs"
 )
 
 func TestEventHandler(t *testing.T) {

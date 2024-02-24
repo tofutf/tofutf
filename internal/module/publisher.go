@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/semver"
-	"github.com/leg100/otf/internal/vcs"
-	"github.com/leg100/otf/internal/vcsprovider"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/semver"
+	"github.com/tofutf/tofutf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/vcsprovider"
 )
 
 type (

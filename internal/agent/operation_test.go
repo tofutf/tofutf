@@ -8,10 +8,10 @@ import (
 	"path"
 	"testing"
 
-	"github.com/leg100/otf/internal/logr"
 	"github.com/mitchellh/iochan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/logr"
 )
 
 func TestExecutor_execute(t *testing.T) {

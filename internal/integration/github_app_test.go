@@ -11,15 +11,15 @@ import (
 	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 	gogithub "github.com/google/go-github/v55/github"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/daemon"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/testutils"
-	"github.com/leg100/otf/internal/user"
-	"github.com/leg100/otf/internal/vcsprovider"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/daemon"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/user"
+	"github.com/tofutf/tofutf/internal/vcsprovider"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // TestIntegration_GithubAppNewUI demonstrates creation of a github app via the

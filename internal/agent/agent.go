@@ -8,7 +8,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 )
 
 var (

@@ -4,11 +4,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/notifications"
-	"github.com/leg100/otf/internal/pubsub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/notifications"
+	"github.com/tofutf/tofutf/internal/pubsub"
 )
 
 func TestIntegration_NotificationConfigurationService(t *testing.T) {

@@ -6,9 +6,9 @@ IMAGE_TAG ?= $(VERSION)-$(RANDOM_SUFFIX)
 DBSTRING=postgres:///otf
 LD_FLAGS = " \
     -s -w \
-	-X 'github.com/leg100/otf/internal.Version=$(VERSION)' \
-	-X 'github.com/leg100/otf/internal.Commit=$(GIT_COMMIT)'	\
-	-X 'github.com/leg100/otf/internal.Built=$(shell date +%s)'	\
+	-X 'github.com/tofutf/tofutf/internal.Version=$(VERSION)' \
+	-X 'github.com/tofutf/tofutf/internal.Commit=$(GIT_COMMIT)'	\
+	-X 'github.com/tofutf/tofutf/internal.Built=$(shell date +%s)'	\
 	" \
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)

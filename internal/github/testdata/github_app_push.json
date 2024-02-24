@@ -30,10 +30,10 @@
       "type": "User",
       "site_admin": false
     },
-    "html_url": "https://github.com/leg100/otf-workspaces",
+    "html_url": "https://github.com/tofutf/tofutf-workspaces",
     "description": "Sample workspaces for OTF",
     "fork": false,
-    "url": "https://github.com/leg100/otf-workspaces",
+    "url": "https://github.com/tofutf/tofutf-workspaces",
     "forks_url": "https://api.github.com/repos/leg100/otf-workspaces/forks",
     "keys_url": "https://api.github.com/repos/leg100/otf-workspaces/keys{/key_id}",
     "collaborators_url": "https://api.github.com/repos/leg100/otf-workspaces/collaborators{/collaborator}",
@@ -73,10 +73,10 @@
     "created_at": 1674067797,
     "updated_at": "2023-01-18T18:50:12Z",
     "pushed_at": 1697565914,
-    "git_url": "git://github.com/leg100/otf-workspaces.git",
+    "git_url": "git://github.com/tofutf/tofutf-workspaces.git",
     "ssh_url": "git@github.com:leg100/otf-workspaces.git",
-    "clone_url": "https://github.com/leg100/otf-workspaces.git",
-    "svn_url": "https://github.com/leg100/otf-workspaces",
+    "clone_url": "https://github.com/tofutf/tofutf-workspaces.git",
+    "svn_url": "https://github.com/tofutf/tofutf-workspaces",
     "homepage": null,
     "size": 12,
     "stargazers_count": 0,
@@ -140,7 +140,7 @@
   "deleted": false,
   "forced": false,
   "base_ref": null,
-  "compare": "https://github.com/leg100/otf-workspaces/compare/f602c779bb6f...0a2d223fa1a3",
+  "compare": "https://github.com/tofutf/tofutf-workspaces/compare/f602c779bb6f...0a2d223fa1a3",
   "commits": [
     {
       "id": "0a2d223fa1a3844480e3b7716cf87aacb658b91f",
@@ -148,7 +148,7 @@
       "distinct": true,
       "message": "empty commit",
       "timestamp": "2023-10-17T19:05:12+01:00",
-      "url": "https://github.com/leg100/otf-workspaces/commit/0a2d223fa1a3844480e3b7716cf87aacb658b91f",
+      "url": "https://github.com/tofutf/tofutf-workspaces/commit/0a2d223fa1a3844480e3b7716cf87aacb658b91f",
       "author": {
         "name": "Louis Garman",
         "email": "louisgarman@gmail.com",
@@ -176,7 +176,7 @@
     "distinct": true,
     "message": "empty commit",
     "timestamp": "2023-10-17T19:05:12+01:00",
-    "url": "https://github.com/leg100/otf-workspaces/commit/0a2d223fa1a3844480e3b7716cf87aacb658b91f",
+    "url": "https://github.com/tofutf/tofutf-workspaces/commit/0a2d223fa1a3844480e3b7716cf87aacb658b91f",
     "author": {
       "name": "Louis Garman",
       "email": "louisgarman@gmail.com",

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/leg100/otf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/rbac"
 )
 
 func lockFileCacheKey(runID string) string {

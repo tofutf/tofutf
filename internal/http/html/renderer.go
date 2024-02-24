@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
 )
 
 const (

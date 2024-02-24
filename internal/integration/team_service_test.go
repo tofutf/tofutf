@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/leg100/otf/internal"
-	otfteam "github.com/leg100/otf/internal/team"
-	"github.com/leg100/otf/internal/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	otfteam "github.com/tofutf/tofutf/internal/team"
+	"github.com/tofutf/tofutf/internal/user"
 )
 
 func TestIntegation_TeamService(t *testing.T) {

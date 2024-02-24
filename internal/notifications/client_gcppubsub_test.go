@@ -3,8 +3,8 @@ package notifications
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
 )
 
 func TestPubSubClient_New(t *testing.T) {

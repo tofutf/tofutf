@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/logr"
 )
 
 func TestAllocator_seed(t *testing.T) {

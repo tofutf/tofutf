@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/leg100/otf/internal"
-	otfapi "github.com/leg100/otf/internal/api"
+	"github.com/tofutf/tofutf/internal"
+	otfapi "github.com/tofutf/tofutf/internal/api"
 )
 
 type Client struct {

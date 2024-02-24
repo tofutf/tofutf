@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/logr"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/logr"
 	"golang.org/x/sync/errgroup"
 )
 

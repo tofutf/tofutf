@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/logr"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/sql"
-	"github.com/leg100/otf/internal/workspace"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/sql"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // LockID guarantees only one notifier on a cluster is running at any

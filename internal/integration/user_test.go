@@ -3,12 +3,12 @@ package integration
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/daemon"
-	"github.com/leg100/otf/internal/sql"
-	otfuser "github.com/leg100/otf/internal/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/daemon"
+	"github.com/tofutf/tofutf/internal/sql"
+	otfuser "github.com/tofutf/tofutf/internal/user"
 )
 
 func TestUser(t *testing.T) {

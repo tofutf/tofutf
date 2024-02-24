@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/leg100/otf/internal/testutils"
-	"github.com/leg100/otf/internal/user"
+	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/user"
 )
 
 func fakeServer(t *testing.T, secret []byte) *server {

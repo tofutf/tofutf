@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/configversion"
-	"github.com/leg100/otf/internal/organization"
-	"github.com/leg100/otf/internal/user"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/configversion"
+	"github.com/tofutf/tofutf/internal/organization"
+	"github.com/tofutf/tofutf/internal/user"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 func TestRun_New_CreatedBy(t *testing.T) {

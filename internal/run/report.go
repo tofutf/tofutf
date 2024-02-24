@@ -3,7 +3,7 @@ package run
 import (
 	"fmt"
 
-	"github.com/leg100/otf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
 )
 
 // Report reports a summary of additions, changes, and deletions of

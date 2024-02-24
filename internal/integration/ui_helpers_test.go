@@ -17,7 +17,7 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal/run"
+	"github.com/tofutf/tofutf/internal/run"
 )
 
 var (

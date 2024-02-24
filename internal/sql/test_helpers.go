@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/iancoleman/strcase"
-	"github.com/leg100/otf/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
 
 	"github.com/jackc/pgx/v4"
 )

@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leg100/otf/internal"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
 )
 
 // NewOIDCIssuer creates an oidc issuer server and returns its url. For testing

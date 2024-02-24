@@ -3,8 +3,8 @@ package tokens
 import (
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
 	"github.com/lestrrat-go/jwx/v2/jwk"
+	"github.com/tofutf/tofutf/internal"
 )
 
 type (

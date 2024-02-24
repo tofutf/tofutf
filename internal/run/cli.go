@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"os"
 
-	otfapi "github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/configversion"
+	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/configversion"
 
-	"github.com/leg100/otf/internal"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/tofutf/tofutf/internal"
 )
 
 type CLI struct {

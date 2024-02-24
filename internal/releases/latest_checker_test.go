@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leg100/otf/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/testutils"
 )
 
 func Test_latestChecker(t *testing.T) {

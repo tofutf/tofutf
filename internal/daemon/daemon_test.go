@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/leg100/otf/internal"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
 )
 
 func TestDaemon_MissingSecretError(t *testing.T) {

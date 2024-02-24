@@ -1,14 +1,14 @@
 # CLI
 
-`otf` is the CLI for OTF.
+`tofutf` is the CLI for TOFUTF.
 
-Download a [release](https://github.com/leg100/otf/releases). Ensure you select the client component, `otf`. The release is a zip file. Extract the `otf` binary to a directory in your system PATH.
+Download a [release](https://github.com/tofutf/tofutf/releases). Ensure you select the client component, `tofutf`. The release is a zip file. Extract the `tofutf` binary to a directory in your system PATH.
 
-Run `otf` with no arguments to receive usage instructions:
+Run `tofutf` with no arguments to receive usage instructions:
 
 ```bash
 Usage:
-  otf [command]
+  tofutf [command]
 
 Available Commands:
   agents        Agent management

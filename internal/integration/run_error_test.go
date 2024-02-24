@@ -7,11 +7,11 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // TestRunError demonstrates a run failing with an error and checks that the

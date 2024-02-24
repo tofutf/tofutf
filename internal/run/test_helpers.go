@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/http/html"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/workspace"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type fakeSubService struct {

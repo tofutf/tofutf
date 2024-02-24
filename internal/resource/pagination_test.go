@@ -3,8 +3,8 @@ package resource
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal"
 )
 
 func TestPagination(t *testing.T) {

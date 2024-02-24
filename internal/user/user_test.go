@@ -3,9 +3,9 @@ package user
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/team"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/team"
 )
 
 func TestSiteAdminCanAccessOrganization(t *testing.T) {

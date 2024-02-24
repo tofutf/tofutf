@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/state"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/state"
 )
 
 func TestIntegration_StateService(t *testing.T) {

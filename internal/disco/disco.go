@@ -7,9 +7,9 @@ import (
 	gohttp "net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal/json"
-	"github.com/leg100/otf/internal/loginserver"
-	"github.com/leg100/otf/internal/tfeapi"
+	"github.com/tofutf/tofutf/internal/json"
+	"github.com/tofutf/tofutf/internal/loginserver"
+	"github.com/tofutf/tofutf/internal/tfeapi"
 )
 
 var discoveryPayload = json.MustMarshal(struct {

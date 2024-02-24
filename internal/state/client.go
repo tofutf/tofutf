@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/leg100/otf/internal"
-	otfapi "github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/tfeapi/types"
+	"github.com/tofutf/tofutf/internal"
+	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/tfeapi/types"
 )
 
 type Client struct {

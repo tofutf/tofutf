@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/leg100/otf/internal"
-	otfapi "github.com/leg100/otf/internal/api"
+	"github.com/tofutf/tofutf/internal"
+	otfapi "github.com/tofutf/tofutf/internal/api"
 
 	"github.com/spf13/cobra"
 )

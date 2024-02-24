@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	otfapi "github.com/leg100/otf/internal/api"
+	otfapi "github.com/tofutf/tofutf/internal/api"
 
-	"github.com/leg100/otf/internal/resource"
 	"github.com/spf13/cobra"
+	"github.com/tofutf/tofutf/internal/resource"
 )
 
 type CLI struct {

@@ -7,10 +7,10 @@ import (
 	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/testutils"
 )
 
 // TestAgentPoolsUI demonstrates managing agent pools and tokens via the UI.

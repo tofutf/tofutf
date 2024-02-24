@@ -7,10 +7,10 @@ import (
 
 	"log/slog"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/connections"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/vcs"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/connections"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/vcs"
 )
 
 const (

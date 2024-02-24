@@ -2,7 +2,7 @@
 
 These steps will get you started with running `otfd` on your local system.
 
-Download a [release](https://github.com/leg100/otf/releases) of the server component, `otfd`. The release is a zip file. Extract the `otfd` binary to your current directory.
+Download a [release](https://github.com/tofutf/tofutf/releases) of the server component, `otfd`. The release is a zip file. Extract the `otfd` binary to your current directory.
 
 Ensure you have access to a postgres server. `otfd` by default assumes postgres is running locally, accessible via a domain socket in `/var/run/postgresql`, and defaults to using a database named `otf`. You need to create the database first:
 

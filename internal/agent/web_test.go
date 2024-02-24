@@ -4,9 +4,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/leg100/otf/internal/http/html/paths"
-	"github.com/leg100/otf/internal/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/testutils"
 )
 
 func TestWebHandlers_createAgentPool(t *testing.T) {

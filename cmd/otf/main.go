@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	cmdutil "github.com/leg100/otf/cmd"
-	"github.com/leg100/otf/internal/cli"
+	cmdutil "github.com/tofutf/tofutf/cmd"
+	"github.com/tofutf/tofutf/internal/cli"
 )
 
 func main() {

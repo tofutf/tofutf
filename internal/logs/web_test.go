@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/leg100/otf/internal"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal"
 )
 
 func TestTailLogs(t *testing.T) {

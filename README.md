@@ -1,13 +1,14 @@
-*The OTF project has ceased to be. I no longer have the time nor resources to maintain a project of this complexity.*
-<hr>
-
 ![OTF logo](/readme_inkscape_logo.png)
 
-OTF is an open source alternative to Terraform Enterprise. Includes SSO, team management, agents, and no per-resource pricing.
+TOFUTF is an open source alternative to Terraform Enterprise. Includes SSO, team management, agents, and no per-resource pricing.
 
 Docs: https://docs.otf.ninja/
 
 [![Slack](https://img.shields.io/badge/join-slack%20community-brightgreen)](https://join.slack.com/t/otf-pg29376/shared_invite/zt-1jga4k1cl-bzmJg71f4uUB9fJhxdT~gQ)
+
+## Provenance
+
+TOFUTF is a fork of the now abandoned [otf](https://github.com/leg100/otf). Louis Garman did some amazing work, and this fork is an attempt to carry the torch.
 
 ## Legal
 

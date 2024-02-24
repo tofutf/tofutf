@@ -5,15 +5,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/connections"
-	"github.com/leg100/otf/internal/http/html/paths"
-	"github.com/leg100/otf/internal/testutils"
-	"github.com/leg100/otf/internal/user"
-	"github.com/leg100/otf/internal/vcs"
-	"github.com/leg100/otf/internal/vcsprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/connections"
+	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/user"
+	"github.com/tofutf/tofutf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/vcsprovider"
 )
 
 func TestListModules(t *testing.T) {

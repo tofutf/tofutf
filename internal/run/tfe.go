@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/leg100/otf/internal"
-	otfhttp "github.com/leg100/otf/internal/http"
-	"github.com/leg100/otf/internal/http/decode"
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/tfeapi"
-	"github.com/leg100/otf/internal/tfeapi/types"
-	"github.com/leg100/otf/internal/workspace"
+	"github.com/tofutf/tofutf/internal"
+	otfhttp "github.com/tofutf/tofutf/internal/http"
+	"github.com/tofutf/tofutf/internal/http/decode"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/tfeapi"
+	"github.com/tofutf/tofutf/internal/tfeapi/types"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type tfe struct {

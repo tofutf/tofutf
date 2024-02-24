@@ -3,8 +3,8 @@ package scheduler
 import (
 	"context"
 
-	"github.com/leg100/otf/internal/run"
-	"github.com/leg100/otf/internal/workspace"
+	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type fakeQueueFactory struct {

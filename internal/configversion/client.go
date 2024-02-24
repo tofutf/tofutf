@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
-	otfapi "github.com/leg100/otf/internal/api"
+	otfapi "github.com/tofutf/tofutf/internal/api"
 )
 
 type Client struct {

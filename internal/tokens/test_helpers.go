@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leg100/otf/internal"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
 )
 
 func NewTestSessionJWT(t *testing.T, username string, secret []byte, lifetime time.Duration) string {

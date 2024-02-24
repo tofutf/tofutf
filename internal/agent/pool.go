@@ -8,8 +8,8 @@ import (
 
 	"log/slog"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/resource"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/resource"
 )
 
 var (

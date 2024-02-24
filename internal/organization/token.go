@@ -3,9 +3,9 @@ package organization
 import (
 	"time"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/tokens"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/tokens"
 )
 
 const OrganizationTokenKind tokens.Kind = "organization_token"

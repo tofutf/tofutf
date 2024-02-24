@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 )
 
 // registry provides a means of registering different kinds of tokens with the

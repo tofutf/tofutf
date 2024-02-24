@@ -7,8 +7,8 @@ import (
 	"path"
 
 	"github.com/hashicorp/terraform-config-inspect/tfconfig"
-	"github.com/leg100/otf/internal"
 	"github.com/pkg/errors"
+	"github.com/tofutf/tofutf/internal"
 )
 
 // TerraformModule is a module of terraform configuration

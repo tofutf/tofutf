@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/google/go-github/v55/github"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/vcs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/vcs"
 )
 
 func TestEventHandler(t *testing.T) {
@@ -52,7 +52,7 @@ func TestEventHandler(t *testing.T) {
 				Branch:             "master",
 				DefaultBranch:      "master",
 				CommitSHA:          "0a2d223fa1a3844480e3b7716cf87aacb658b91f",
-				CommitURL:          "https://github.com/leg100/otf-workspaces/commit/0a2d223fa1a3844480e3b7716cf87aacb658b91f",
+				CommitURL:          "https://github.com/tofutf/tofutf-workspaces/commit/0a2d223fa1a3844480e3b7716cf87aacb658b91f",
 				Action:             vcs.ActionCreated,
 				Paths:              nil,
 				SenderUsername:     "leg100",
@@ -73,9 +73,9 @@ func TestEventHandler(t *testing.T) {
 				Branch:            "pr-2",
 				DefaultBranch:     "master",
 				CommitSHA:         "c560613b228f5e189520fbab4078284ea8312bcb",
-				CommitURL:         "https://github.com/leg100/otf-workspaces/commit/c560613b228f5e189520fbab4078284ea8312bcb",
+				CommitURL:         "https://github.com/tofutf/tofutf-workspaces/commit/c560613b228f5e189520fbab4078284ea8312bcb",
 				PullRequestNumber: 2,
-				PullRequestURL:    "https://github.com/leg100/otf-workspaces/pull/2",
+				PullRequestURL:    "https://github.com/tofutf/tofutf-workspaces/pull/2",
 				PullRequestTitle:  "pr-2",
 				Action:            vcs.ActionCreated,
 				SenderUsername:    "leg100",
@@ -95,9 +95,9 @@ func TestEventHandler(t *testing.T) {
 				Branch:            "pr-1",
 				DefaultBranch:     "master",
 				CommitSHA:         "067e2b4c6394b3dad3c0ec89ffc428ab60ae7e5d",
-				CommitURL:         "https://github.com/leg100/otf-workspaces/commit/067e2b4c6394b3dad3c0ec89ffc428ab60ae7e5d",
+				CommitURL:         "https://github.com/tofutf/tofutf-workspaces/commit/067e2b4c6394b3dad3c0ec89ffc428ab60ae7e5d",
 				PullRequestNumber: 1,
-				PullRequestURL:    "https://github.com/leg100/otf-workspaces/pull/1",
+				PullRequestURL:    "https://github.com/tofutf/tofutf-workspaces/pull/1",
 				PullRequestTitle:  "pr-1",
 				Action:            vcs.ActionUpdated,
 				SenderUsername:    "leg100",

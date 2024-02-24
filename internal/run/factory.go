@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/leg100/otf/internal/configversion"
-	"github.com/leg100/otf/internal/organization"
-	"github.com/leg100/otf/internal/releases"
-	"github.com/leg100/otf/internal/vcs"
-	"github.com/leg100/otf/internal/workspace"
+	"github.com/tofutf/tofutf/internal/configversion"
+	"github.com/tofutf/tofutf/internal/organization"
+	"github.com/tofutf/tofutf/internal/releases"
+	"github.com/tofutf/tofutf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type (

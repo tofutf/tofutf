@@ -9,9 +9,9 @@ import (
 	"os"
 	"testing"
 
-	otfhttp "github.com/leg100/otf/internal/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	otfhttp "github.com/tofutf/tofutf/internal/http"
 )
 
 func TestDownloader(t *testing.T) {

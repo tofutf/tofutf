@@ -3,12 +3,12 @@ package daemon
 import (
 	"errors"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/agent"
-	"github.com/leg100/otf/internal/authenticator"
-	"github.com/leg100/otf/internal/configversion"
-	"github.com/leg100/otf/internal/inmem"
-	"github.com/leg100/otf/internal/tokens"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/agent"
+	"github.com/tofutf/tofutf/internal/authenticator"
+	"github.com/tofutf/tofutf/internal/configversion"
+	"github.com/tofutf/tofutf/internal/inmem"
+	"github.com/tofutf/tofutf/internal/tokens"
 )
 
 var ErrInvalidSecretLength = errors.New("secret must be 16 bytes in size")

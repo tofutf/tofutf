@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/leg100/otf/internal/state"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/state"
 )
 
 // TestIntegration_StateCLI demonstrates managing state via the CLI

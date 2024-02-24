@@ -7,7 +7,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/jaschaephraim/lrserver"
-	"github.com/leg100/otf/internal/logr"
+	"github.com/tofutf/tofutf/internal/logr"
 )
 
 var (

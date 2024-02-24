@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/leg100/otf/internal"
-	otfapi "github.com/leg100/otf/internal/api"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/resource"
 	"github.com/spf13/cobra"
+	"github.com/tofutf/tofutf/internal"
+	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/resource"
 )
 
 type (

@@ -7,7 +7,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/go-logr/logr"
-	"github.com/leg100/otf/internal"
+	"github.com/tofutf/tofutf/internal"
 	"golang.org/x/sync/errgroup"
 )
 

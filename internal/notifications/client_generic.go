@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/leg100/otf/internal/run"
+	"github.com/tofutf/tofutf/internal/run"
 )
 
 type (

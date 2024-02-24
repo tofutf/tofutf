@@ -1,6 +1,6 @@
 package pubsub
 
-import "github.com/leg100/otf/internal/sql"
+import "github.com/tofutf/tofutf/internal/sql"
 
 type fakeListener struct{}
 

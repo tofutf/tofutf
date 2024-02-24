@@ -3,10 +3,10 @@ package integration
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal/daemon"
-	"github.com/leg100/otf/internal/pubsub"
-	"github.com/leg100/otf/internal/sql"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal/daemon"
+	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/sql"
 )
 
 // TestBroker demonstrates publishing and subscribing of events via postgres.

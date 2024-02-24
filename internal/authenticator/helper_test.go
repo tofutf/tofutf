@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/leg100/otf/internal/tokens"
+	"github.com/tofutf/tofutf/internal/tokens"
 	"golang.org/x/oauth2"
 )
 

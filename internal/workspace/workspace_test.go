@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/leg100/otf/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
 )
 
 func TestNewWorkspace(t *testing.T) {

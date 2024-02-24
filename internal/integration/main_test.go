@@ -11,10 +11,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/testbrowser"
-	"github.com/leg100/otf/internal/testcompose"
-	"github.com/leg100/otf/internal/user"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/testbrowser"
+	"github.com/tofutf/tofutf/internal/testcompose"
+	"github.com/tofutf/tofutf/internal/user"
 )
 
 var (

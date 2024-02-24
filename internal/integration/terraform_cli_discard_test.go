@@ -8,9 +8,9 @@ import (
 	"time"
 
 	expect "github.com/google/goexpect"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/run"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/run"
 )
 
 // TestIntegration_TerraformCLIDiscard demonstrates a user discarding a run via

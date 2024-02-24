@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/rbac"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/rbac"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
 )
 
 type (

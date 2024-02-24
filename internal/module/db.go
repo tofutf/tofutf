@@ -5,10 +5,10 @@ import (
 	"sort"
 
 	"github.com/jackc/pgtype"
-	"github.com/leg100/otf/internal/connections"
-	"github.com/leg100/otf/internal/semver"
-	"github.com/leg100/otf/internal/sql"
-	"github.com/leg100/otf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal/connections"
+	"github.com/tofutf/tofutf/internal/semver"
+	"github.com/tofutf/tofutf/internal/sql"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
 )
 
 type (

@@ -7,10 +7,10 @@ import (
 	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
-	"github.com/leg100/otf/internal/github"
-	"github.com/leg100/otf/internal/testutils"
-	"github.com/leg100/otf/internal/vcs"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/github"
+	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/vcs"
 )
 
 // TestIntegration_WorkspaceUI demonstrates management of workspaces via the UI.

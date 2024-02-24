@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/leg100/otf/internal/logr"
-	"github.com/leg100/otf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/pubsub"
 )
 
 // AllocatorLockID guarantees only one allocator on a cluster is running at any

@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal/run"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/run"
 )
 
 // TestIntegration_StateUI demonstrates the displaying of terraform state via

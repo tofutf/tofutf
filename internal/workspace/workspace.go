@@ -12,10 +12,10 @@ import (
 	"slices"
 
 	"github.com/gobwas/glob"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/releases"
-	"github.com/leg100/otf/internal/resource"
-	"github.com/leg100/otf/internal/semver"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/releases"
+	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/tofutf/tofutf/internal/semver"
 )
 
 const (

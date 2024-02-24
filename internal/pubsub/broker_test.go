@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/leg100/otf/internal/logr"
-	"github.com/leg100/otf/internal/sql"
 	"github.com/stretchr/testify/assert"
+	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/sql"
 )
 
 type foo struct {

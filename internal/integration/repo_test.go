@@ -3,9 +3,9 @@ package integration
 import (
 	"testing"
 
-	"github.com/leg100/otf/internal/connections"
-	"github.com/leg100/otf/internal/github"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal/connections"
+	"github.com/tofutf/tofutf/internal/github"
 )
 
 func TestRepo(t *testing.T) {

@@ -12,10 +12,10 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal"
-	"github.com/leg100/otf/internal/tokens"
-	otfuser "github.com/leg100/otf/internal/user"
 	"github.com/stretchr/testify/require"
+	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/tokens"
+	otfuser "github.com/tofutf/tofutf/internal/user"
 )
 
 const headlessEnvVar = "OTF_E2E_HEADLESS"

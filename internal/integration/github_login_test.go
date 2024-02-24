@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/chromedp/chromedp"
-	"github.com/leg100/otf/internal/daemon"
-	"github.com/leg100/otf/internal/github"
+	"github.com/tofutf/tofutf/internal/daemon"
+	"github.com/tofutf/tofutf/internal/github"
 )
 
 // TestGithubLogin demonstrates logging into the UI via Github OAuth.
