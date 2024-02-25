@@ -105,10 +105,24 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 	}
 	logger.Info("started cache", "max_size", cfg.CacheConfig.Size, "ttl", cfg.CacheConfig.TTL)
 
-	db, err := sql.New(ctx, sql.Options{
-		Logger:     logger,
-		ConnString: cfg.Database,
-	})
+	var db *sql.DB
+	const maxRetries = 10
+	retryInterval := 5 * time.Second
+
+	for i := 0; i < maxRetries; i++ {
+		db, err = sql.New(ctx, sql.Options{
+			Logger:     logger,
+			ConnString: cfg.Database,
+		})
+		if err == nil {
+			break
+		}
+
+		logger.Info("waiting for database", "err", err)
+
+		time.Sleep(retryInterval)
+	}
+
 	if err != nil {
 		return nil, err
 	}

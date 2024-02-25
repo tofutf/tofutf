@@ -1,0 +1,6 @@
+auth:
+  adminUser: admin
+  adminPassword: password
+
+postgres:
+  enabled: true

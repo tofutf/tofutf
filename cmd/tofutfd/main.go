@@ -46,9 +46,9 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 	var loggerConfig *logr.Config
 
 	cmd := &cobra.Command{
-		Use:           "otfd",
-		Short:         "otf daemon",
-		Long:          "otfd is the daemon component of the open terraforming framework.",
+		Use:           "tofutfd",
+		Short:         "tofutf daemon",
+		Long:          "tofutfd is the daemon component of the open terraforming framework.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Version:       internal.Version,

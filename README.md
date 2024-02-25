@@ -1,4 +1,11 @@
+# WIP
+This repository is currently a work in progress. It is currently in an unreleased state. OTF was feature rich, and complex, and I have been paring it down a bit feature-wise to make it easier to maintain and deploy.
+
+<hr/>
+
 ![OTF logo](/readme_inkscape_logo.png)
+
+
 
 TOFUTF is an open source alternative to Terraform Enterprise. Includes SSO, team management, agents, and no per-resource pricing.
 

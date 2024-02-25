@@ -1,0 +1,61 @@
+apiVersion: skaffold/v4beta9
+kind: Config
+metadata:
+  name: tofutf
+
+deploy:
+  helm:
+    releases:
+      - name: tofutf
+        chartPath: charts/tofutf
+        valuesFiles:
+          - charts/tofutf/values.yaml
+          - charts/tofutf/test-values.yaml
+        version: 0.3.11
+        setValueTemplates:
+          image.repository: "{{.IMAGE_REPO_ghcr_io_tofutf_tofutfd }}"
+      - name: keycloak
+        remoteChart: oci://registry-1.docker.io/bitnamicharts/keycloak
+        version: 18.7.1
+        valuesFiles:
+          - hack/skaffold/keycloak.yaml
+
+
+build:
+  platforms: ["linux/amd64"]
+  artifacts:
+  - image: ghcr.io/tofutf/tofutfd
+    ko:
+      main: ./cmd/tofutfd
+      labels:
+        org.opencontainers.image.licenses: MPL-2.0
+        org.opencontainers.image.revision: "{{.GITHUB_SHA}}"
+        org.opencontainers.image.source: "{{.GITHUB_SERVER_URL}}/{{.GITHUB_REPOSITORY}}"
+  - image: ghcr.io/tofutf/tofutf-agent
+    ko:
+      main: ./cmd/tofutf-agent
+      labels:
+        org.opencontainers.image.licenses: MPL-2.0
+        org.opencontainers.image.revision: "{{.GITHUB_SHA}}"
+        org.opencontainers.image.source: "{{.GITHUB_SERVER_URL}}/{{.GITHUB_REPOSITORY}}"
+  - image: ghcr.io/tofutf/tofutf
+    ko:
+      main: ./cmd/tofutf
+      labels:
+        org.opencontainers.image.licenses: MPL-2.0
+        org.opencontainers.image.revision: "{{.GITHUB_SHA}}"
+        org.opencontainers.image.source: "{{.GITHUB_SERVER_URL}}/{{.GITHUB_REPOSITORY}}"
+
+portForward:
+  - resourceType: service
+    resourceName: tofutf
+    namespace: default
+    port: 80
+    localPort: 8080
+    address: 0.0.0.0
+  - resourceType: service
+    resourceName: keycloak
+    namespace: default
+    port: 80
+    localPort: 8081
+    address: 0.0.0.0
