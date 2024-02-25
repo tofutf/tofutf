@@ -48,7 +48,7 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 	cmd := &cobra.Command{
 		Use:           "tofutfd",
 		Short:         "tofutf daemon",
-		Long:          "tofutfd is the daemon component of the open terraforming framework.",
+		Long:          "tofutfd is the daemon component of the opentofu tuft framework.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Version:       internal.Version,

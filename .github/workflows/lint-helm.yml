@@ -1,0 +1,28 @@
+name: "Lint Helm"
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Lint
+        run: helm lint ./charts/tofutf
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.8.0
+      - name: Test
+        run: |
+          helm install --debug -f ./charts/tofutf/test-values.yaml tofutf ./charts/tofutf --wait
+          helm test tofutf
+      - name: Debug
+        if: failure()
+        run: |
+          kubectl -n tofutf-test get all
+          kubectl -n tofutf-test describe pod
+          kubectl -n tofutf-test logs -l app.kubernetes.io/name=postgresql
+          kubectl -n tofutf-test logs -l app.kubernetes.io/name=tofutf

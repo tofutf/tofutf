@@ -12,7 +12,6 @@ on:
 
 jobs:
   build:
-    # You must use a Linux environment when using service containers or container jobs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
