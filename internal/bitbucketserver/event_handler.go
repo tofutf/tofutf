@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	bitbucketv1 "github.com/gfleury/go-bitbucket-v1"
 	"github.com/tofutf/tofutf/internal/vcs"
 	"golang.org/x/exp/slog"
@@ -49,8 +48,6 @@ func HandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) {
 		}
 	}
 
-	spew.Dump(event)
-
 	repoPath := ""
 
 	switch event.EventKey {
@@ -64,10 +61,11 @@ func HandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) {
 			return nil, fmt.Errorf("unable to handle multiple changes in a single push")
 		}
 
-		changeType := event.Changes[0].Ref.Type
+		refType := event.Changes[0].Ref.Type
+		actionType := event.Changes[0].Type
 		refID := event.Changes[0].Ref.ID
 
-		if changeType == "ADD" {
+		if refType == "TAG" && actionType == "ADD" {
 			tag := strings.TrimPrefix(refID, "refs/")
 			return &vcs.EventPayload{
 				RepoPath:      repoPath,
@@ -77,7 +75,7 @@ func HandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) {
 				CommitSHA:     event.Changes[0].ToHash,
 				DefaultBranch: "main", // TODO(johnrowl) need to change this.
 			}, nil
-		} else if changeType == "DELETE" {
+		} else if refType == "TAG" && actionType == "DELETE" {
 			tag := strings.TrimPrefix(refID, "refs/")
 			return &vcs.EventPayload{
 				RepoPath:      repoPath,
@@ -88,6 +86,8 @@ func HandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) {
 				DefaultBranch: "main", // TODO(johnrowl) need to change this.
 			}, nil
 		}
+
+		slog.Error("unhandled push event", "event", event)
 
 		return nil, fmt.Errorf("failed to handle push event")
 	}
