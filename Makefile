@@ -18,6 +18,10 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+.PHONY: dev
+dev: 
+	skaffold build --push -b ghcr.io/tofutf/tofutfd
+
 .PHONY: go-tfe-tests
 go-tfe-tests: image compose-up
 	./hack/go-tfe-tests.bash

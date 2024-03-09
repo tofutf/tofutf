@@ -16,14 +16,19 @@ var ErrInvalidSecretLength = errors.New("secret must be 16 bytes in size")
 // Config configures the otfd daemon. Descriptions of each field can be found in
 // the flag definitions in ./cmd/otfd
 type Config struct {
-	AgentConfig                  *agent.Config
-	CacheConfig                  *inmem.CacheConfig
-	GithubHostname               string
-	GithubClientID               string
-	GithubClientSecret           string
-	GitlabHostname               string
-	GitlabClientID               string
-	GitlabClientSecret           string
+	AgentConfig *agent.Config
+	CacheConfig *inmem.CacheConfig
+
+	GithubHostname     string
+	GithubClientID     string
+	GithubClientSecret string
+
+	GitlabHostname     string
+	GitlabClientID     string
+	GitlabClientSecret string
+
+	BitbucketServerHostname string
+
 	OIDC                         authenticator.OIDCConfig
 	Secret                       []byte // 16-byte secret for signing URLs and encrypting payloads
 	SiteToken                    string

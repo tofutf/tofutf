@@ -139,13 +139,16 @@ func (s *Service) publishModule(ctx context.Context, organization string, opts P
 		if err != nil {
 			return err
 		}
+
 		client, err = s.vcsproviders.GetVCSClient(ctx, opts.VCSProviderID)
 		if err != nil {
 			return err
 		}
+
 		tags, err = client.ListTags(ctx, vcs.ListTagsOptions{
 			Repo: string(opts.Repo),
 		})
+
 		if err != nil {
 			return err
 		}

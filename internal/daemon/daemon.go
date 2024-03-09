@@ -189,16 +189,17 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 	vcsEventBroker := &vcs.Broker{}
 
 	vcsProviderService := vcsprovider.NewService(vcsprovider.Options{
-		Logger:              logger,
-		DB:                  db,
-		Renderer:            renderer,
-		Responder:           responder,
-		HostnameService:     hostnameService,
-		GithubAppService:    githubAppService,
-		GithubHostname:      cfg.GithubHostname,
-		GitlabHostname:      cfg.GitlabHostname,
-		SkipTLSVerification: cfg.SkipTLSVerification,
-		Subscriber:          vcsEventBroker,
+		Logger:                  logger,
+		DB:                      db,
+		Renderer:                renderer,
+		Responder:               responder,
+		HostnameService:         hostnameService,
+		GithubAppService:        githubAppService,
+		GithubHostname:          cfg.GithubHostname,
+		GitlabHostname:          cfg.GitlabHostname,
+		BitbucketServerHostname: cfg.BitbucketServerHostname,
+		SkipTLSVerification:     cfg.SkipTLSVerification,
+		Subscriber:              vcsEventBroker,
 	})
 	repoService := repohooks.NewService(ctx, repohooks.Options{
 		Logger:              logger,

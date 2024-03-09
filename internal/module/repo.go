@@ -17,6 +17,7 @@ func (r Repo) Split() (name, provider string, err error) {
 	if len(repoParts) < 2 {
 		return "", "", internal.ErrInvalidRepo
 	}
+
 	parts := strings.SplitN(repoParts[1], "-", 3)
 	if len(parts) < 3 {
 		return "", "", ErrInvalidModuleRepo

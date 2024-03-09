@@ -1,9 +1,0 @@
-FROM alpine:3.19.1
-
-# bubblewrap is for sandboxing, and git permits pulling modules via
-# the git protocol
-RUN apk add --no-cache bubblewrap git
-
-COPY tofutf-agent /usr/local/bin/tofutf-agent
-
-ENTRYPOINT ["/usr/local/bin/tofutf-agent"]
