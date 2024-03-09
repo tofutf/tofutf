@@ -127,7 +127,12 @@ func (g *TokenClient) ListTags(ctx context.Context, opts vcs.ListTagsOptions) ([
 	response, err := g.client.DefaultApi.GetTags(
 		owner,
 		name,
-		map[string]interface{}{"filterText": opts.Prefix},
+		map[string]interface{}{
+			"filterText": opts.Prefix,
+			"orderBy":    "MODIFICATION",
+			"start":      0,
+			"limit":      1000,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tags: %w", err)

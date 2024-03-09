@@ -315,6 +315,78 @@ func (s *Service) DeleteModule(ctx context.Context, id string) (*Module, error) 
 	return module, nil
 }
 
+func (s *Service) RefreshModule(ctx context.Context, id string) (*Module, error) {
+	module, err := s.db.getModuleByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.organization.CanAccess(ctx, rbac.CreateModuleVersionAction, module.Organization)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := s.vcsproviders.GetVCSClient(ctx, module.Connection.VCSProviderID)
+	if err != nil {
+		return nil, err
+	}
+
+	tags, err := client.ListTags(ctx, vcs.ListTagsOptions{
+		Repo: module.Connection.Repo,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	exists := map[string]bool{}
+	for _, tag := range tags {
+		_, version, found := strings.Cut(tag, "/")
+		finalVersion := strings.TrimPrefix(version, "v")
+
+		if found {
+			exists[finalVersion] = true
+		}
+	}
+
+	for _, tag := range tags {
+		// tags/<version> -> <version>
+		_, version, found := strings.Cut(tag, "/")
+		if !found {
+			return nil, fmt.Errorf("malformed git ref: %s", tag)
+		}
+		// skip tags that are not semantic versions
+		if !semver.IsValid(version) {
+			continue
+		}
+
+		finalVersion := strings.TrimPrefix(version, "v")
+
+		// if it already exists then continue
+		if _, ok := exists[finalVersion]; ok {
+			continue
+		}
+
+		err := s.PublishVersion(ctx, PublishVersionOptions{
+			ModuleID: module.ID,
+			// strip off v prefix if it has one
+			Version: finalVersion,
+			Ref:     tag,
+			Repo:    Repo(module.Connection.Repo),
+			Client:  client,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	module, err = s.db.getModuleByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return module, nil
+}
+
 func (s *Service) CreateVersion(ctx context.Context, opts CreateModuleVersionOptions) (*ModuleVersion, error) {
 	module, err := s.db.getModuleByID(ctx, opts.ModuleID)
 	if err != nil {

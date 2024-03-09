@@ -80,5 +80,9 @@
     <form id="module-delete-button" action="{{ deleteModulePath .Module.ID }}" method="POST">
       <button class="btn-danger" onclick="return confirm('Are you sure you want to delete?')">Delete module</button>
     </form>
+
+    <form id="module-refresh-button" action="{{ refreshModulePath .Module.ID }}" method="POST">
+      <button class="btn" onclick="return confirm('Are you sure you want to refresh?')">Refresh module</button>
+    </form>
   </div>
 {{ end }}

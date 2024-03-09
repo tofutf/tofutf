@@ -328,6 +328,7 @@ var specs = []controllerSpec{
 			{
 				Name:           "module",
 				controllerType: resourcePath,
+				actions:        []action{{name: "refresh", collection: false}},
 			},
 		},
 	},

@@ -46,6 +46,7 @@ type (
 		ListModules(context.Context, ListModulesOptions) ([]*Module, error)
 		PublishModule(context.Context, PublishOptions) (*Module, error)
 		DeleteModule(ctx context.Context, id string) (*Module, error)
+		RefreshModule(ctx context.Context, id string) (*Module, error)
 	}
 
 	// vcsprovidersClient provides web handlers with access to vcs providers
@@ -66,6 +67,7 @@ func (h *webHandlers) addHandlers(r *mux.Router) {
 	r.HandleFunc("/organizations/{organization_name}/modules/create", h.publish).Methods("POST")
 	r.HandleFunc("/modules/{module_id}", h.get).Methods("GET")
 	r.HandleFunc("/modules/{module_id}/delete", h.delete).Methods("POST")
+	r.HandleFunc("/modules/{module_id}/refresh", h.refresh).Methods("POST")
 }
 
 func (h *webHandlers) list(w http.ResponseWriter, r *http.Request) {
@@ -163,6 +165,25 @@ func (h *webHandlers) get(w http.ResponseWriter, r *http.Request) {
 		ModuleStatusSetupComplete: ModuleStatusSetupComplete,
 		ModuleVersionStatusOK:     ModuleVersionStatusOK,
 	})
+}
+
+func (h *webHandlers) refresh(w http.ResponseWriter, r *http.Request) {
+	var params struct {
+		ID string `schema:"module_id,required"`
+	}
+	if err := decode.All(&params, r); err != nil {
+		h.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
+	module, err := h.client.RefreshModule(r.Context(), params.ID)
+	if err != nil {
+		h.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	html.FlashSuccess(w, "refreshed module: "+module.Name)
+	http.Redirect(w, r, paths.Module(module.ID), http.StatusFound)
 }
 
 func (h *webHandlers) new(w http.ResponseWriter, r *http.Request) {
