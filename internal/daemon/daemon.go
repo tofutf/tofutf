@@ -13,6 +13,7 @@ import (
 	"github.com/tofutf/tofutf/internal/agent"
 	"github.com/tofutf/tofutf/internal/api"
 	"github.com/tofutf/tofutf/internal/authenticator"
+	"github.com/tofutf/tofutf/internal/bitbucketserver"
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/connections"
 	"github.com/tofutf/tofutf/internal/disco"
@@ -212,6 +213,7 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 	})
 	repoService.RegisterCloudHandler(vcs.GithubKind, github.HandleEvent)
 	repoService.RegisterCloudHandler(vcs.GitlabKind, gitlab.HandleEvent)
+	repoService.RegisterCloudHandler(vcs.BitbucketServer, bitbucketserver.HandleEvent)
 
 	connectionService := connections.NewService(ctx, connections.Options{
 		Logger:             logger,
