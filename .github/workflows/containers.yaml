@@ -32,5 +32,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
         run: |
-          ko build ./cmd/tofutfd --base-import-paths -t ${{ github.ref_name }} 
-          ko build ./cmd/tofutf-agent --base-import-paths -t ${{ github.ref_name }} 
+          ko build ./cmd/tofutfd --base-import-paths -t ${{ github.ref_name }}  --sbom="none"
+          ko build ./cmd/tofutf-agent --base-import-paths -t ${{ github.ref_name }} --sbom="none"
