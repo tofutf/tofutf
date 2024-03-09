@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/tofutf/tofutf/compare/v0.2.5...v0.3.0) (2024-03-09)
+
+
+### Features
+
+* added basic bitbucketserver support ([2e32ffb](https://github.com/tofutf/tofutf/commit/2e32ffbe2b7bc48016ad611df722e9fc33e4750a))
+* minor fix to message, and more ci changes ([0756fd9](https://github.com/tofutf/tofutf/commit/0756fd97f6b62873f7d49e5c95b7eba5934df24a))
+
 ## [0.2.5](https://github.com/tofutf/tofutf/compare/v0.2.4...v0.2.5) (2024-02-24)
 
 
