@@ -1,3 +1,4 @@
+// Package bitbucketserver provides bitbucket server integration with tofutf
 package bitbucketserver
 
 import (
