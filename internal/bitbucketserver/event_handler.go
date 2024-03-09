@@ -67,66 +67,30 @@ func HandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) {
 		changeType := event.Changes[0].Ref.Type
 		refID := event.Changes[0].Ref.ID
 
-		if changeType == "TAG" {
-			refParts := strings.Split(refID, "/")
-			if len(refParts) != 3 {
-				return nil, fmt.Errorf("malformed ref: %s", refID)
-			}
-
+		if changeType == "ADD" {
+			tag := strings.TrimPrefix(refID, "refs/")
 			return &vcs.EventPayload{
 				RepoPath:      repoPath,
 				VCSKind:       vcs.BitbucketServer,
-				Tag:           refParts[2],
+				Tag:           tag,
 				Action:        vcs.ActionCreated,
 				CommitSHA:     event.Changes[0].ToHash,
 				DefaultBranch: "main", // TODO(johnrowl) need to change this.
 			}, nil
-		} else if changeType == "BRANCH" {
-			refParts := strings.Split(refID, "/")
-			if len(refParts) != 3 {
-				return nil, fmt.Errorf("malformed ref: %s", refID)
-			}
-
+		} else if changeType == "DELETE" {
+			tag := strings.TrimPrefix(refID, "refs/")
 			return &vcs.EventPayload{
 				RepoPath:      repoPath,
 				VCSKind:       vcs.BitbucketServer,
-				Branch:        refParts[2],
+				Tag:           tag,
+				Action:        vcs.ActionCreated,
 				CommitSHA:     event.Changes[0].ToHash,
 				DefaultBranch: "main", // TODO(johnrowl) need to change this.
 			}, nil
 		}
 
-		// return &cloud.VCSEvent{
-
-		// }, nil
-
 		return nil, fmt.Errorf("failed to handle push event")
 	}
-
-	// switch event := rawEvent.(type) {
-	// case *gitlab.PushEvent:
-	// 	refParts := strings.Split(event.Ref, "/")
-	// 	if len(refParts) != 3 {
-	// 		return nil, fmt.Errorf("malformed ref: %s", event.Ref)
-	// 	}
-	// 	return &cloud.VCSEvent{
-	// 		Branch:        refParts[2],
-	// 		CommitSHA:     event.After,
-	// 		DefaultBranch: event.Project.DefaultBranch,
-	// 	}, nil
-	// case *gitlab.TagEvent:
-	// 	refParts := strings.Split(event.Ref, "/")
-	// 	if len(refParts) != 3 {
-	// 		return nil, fmt.Errorf("malformed ref: %s", event.Ref)
-	// 	}
-	// 	return &cloud.VCSEvent{
-	// 		Tag: refParts[2],
-	// 		// Action:     action,
-	// 		CommitSHA:     event.After,
-	// 		DefaultBranch: event.Project.DefaultBranch,
-	// 	}, nil
-	// case *gitlab.MergeEvent:
-	// }
 
 	return nil, nil
 }
