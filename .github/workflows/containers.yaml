@@ -27,14 +27,14 @@ jobs:
           fetch-depth: 0
       - name: Set up Go
         uses: actions/setup-go@v4
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean ${{ env.flags }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Run GoReleaser
+      #   uses: goreleaser/goreleaser-action@v5
+      #   with:
+      #     distribution: goreleaser
+      #     version: latest
+      #     args: release --clean ${{ env.flags }}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: ko-build/setup-ko@v0.6
       - name: publish
         env:
