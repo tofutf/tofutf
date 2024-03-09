@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1-0](https://github.com/tofutf/tofutf/compare/v0.3.0...v0.3.1-0) (2024-03-09)
+
+
+### Bug Fixes
+
+* **lint:** fixing a linting issue ([6a68417](https://github.com/tofutf/tofutf/commit/6a68417096e1dbf0b4f2e91d5b03fad6cbceebc4))
+
 ## [0.3.0](https://github.com/tofutf/tofutf/compare/v0.2.5...v0.3.0) (2024-03-09)
 
 
