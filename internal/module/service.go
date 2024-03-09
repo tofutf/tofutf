@@ -3,6 +3,7 @@ package module
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -316,6 +317,8 @@ func (s *Service) DeleteModule(ctx context.Context, id string) (*Module, error) 
 }
 
 func (s *Service) RefreshModule(ctx context.Context, id string) (*Module, error) {
+	logger := slog.Default().With("service", "module", "op", "RefreshModule")
+
 	module, err := s.db.getModuleByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -339,23 +342,22 @@ func (s *Service) RefreshModule(ctx context.Context, id string) (*Module, error)
 	}
 
 	exists := map[string]bool{}
-	for _, tag := range tags {
-		_, version, found := strings.Cut(tag, "/")
-		finalVersion := strings.TrimPrefix(version, "v")
-
-		if found {
-			exists[finalVersion] = true
-		}
+	for _, version := range module.Versions {
+		exists[version.Version] = true
 	}
+
+	logger.Info("listing tags", "tags", exists)
 
 	for _, tag := range tags {
 		// tags/<version> -> <version>
 		_, version, found := strings.Cut(tag, "/")
 		if !found {
+			logger.Debug("skipping malformed git ref", "tag", tag)
 			return nil, fmt.Errorf("malformed git ref: %s", tag)
 		}
 		// skip tags that are not semantic versions
 		if !semver.IsValid(version) {
+			logger.Debug("skipping invalid version", "version", version)
 			continue
 		}
 
@@ -363,8 +365,11 @@ func (s *Service) RefreshModule(ctx context.Context, id string) (*Module, error)
 
 		// if it already exists then continue
 		if _, ok := exists[finalVersion]; ok {
+			logger.Debug("skipping version that already exists", "version", finalVersion)
 			continue
 		}
+
+		logger.Info("publishing newly detected version", "version", finalVersion)
 
 		err := s.PublishVersion(ctx, PublishVersionOptions{
 			ModuleID: module.ID,
