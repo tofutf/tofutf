@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/tofutf/tofutf/compare/v0.3.1...v0.4.0) (2024-03-10)
+
+
+### Features
+
+* added basic styling to module readme ([408d162](https://github.com/tofutf/tofutf/commit/408d162736d217021d35dfa5bce84c1310e2eaf5))
+* added more logging to module refreshing ([f8024e7](https://github.com/tofutf/tofutf/commit/f8024e7ef31d90a5622b8c4d3d765aa0d40c287b))
+* added the ability to manuall refresh a module ([ae7945d](https://github.com/tofutf/tofutf/commit/ae7945da4a2ddc26d61fd0c25b33eb5ace974461))
+* made bitbucket pushes trigger tofutf webhooks ([57ee251](https://github.com/tofutf/tofutf/commit/57ee251929e1472cb1fddd06ea05954dfb5e924c))
+
+
+### Bug Fixes
+
+* fixed broken webhooks ([26d9d45](https://github.com/tofutf/tofutf/commit/26d9d45de65079b85940289a50eba770ec9d60f8))
+* hacking on bitbucket webhooks ([e08e8ce](https://github.com/tofutf/tofutf/commit/e08e8cecc04504f48c63ccb034db3aac9074bc36))
+
 ## [0.3.1-0](https://github.com/tofutf/tofutf/compare/v0.3.0...v0.3.1-0) (2024-03-09)
 
 
