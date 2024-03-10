@@ -43,9 +43,9 @@
           </textarea>
         </div>
       </div>
-      <div>
+      <article class="prose">
         {{ trimHTML .Readme }}
-      </div>
+      </article>
       <div>
         <h3 class="font-semibold">Resources</h3>
         {{ if ne .TerraformModule nil }}
