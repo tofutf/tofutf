@@ -32,7 +32,8 @@ jobs:
           BINARY: yq_linux_amd64
         run: | 
           wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY}.tar.gz -O - |\
-            tar xz && mv ${BINARY} /usr/bin/yq
+            tar xz
+          sudo mv ${BINARY} /usr/bin/yq
       - uses: ko-build/setup-ko@v0.6
       - uses: chrisdickinson/setup-yq@latest
       - name: publish-release
