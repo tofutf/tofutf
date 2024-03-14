@@ -5,8 +5,12 @@
 # -- Number of otfd nodes in cluster
 replicaCount: 1
 
+agent:
+  __hack__: "ko://github.com/tofutf/tofutf/cmd/tofutf-agent"
+
 image:
-  repository: ghcr.io/tofutf/tofutfd
+  __hack__: "ko://github.com/tofutf/tofutf/cmd/tofutfd"
+  repository: ghcr.io/tofutf/tofutf/tofutfd
   tag: "latest"
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.

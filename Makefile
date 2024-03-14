@@ -1,15 +1,8 @@
-VERSION = $(shell git describe --tags --dirty --always)
+VERSION ?= $(shell git describe --tags --dirty --always)
+
 GIT_COMMIT = $(shell git rev-parse HEAD)
 RANDOM_SUFFIX := $(shell cat /dev/urandom | tr -dc 'a-z0-9' | head -c5)
-IMAGE_NAME = leg100/otfd
-IMAGE_TAG ?= $(VERSION)-$(RANDOM_SUFFIX)
 DBSTRING=postgres:///otf
-LD_FLAGS = " \
-    -s -w \
-	-X 'github.com/tofutf/tofutf/internal.Version=$(VERSION)' \
-	-X 'github.com/tofutf/tofutf/internal.Commit=$(GIT_COMMIT)'	\
-	-X 'github.com/tofutf/tofutf/internal.Built=$(shell date +%s)'	\
-	" \
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -45,26 +38,6 @@ tailwind-watch:
 test:
 	go test ./...
 
-.PHONY: build
-build:
-	CGO_ENABLED=0 go build -o _build/ -ldflags $(LD_FLAGS) ./...
-	chmod -R +x _build/*
-
-.PHONY: install
-install:
-	go install -ldflags $(LD_FLAGS) ./...
-
-.PHONY: install-latest-release
-install-latest-release:
-	{ \
-	set -ex ;\
-	ZIP_FILE=$$(mktemp) ;\
-	RELEASE_URL=$$(curl -s https://api.github.com/repos/leg100/otf/releases/latest | \
-		jq -r '.assets[] | select(.name | test("otfd_.*_linux_amd64.zip$$")) | .browser_download_url') ;\
-	curl -Lo $$ZIP_FILE $$RELEASE_URL ;\
-	unzip -o -d $(GOBIN) $$ZIP_FILE otfd ;\
-	}
-
 # Run docker compose stack
 .PHONY: compose-up
 compose-up: image
@@ -94,16 +67,6 @@ fmt:
 .PHONY: vet
 vet:
 	go vet ./...
-
-# Build docker image
-.PHONY: image
-image: build
-	docker build -f Dockerfile -t $(IMAGE_NAME):$(IMAGE_TAG) -t $(IMAGE_NAME):latest ./_build
-
-# Build and load image into k8s kind
-.PHONY: load
-load: image
-	kind load docker-image $(IMAGE_NAME):$(IMAGE_TAG)
 
 # Install pre-commit
 .PHONY: install-pre-commit
@@ -197,3 +160,10 @@ actions:
 .PHONY: install-linter
 install-linter:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
+
+.PHONY: publish
+publish:
+	KO_DOCKER_REPO=ghcr.io/tofutf/tofutf/ ko resolve --local --base-import-paths -t $(VERSION) -f ./charts/tofutf/values.yaml.tmpl > ./charts/tofutf/values.yaml 
+	yq 'select(di == 0) | .image.tag = .image.__hack__ | del(.image.__hack__) | del(.agent) | .image.tag |= sub("ghcr.io/tofutf/tofutf/tofutfd:", "")' -i ./charts/tofutf/values.yaml
+	helm package ./charts/tofutf --app-version $(VERSION) --version $(VERSION) --destination=./hack/charts/
+	helm push ./hack/charts/tofutf-$(VERSION).tgz oci://ghcr.io/tofutf/tofutf/charts
