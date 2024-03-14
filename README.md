@@ -1,6 +1,6 @@
 # WIP
 
-![Build](https://github.com/tofutf/tofutf/actions/workflows/build.yaml/badge.svg)
+![Build](https://github.com/tofutf/tofutf/actions/workflows/build.yml/badge.svg)
 
 This repository is currently a work in progress. It is currently in an unreleased state. OTF was feature rich, and complex, and I have been paring it down a bit feature-wise to make it easier to maintain and deploy.
 
