@@ -35,7 +35,6 @@ jobs:
             tar xz
           sudo mv ${BINARY} /usr/bin/yq
       - uses: ko-build/setup-ko@v0.6
-      - uses: chrisdickinson/setup-yq@latest
       - name: publish-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
