@@ -27,6 +27,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
       - name: Set up yq
+        env: 
+          VERSION: v4.2.0
+          BINARY: yq_linux_amd64
         run: | 
           wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY}.tar.gz -O - |\
             tar xz && mv ${BINARY} /usr/bin/yq
