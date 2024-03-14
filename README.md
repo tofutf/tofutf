@@ -1,9 +1,12 @@
 # WIP
+
+![Build](https://github.com/tofutf/tofutf/actions/workflows/build.yaml/badge.svg)
+
 This repository is currently a work in progress. It is currently in an unreleased state. OTF was feature rich, and complex, and I have been paring it down a bit feature-wise to make it easier to maintain and deploy.
 
 <hr/>
 
-![OTF logo](/readme_inkscape_logo.png)
+![TofuTF logo](/readme_logo.png)
 
 
 
@@ -16,6 +19,8 @@ Docs: https://docs.otf.ninja/
 ## Provenance
 
 TOFUTF is a fork of the now abandoned [otf](https://github.com/leg100/otf). Louis Garman did some amazing work, and this fork is an attempt to carry the torch.
+
+![OTF logo](/readme_otf_logo.png)
 
 ## Legal
 
