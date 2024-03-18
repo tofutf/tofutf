@@ -9,7 +9,18 @@
   "imageSize": 32,
   "commit": false,
   "commitConvention": "angular",
-  "contributors": [],
+  "contributors": [
+    {
+      "login": "robbert229",
+      "name": "John Rowley",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3454480?v=4",
+      "profile": "http://blog.johnrowley.co",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
   "contributorsPerLine": 7,
-  "linkToUsage": true
+  "linkToUsage": true,
+  "commitType": "docs"
 }
