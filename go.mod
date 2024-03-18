@@ -40,7 +40,7 @@ require (
 	github.com/leg100/surl v0.0.5
 	github.com/lestrrat-go/jwx/v2 v2.0.21
 	github.com/mitchellh/iochan v1.0.0
-	github.com/mitchellh/mapstructure v1.4.1
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/natefinch/atomic v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/pressly/goose/v3 v3.5.3
