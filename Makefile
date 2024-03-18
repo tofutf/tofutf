@@ -157,7 +157,7 @@ install-linter:
 
 .PHONY: publish
 publish:
-	KO_DOCKER_REPO=ghcr.io/tofutf/tofutf/ ko resolve --local --base-import-paths -t $(VERSION) -f ./charts/tofutf/values.yaml.tmpl > ./charts/tofutf/values.yaml 
+	KO_DOCKER_REPO=ghcr.io/tofutf/tofutf/ ko resolve --base-import-paths -t $(VERSION) -f ./charts/tofutf/values.yaml.tmpl > ./charts/tofutf/values.yaml 
 	yq 'select(di == 0) | .image.tag = .image.__hack__ | del(.image.__hack__) | del(.agent) | .image.tag |= sub("ghcr.io/tofutf/tofutf/tofutfd:", "")' -i ./charts/tofutf/values.yaml
 	helm package ./charts/tofutf --app-version $(VERSION) --version $(VERSION) --destination=./hack/charts/
-	# helm push ./hack/charts/tofutf-$(VERSION).tgz oci://ghcr.io/tofutf/tofutf/charts
+	helm push ./hack/charts/tofutf-$(VERSION).tgz oci://ghcr.io/tofutf/tofutf/charts
