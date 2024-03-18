@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/tofutf/tofutf/compare/v0.4.0...v0.4.1) (2024-03-18)
+
+
+### Miscellaneous Chores
+
+* fixing release builds ([#36](https://github.com/tofutf/tofutf/issues/36)) ([f600b1c](https://github.com/tofutf/tofutf/commit/f600b1cdb914c656be6e4957e5e79c1254d4aabd))
+
 ## [0.4.0](https://github.com/tofutf/tofutf/compare/v0.3.1...v0.4.0) (2024-03-10)
 
 
