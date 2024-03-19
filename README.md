@@ -33,6 +33,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="http://blog.johnrowley.co"><img src="https://avatars.githubusercontent.com/u/3454480?v=4?s=32" width="32px;" alt="John Rowley"/><br /><sub><b>John Rowley</b></sub></a><br /><a href="https://github.com/tofutf/tofutf/commits?author=robbert229" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jpetrucciani"><img src="https://avatars.githubusercontent.com/u/8117202?v=4?s=32" width="32px;" alt="jacobi petrucciani"/><br /><sub><b>jacobi petrucciani</b></sub></a><br /><a href="https://github.com/tofutf/tofutf/commits?author=jpetrucciani" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/leg100"><img src="https://avatars.githubusercontent.com/u/75728?v=4?s=32" width="32px;" alt="Louis Garman"/><br /><sub><b>Louis Garman</b></sub></a><br /><a href="https://github.com/tofutf/tofutf/commits?author=leg100" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
