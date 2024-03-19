@@ -13,12 +13,12 @@ deploy:
           - charts/tofutf/test-values.yaml
         version: 0.5.0-dev
         setValueTemplates:
-          image.repository: "{{.IMAGE_REPO_ghcr_io_tofutf_tofutf_tofutfd }}"
+          image.override: "{{.IMAGE_REPO_ghcr_io_tofutf_tofutf_tofutfd }}"
 
 build:
   platforms: ["linux/amd64"]
   artifacts:
-  - image: ghcr.io/tofutf/tofutfd
+  - image: ghcr.io/tofutf/tofutf/tofutfd
     ko:
       fromImage: ghcr.io/tofutf/tofutf/tofutf-base:v1.0.0
       main: ./cmd/tofutfd

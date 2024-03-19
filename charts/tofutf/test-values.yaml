@@ -1,6 +1,6 @@
 secret: 2876cb147697052eec5b3cdb56211681
 siteToken: site-token
-database: postgres://tofutf-postgresql?user=postgres
+database: 'postgres://tofutf-postgresql?user=postgres'
 databasePasswordFromSecret:
   name: tofutf-postgresql
   key: postgres-password

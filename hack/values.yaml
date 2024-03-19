@@ -2,14 +2,15 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# -- Number of otfd nodes in cluster
+# -- Number of tofutf nodes in cluster
 replicaCount: 1
 
 agent:
-  __hack__: "ko://github.com/tofutf/tofutf/cmd/tofutf-agent"
+  override: "ko://github.com/tofutf/tofutf/cmd/tofutf-agent"
 
 image:
-  __hack__: "ko://github.com/tofutf/tofutf/cmd/tofutfd"
-  repository: ghcr.io/tofutf/tofutf/tofutfd
-  tag: "latest"
-  pullPolicy: IfNotPresent
+  override: "ko://github.com/tofutf/tofutf/cmd/tofutfd"
+  pullPolicy: Always
+
+postgres:
+  postgresPassword: password

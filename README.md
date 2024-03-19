@@ -9,55 +9,47 @@ TofuTF is an open source alternative to Terraform Enterprise. Includes SSO, team
 
 ## Getting Started
 
-# Quick Start
+### Quick Start
+
+Create a file named `values.yaml` and paste the following contents inside of it.
 
 ```yaml
 # values.yaml
 
-# The secret is used to sign sessions. It should be kept confidential.
+# The secret is used to sign sessions. It should be kept confidential, and 
+# production installs of tofutf should have a randomly generated secret.
 secret: 2876cb147697052eec5b3cdb56211681
 
 # The siteToken is the special token that grants administrator access to 
-# tofutf.
+# tofutf. Production installs of tofutf should have a randomly generated
+# site token.
 siteToken: site-token
 
-# Hostname is the host that tofutf will be hosted on. 
-hostname: "dev.tofutf.io"
-
-ingress:
-  enabled: true
-  hosts: 
-    - dev.tofutf.io
-  tls:
-  - hosts:
-    - dev.tofutf.io
-
-# here we enable the bundled postgres instance, and configure it to provision a tofutf database.
+# here we enable the bundled postgres instance, and configure it to provision
+# a tofutf database.
 postgres:
   enabled: true
   database: tofutf
 
 # here we configure tofutf to connect to the bundled postgres instance. 
-database: postgres://tofutf-postgresql?user=postgres
+database: postgres://tofutf-postgresql/tofutf?user=postgres
 databasePasswordFromSecret:
   name: tofutf-postgresql
   key: postgres-password
 ```
 
+Then run the following command to install tofutf.
+
 ```
-helm 
+helm install my-release -f values.yaml oci://ghcr.io/tofutf/tofutf/charts/tofutf --version v0.4.1
 ```
-Check out the docs! https://docs.tofutf.io/
 
-## Provenance
-
-TofuTF is a fork of the now abandoned [otf](https://github.com/leg100/otf). Louis Garman did some amazing work, and this fork is an attempt to carry the torch.
-
-<img src="readme_otf_logo.png" width="128px"/>
+### Congrats! 🎉
+Congrats, you have deployed TofuTF! Check the quickstart guide on the official docs site for next steps. https://docs.tofutf.io/quickstart
 
 ## Legal
 
-OTF is in no way affiliated with Hashicorp. Terraform and Terraform Enterprise are trademarks of Hashicorp. Hashicorp have [confirmed](https://www.reddit.com/r/Terraform/comments/15p2p32/impact_of_new_licensing_on_open_source/) OTF is in compliance with their BSL license.
+TofuTF is in no way affiliated with Hashicorp. Terraform and Terraform Enterprise are trademarks of Hashicorp. Hashicorp have [confirmed](https://www.reddit.com/r/Terraform/comments/15p2p32/impact_of_new_licensing_on_open_source/) TofuTF is in compliance with their BSL license.
 
 ## Contributors ✨
 
@@ -69,9 +61,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/leg100"><img src="https://avatars.githubusercontent.com/u/75728?v=4?s=32" width="32px;" alt="Louis Garman"/><br /><sub><b>Louis Garman</b></sub></a><br /><a href="https://github.com/tofutf/tofutf/commits?author=leg100" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://blog.johnrowley.co"><img src="https://avatars.githubusercontent.com/u/3454480?v=4?s=32" width="32px;" alt="John Rowley"/><br /><sub><b>John Rowley</b></sub></a><br /><a href="https://github.com/tofutf/tofutf/commits?author=robbert229" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jpetrucciani"><img src="https://avatars.githubusercontent.com/u/8117202?v=4?s=32" width="32px;" alt="jacobi petrucciani"/><br /><sub><b>jacobi petrucciani</b></sub></a><br /><a href="https://github.com/tofutf/tofutf/commits?author=jpetrucciani" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/leg100"><img src="https://avatars.githubusercontent.com/u/75728?v=4?s=32" width="32px;" alt="Louis Garman"/><br /><sub><b>Louis Garman</b></sub></a><br /><a href="https://github.com/tofutf/tofutf/commits?author=leg100" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
@@ -91,3 +83,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+## Provenance
+
+TofuTF is a fork of the now abandoned [otf](https://github.com/leg100/otf). Louis Garman did some amazing work, and this fork is an attempt to carry the torch.
+
+<img src="readme_otf_logo.png" width="128px"/>
