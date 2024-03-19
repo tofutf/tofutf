@@ -38,6 +38,14 @@ tailwind-watch:
 test:
 	go test ./...
 
+.PHONY: k3d-up
+k3d-up:
+	k3d cluster create --config=./hack/k3d.yaml
+
+.PHONY: k3d-down
+k3d-down:
+	k3d cluster delete tofutf
+
 # Run docker compose stack
 .PHONY: compose-up
 compose-up: image

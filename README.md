@@ -9,6 +9,44 @@ TofuTF is an open source alternative to Terraform Enterprise. Includes SSO, team
 
 ## Getting Started
 
+# Quick Start
+
+```yaml
+# values.yaml
+
+# The secret is used to sign sessions. It should be kept confidential.
+secret: 2876cb147697052eec5b3cdb56211681
+
+# The siteToken is the special token that grants administrator access to 
+# tofutf.
+siteToken: site-token
+
+# Hostname is the host that tofutf will be hosted on. 
+hostname: "dev.tofutf.io"
+
+ingress:
+  enabled: true
+  hosts: 
+    - dev.tofutf.io
+  tls:
+  - hosts:
+    - dev.tofutf.io
+
+# here we enable the bundled postgres instance, and configure it to provision a tofutf database.
+postgres:
+  enabled: true
+  database: tofutf
+
+# here we configure tofutf to connect to the bundled postgres instance. 
+database: postgres://tofutf-postgresql?user=postgres
+databasePasswordFromSecret:
+  name: tofutf-postgresql
+  key: postgres-password
+```
+
+```
+helm 
+```
 Check out the docs! https://docs.tofutf.io/
 
 ## Provenance

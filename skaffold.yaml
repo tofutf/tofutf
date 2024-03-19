@@ -11,7 +11,7 @@ deploy:
         valuesFiles:
           - charts/tofutf/values.yaml
           - charts/tofutf/test-values.yaml
-        version: 0.3.11
+        version: 0.5.0-dev
         setValueTemplates:
           image.repository: "{{.IMAGE_REPO_ghcr_io_tofutf_tofutf_tofutfd }}"
 
