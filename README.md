@@ -5,15 +5,15 @@
 
 ![Build](https://github.com/tofutf/tofutf/actions/workflows/build.yml/badge.svg)  ![GitHub License](https://img.shields.io/github/license/tofutf/tofutf) ![GitHub Release](https://img.shields.io/github/v/release/tofutf/tofutf) [![Star on GitHub](https://img.shields.io/github/stars/tofutf/tofutf.svg?style=flat)](https://github.com/tofutf/tofutf/stargazers) ![GitHub contributors from allcontributors.org](https://img.shields.io/github/all-contributors/tofutf/tofutf) ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=flat&logo=postgresql&logoColor=white) ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=flat&logo=go&logoColor=white) ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=flat&logo=kubernetes&logoColor=white) ![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=flat&logo=terraform&logoColor=white) ![Maintained-Yes](https://img.shields.io/badge/Maintained%3F-yes-green.svg?style=flat) 
 
-TofuTF is an open source alternative to Terraform Enterprise. Includes SSO, team management, agents, no per-resource pricing, and even [OpenTofu](https://opentofu.org/) support in the near future.
+TofuTF is an open source alternative to Terraform Enterprise. Includes SSO, team management, agents, no per-resource pricing, and soon to be [OpenTofu](https://opentofu.org/) support.
 
 ## Getting Started
 
-Work In Progress
+Check out the docs! https://docs.tofutf.io/
 
 ## Provenance
 
-TOFUTF is a fork of the now abandoned [otf](https://github.com/leg100/otf). Louis Garman did some amazing work, and this fork is an attempt to carry the torch.
+TofuTF is a fork of the now abandoned [otf](https://github.com/leg100/otf). Louis Garman did some amazing work, and this fork is an attempt to carry the torch.
 
 <img src="readme_otf_logo.png" width="128px"/>
 
