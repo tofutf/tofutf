@@ -6,15 +6,15 @@
 replicaCount: 1
 
 agent:
-  __hack__: "ko://github.com/tofutf/tofutf/cmd/tofutf-agent"
+  # override is removed from the helm chart as a part of the build process.
+  override: "ko://github.com/tofutf/tofutf/cmd/tofutf-agent"
 
 image:
-  __hack__: "ko://github.com/tofutf/tofutf/cmd/tofutfd"
+  # override is removed from the helm chart as a part of the build process.
+  override: "ko://github.com/tofutf/tofutf/cmd/tofutfd"
   repository: ghcr.io/tofutf/tofutf/tofutfd
   tag: "latest"
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-
 
 imagePullSecrets: []
 nameOverride: ""
@@ -23,7 +23,7 @@ fullnameOverride: ""
 # System hostname used in links - if unset then a hostname is inferred
 # from the listening address. It's recommended you set this.
 
-# -- Set client-accessible hostname. See [docs](https://docs.otf.ninja/latest/config/flags/#-hostname).
+# -- Set client-accessible hostname. See [docs](https://docs.tofutf.io/config/flags/#-hostname).
 hostname: ""
 
 postgres:

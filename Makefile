@@ -38,6 +38,14 @@ tailwind-watch:
 test:
 	go test ./...
 
+.PHONY: k3d-up
+k3d-up:
+	k3d cluster create --config=./hack/k3d.yaml
+
+.PHONY: k3d-down
+k3d-down:
+	k3d cluster delete tofutf
+
 # Run docker compose stack
 .PHONY: compose-up
 compose-up: image
@@ -157,10 +165,10 @@ install-linter:
 
 .PHONY: publish
 publish:
-	KO_DOCKER_REPO=ghcr.io/tofutf/tofutf/ ko resolve --base-import-paths -t $(VERSION) -f ./charts/tofutf/values.yaml.tmpl > ./charts/tofutf/values.yaml 
-	yq 'select(di == 0) | .image.tag = .image.__hack__ | del(.image.__hack__) | del(.agent) | .image.tag |= sub("ghcr.io/tofutf/tofutf/tofutfd:", "")' -i ./charts/tofutf/values.yaml
+	KO_DOCKER_REPO=ghcr.io/tofutf/tofutf/ ko resolve --base-import-paths -t $(VERSION) -f ./charts/tofutf/values.yaml > ./charts/tofutf/values.yaml 
+	yq 'select(di == 0) | .image.tag = .image.override | del(.image.override) | del(.agent) | .image.tag |= sub("ghcr.io/tofutf/tofutf/tofutfd:", "")' -i ./charts/tofutf/values.yaml
 	helm package ./charts/tofutf --app-version $(VERSION) --version $(VERSION) --destination=./hack/charts/
 	helm push ./hack/charts/tofutf-$(VERSION).tgz oci://ghcr.io/tofutf/tofutf/charts
 
-publish-dev-tofutfd:
+publish-dev:
 	KO_DOCKER_REPO=ghcr.io/tofutf/tofutf/ ko build --base-import-paths -t dev ./cmd/tofutfd

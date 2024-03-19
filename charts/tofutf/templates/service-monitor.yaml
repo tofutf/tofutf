@@ -2,13 +2,13 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "otf.fullname" . }}
+  name: {{ include "tofutf.fullname" . }}
   labels:
-    {{- include "otf.labels" . | nindent 4 }}
+    {{- include "tofutf.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "otf.labels" . | nindent 6 }}
+      {{- include "tofutf.labels" . | nindent 6 }}
   endpoints:
   - port: http
 {{- end }}

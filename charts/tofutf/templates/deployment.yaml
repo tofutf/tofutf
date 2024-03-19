@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "otf.fullname" . }}
+  name: {{ include "tofutf.fullname" . }}
   labels:
-    {{- include "otf.labels" . | nindent 4 }}
+    {{- include "tofutf.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "otf.selectorLabels" . | nindent 6 }}
+      {{- include "tofutf.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,13 +16,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "otf.selectorLabels" . | nindent 8 }}
+        {{- include "tofutf.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "otf.serviceAccountName" . }}
+      serviceAccountName: {{ include "tofutf.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -145,7 +145,7 @@ spec:
             {{- end }}
           securityContext:
             privileged: {{ .Values.sandbox }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ include "tofutf.tofutfd.image" . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
