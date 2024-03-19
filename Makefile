@@ -161,3 +161,6 @@ publish:
 	yq 'select(di == 0) | .image.tag = .image.__hack__ | del(.image.__hack__) | del(.agent) | .image.tag |= sub("ghcr.io/tofutf/tofutf/tofutfd:", "")' -i ./charts/tofutf/values.yaml
 	helm package ./charts/tofutf --app-version $(VERSION) --version $(VERSION) --destination=./hack/charts/
 	helm push ./hack/charts/tofutf-$(VERSION).tgz oci://ghcr.io/tofutf/tofutf/charts
+
+publish-dev-tofutfd:
+	KO_DOCKER_REPO=ghcr.io/tofutf/tofutf/ ko build --base-import-paths -t dev ./cmd/tofutfd
