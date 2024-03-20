@@ -62,9 +62,9 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "tofutf.tofutfd.image" -}}
-    {{- if eq .Values.image.override "" -}}
-        {{- .Values.image.repository -}}:{{- .Values.image.tag | default .Chart.AppVersion -}}
-    {{- else -}}
+    {{- if ne .Values.image.override nil -}}
         {{- .Values.image.override -}}
+    {{- else -}}
+        {{- .Values.image.repository -}}:{{- .Values.image.tag | default .Chart.AppVersion -}}
     {{- end -}}
 {{- end -}}
