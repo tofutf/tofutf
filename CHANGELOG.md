@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tofutf/tofutf/compare/v0.5.0...v0.6.0) (2024-03-20)
+
+
+### Features
+
+* finished bitbucket workspace support ([#49](https://github.com/tofutf/tofutf/issues/49)) ([f81ee8f](https://github.com/tofutf/tofutf/commit/f81ee8feb35cc58114a10ead24c682228433ccf3))
+
 ## [0.5.0](https://github.com/tofutf/tofutf/compare/v0.4.1...v0.5.0) (2024-03-20)
 
 
