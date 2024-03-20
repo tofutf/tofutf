@@ -246,10 +246,10 @@ func NewWorkspace(opts CreateOptions) (*Workspace, error) {
 	// (a) tags-regex
 	// (b) trigger-patterns
 	// (c) always-trigger=true
-	if (opts.ConnectOptions != nil && opts.ConnectOptions.TagsRegex != nil) && opts.TriggerPatterns != nil {
+	if (opts.ConnectOptions != nil && (opts.ConnectOptions.TagsRegex != nil && *opts.ConnectOptions.TagsRegex != "")) && opts.TriggerPatterns != nil {
 		return nil, ErrTagsRegexAndTriggerPatterns
 	}
-	if (opts.ConnectOptions != nil && opts.ConnectOptions.TagsRegex != nil) && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
+	if (opts.ConnectOptions != nil && (opts.ConnectOptions.TagsRegex != nil && *opts.ConnectOptions.TagsRegex != "")) && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
 		return nil, ErrTagsRegexAndAlwaysTrigger
 	}
 	if len(opts.TriggerPatterns) > 0 && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
@@ -362,10 +362,10 @@ func (ws *Workspace) Update(opts UpdateOptions) (*bool, error) {
 	// (a) tags-regex
 	// (b) trigger-patterns
 	// (c) always-trigger=true
-	if (opts.ConnectOptions != nil && opts.ConnectOptions.TagsRegex != nil) && opts.TriggerPatterns != nil {
+	if (opts.ConnectOptions != nil && (opts.ConnectOptions.TagsRegex != nil && *opts.ConnectOptions.TagsRegex != "")) && opts.TriggerPatterns != nil {
 		return nil, ErrTagsRegexAndTriggerPatterns
 	}
-	if (opts.ConnectOptions != nil && opts.ConnectOptions.TagsRegex != nil) && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
+	if (opts.ConnectOptions != nil && (opts.ConnectOptions.TagsRegex != nil && *opts.ConnectOptions.TagsRegex != "")) && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
 		return nil, ErrTagsRegexAndAlwaysTrigger
 	}
 	if len(opts.TriggerPatterns) > 0 && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
@@ -410,7 +410,7 @@ func (ws *Workspace) Update(opts UpdateOptions) (*bool, error) {
 			updated = true
 		} else {
 			// modify existing connection
-			if opts.TagsRegex != nil {
+			if opts.TagsRegex != nil && *opts.TagsRegex != "" {
 				if err := ws.setTagsRegex(*opts.TagsRegex); err != nil {
 					return nil, fmt.Errorf("invalid tags-regex: %w", err)
 				}
@@ -448,7 +448,7 @@ func (ws *Workspace) addConnection(opts *ConnectOptions) error {
 	if opts.AllowCLIApply != nil {
 		ws.Connection.AllowCLIApply = *opts.AllowCLIApply
 	}
-	if opts.TagsRegex != nil {
+	if opts.TagsRegex != nil && *opts.TagsRegex != "" {
 		if err := ws.setTagsRegex(*opts.TagsRegex); err != nil {
 			return fmt.Errorf("invalid tags-regex: %w", err)
 		}

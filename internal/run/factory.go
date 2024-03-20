@@ -50,16 +50,17 @@ type (
 func (f *factory) NewRun(ctx context.Context, workspaceID string, opts CreateOptions) (*Run, error) {
 	ws, err := f.workspaces.Get(ctx, workspaceID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve workspace: %w", err)
 	}
 	org, err := f.organizations.Get(ctx, ws.Organization)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve organization: %w", err)
 	}
+
 	if ws.TerraformVersion == releases.LatestVersionString {
 		ws.TerraformVersion, _, err = f.releases.GetLatest(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to retrieve terraform version: %w", err)
 		}
 	}
 
@@ -70,13 +71,19 @@ func (f *factory) NewRun(ctx context.Context, workspaceID string, opts CreateOpt
 	var cv *configversion.ConfigurationVersion
 	if opts.ConfigurationVersionID != nil {
 		cv, err = f.configs.Get(ctx, *opts.ConfigurationVersionID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve configuration: %w", err)
+		}
 	} else if ws.Connection == nil {
 		cv, err = f.configs.GetLatest(ctx, workspaceID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve latest configuration: %w", err)
+		}
 	} else {
 		cv, err = f.createConfigVersionFromVCS(ctx, ws)
-	}
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve configuration from vcs: %w", err)
+		}
 	}
 
 	return newRun(ctx, org, cv, ws, opts), nil

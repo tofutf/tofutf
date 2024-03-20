@@ -346,18 +346,18 @@ func (s *Service) RefreshModule(ctx context.Context, id string) (*Module, error)
 		exists[version.Version] = true
 	}
 
-	logger.Info("listing tags", "tags", exists)
+	logger.Info("listing tags", "exists", exists, "tags", tags)
 
 	for _, tag := range tags {
 		// tags/<version> -> <version>
 		_, version, found := strings.Cut(tag, "/")
 		if !found {
-			logger.Debug("skipping malformed git ref", "tag", tag)
+			logger.Info("skipping malformed git ref", "tag", tag)
 			return nil, fmt.Errorf("malformed git ref: %s", tag)
 		}
 		// skip tags that are not semantic versions
 		if !semver.IsValid(version) {
-			logger.Debug("skipping invalid version", "version", version)
+			logger.Info("skipping invalid version", "version", version)
 			continue
 		}
 
@@ -365,7 +365,7 @@ func (s *Service) RefreshModule(ctx context.Context, id string) (*Module, error)
 
 		// if it already exists then continue
 		if _, ok := exists[finalVersion]; ok {
-			logger.Debug("skipping version that already exists", "version", finalVersion)
+			logger.Info("skipping version that already exists", "version", finalVersion)
 			continue
 		}
 
