@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/tofutf/tofutf/compare/v0.4.1...v0.5.0) (2024-03-20)
+
+
+### Features
+
+* backported [@jpetrucciani](https://github.com/jpetrucciani)'s yellow run-status indicators ([#42](https://github.com/tofutf/tofutf/issues/42)) ([4a17ea2](https://github.com/tofutf/tofutf/commit/4a17ea27e7ac25d5b5f602322f0b49d4b023297d))
+
 ## [0.4.1](https://github.com/tofutf/tofutf/compare/v0.4.0...v0.4.1) (2024-03-18)
 
 
