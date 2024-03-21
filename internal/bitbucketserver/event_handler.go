@@ -52,10 +52,15 @@ func ApplyMiddleware(base EventHandler, factories ...EventFactory) EventHandler 
 	return decorated
 }
 
+// EventFactory decorate EventHandlers with extra functionality. This is used
+// to provide middleware to event processing.
 type EventFactory func(next EventHandler) EventHandler
 
+// EventHandler is a type that describes an event handler. Its a temporary
+// duplication of the vcshooks.EventUnmarshaller.
 type EventHandler func(r *http.Request, secret string) (*vcs.EventPayload, error)
 
+// HandleEventWithLogging is a decorator for an event handler that wraps the event handler with basic event logging.
 func HandleEventWithLogging(next EventHandler) EventHandler {
 	return func(r *http.Request, secret string) (*vcs.EventPayload, error) {
 		event, err := next(r, secret)
@@ -69,6 +74,7 @@ func HandleEventWithLogging(next EventHandler) EventHandler {
 	}
 }
 
+// BaseHandleEvent is the base event handler.
 func BaseHandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) {
 	slog.Debug("handling webhook")
 
@@ -111,31 +117,94 @@ func BaseHandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) 
 			return nil, err
 		}
 
-		refID, err := event.getRefID()
-		if err != nil {
-			return nil, err
-		}
-
 		if refType == "TAG" {
 			if actionType == "ADD" {
-				tag := strings.TrimPrefix(refID, "refs/")
+				tag, err := event.GetTag()
+				if err != nil {
+					return nil, err
+				}
+
+				commitSHA, err := event.GetCommitSHA()
+				if err != nil {
+					return nil, err
+				}
+
+				commitURL, err := event.GetCommitURL()
+				if err != nil {
+					return nil, err
+				}
+
+				actorURL, err := event.GetActorURL()
+				if err != nil {
+					return nil, err
+				}
+
+				actorAvatarURL, err := event.GetActorAvatarURL()
+				if err != nil {
+					return nil, err
+				}
+
+				actorUsername, err := event.GetActorUsername()
+				if err != nil {
+					return nil, err
+				}
+
 				return &vcs.EventPayload{
-					RepoPath:      repoPath,
-					VCSKind:       vcs.BitbucketServer,
-					Tag:           tag,
-					Action:        vcs.ActionCreated,
-					CommitSHA:     event.Changes[0].ToHash,
-					DefaultBranch: "main", // TODO(johnrowl) need to change this.
+					RepoPath:        repoPath,
+					VCSKind:         vcs.BitbucketServer,
+					Tag:             tag,
+					Action:          vcs.ActionCreated,
+					CommitSHA:       commitSHA,
+					CommitURL:       commitURL,
+					SenderHTMLURL:   actorURL,
+					SenderAvatarURL: actorAvatarURL,
+					SenderUsername:  actorUsername,
+					DefaultBranch:   "main", // TODO(johnrowl) need to change this.
+					Type:            vcs.EventTypeTag,
 				}, nil
 			} else if actionType == "DELETE" {
-				tag := strings.TrimPrefix(refID, "refs/")
+				tag, err := event.GetTag()
+				if err != nil {
+					return nil, err
+				}
+
+				commitSHA, err := event.GetCommitSHA()
+				if err != nil {
+					return nil, err
+				}
+
+				commitURL, err := event.GetCommitURL()
+				if err != nil {
+					return nil, err
+				}
+
+				actorURL, err := event.GetActorURL()
+				if err != nil {
+					return nil, err
+				}
+
+				actorAvatarURL, err := event.GetActorAvatarURL()
+				if err != nil {
+					return nil, err
+				}
+
+				actorUsername, err := event.GetActorUsername()
+				if err != nil {
+					return nil, err
+				}
+
 				return &vcs.EventPayload{
-					RepoPath:      repoPath,
-					VCSKind:       vcs.BitbucketServer,
-					Tag:           tag,
-					Action:        vcs.ActionCreated,
-					CommitSHA:     event.Changes[0].ToHash,
-					DefaultBranch: "main", // TODO(johnrowl) need to change this.
+					RepoPath:        repoPath,
+					VCSKind:         vcs.BitbucketServer,
+					Tag:             tag,
+					Action:          vcs.ActionCreated,
+					CommitSHA:       commitSHA,
+					CommitURL:       commitURL,
+					SenderHTMLURL:   actorURL,
+					SenderAvatarURL: actorAvatarURL,
+					SenderUsername:  actorUsername,
+					DefaultBranch:   "main", // TODO(johnrowl) need to change this.
+					Type:            vcs.EventTypeTag,
 				}, nil
 			}
 		} else if refType == "BRANCH" {
@@ -195,11 +264,16 @@ func BaseHandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) 
 	return nil, nil
 }
 
+// getRefType returns the ref type of the event.
 func (e BitbucketHookEvent) getRefType() (string, error) {
 	return e.Changes[0].Ref.Type, nil
 
 }
 
+// getActionType returns the action type of the event. Values we care about
+// are: UPDATE, ADD, or DELETE.
+//
+// TODO(robbert229): add ActionType type.
 func (e BitbucketHookEvent) getActionType() (string, error) {
 	return e.Changes[0].Type, nil
 }
@@ -208,6 +282,7 @@ func (e BitbucketHookEvent) getRefID() (string, error) {
 	return e.Changes[0].Ref.ID, nil
 }
 
+// IsBranchPushEvent returns true if the event is a BRANCH push event.
 func (e BitbucketHookEvent) IsBranchPushEvent() (bool, error) {
 	refType, err := e.getRefType()
 	if err != nil {
@@ -217,6 +292,7 @@ func (e BitbucketHookEvent) IsBranchPushEvent() (bool, error) {
 	return refType == "BRANCH", nil
 }
 
+// GetCommitURL builds the URL of the commit in bitbucket server.
 func (e BitbucketHookEvent) GetCommitURL() (string, error) {
 	commitSHA, err := e.GetCommitSHA()
 	if err != nil {
@@ -228,14 +304,18 @@ func (e BitbucketHookEvent) GetCommitURL() (string, error) {
 	return commitURL, nil
 }
 
+// GetCommitSHA extracts the commit sha from the event.
 func (e BitbucketHookEvent) GetCommitSHA() (string, error) {
 	return e.Changes[0].ToHash, nil
 }
 
+// GetActorURL returns the URL of the user who performed the operation that
+// triggered the event.
 func (e BitbucketHookEvent) GetActorURL() (string, error) {
 	return e.Actor.Links.Self[0].Href, nil
 }
 
+// GetActorAvatarURL returns the URL of the user who triggered the event.
 func (e BitbucketHookEvent) GetActorAvatarURL() (string, error) {
 	actorURL, err := e.GetActorURL()
 	if err != nil {
@@ -245,10 +325,21 @@ func (e BitbucketHookEvent) GetActorAvatarURL() (string, error) {
 	return actorURL + "/avatar.png?s=192", nil
 }
 
+// GetActorUsername returns the username of the user who created the event.
 func (e BitbucketHookEvent) GetActorUsername() (string, error) {
 	return e.Actor.Slug, nil
 }
 
+func (e BitbucketHookEvent) GetTag() (string, error) {
+	refID, err := e.getRefID()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimPrefix(refID, "refs/tags/"), nil
+}
+
+// BitbucketHookEvent is the decoded bitbucket event.
 type BitbucketHookEvent struct {
 	EventKey string `json:"eventKey"`
 	Date     string `json:"date"`
