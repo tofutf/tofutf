@@ -1,0 +1,76 @@
+{
+    "eventKey": "repo:refs_changed",
+    "date": "2024-03-20T17:02:13-0700",
+    "actor": {
+        "name": "johnrowl",
+        "emailAddress": "johnrowleyster@gmail.com",
+        "id": 21708,
+        "displayName": "John Rowley",
+        "active": true,
+        "slug": "johnrowl",
+        "type": "NORMAL",
+        "links": {
+            "self": [
+                {
+                    "href": "https://bitbucket.tofutf.io/users/johnrowl"
+                }
+            ]
+        }
+    },
+    "repository": {
+        "slug": "terraform-tofutf-test",
+        "id": 26243,
+        "name": "terraform-tofutf-test",
+        "hierarchyId": "04318114b20e2aa2e003",
+        "scmId": "git",
+        "state": "AVAILABLE",
+        "statusMessage": "Available",
+        "forkable": true,
+        "project": {
+            "key": "tft",
+            "id": 3982,
+            "name": "TofuTF Test",
+            "description": "The testing project for TofuTF",
+            "public": false,
+            "type": "NORMAL",
+            "links": {
+                "self": [
+                    {
+                        "href": "https://bitbucket.tofutf.io/projects/tft"
+                    }
+                ]
+            }
+        },
+        "public": false,
+        "links": {
+            "clone": [
+                {
+                    "href": "https://bitbucket.tofutf.io/scm/tft/terraform-tofutf-test.git",
+                    "name": "http"
+                },
+                {
+                    "href": "ssh://git@bitbucket.tofutf.io:7999/tft/terraform-tofutf-test.git",
+                    "name": "ssh"
+                }
+            ],
+            "self": [
+                {
+                    "href": "https://bitbucket.tofutf.io/projects/tft/repos/terraform-tofutf-test/browse"
+                }
+            ]
+        }
+    },
+    "changes": [
+        {
+            "ref": {
+                "id": "refs/tags/v1.2.3",
+                "displayId": "v1.2.3",
+                "type": "TAG"
+            },
+            "refId": "refs/tags/v1.2.3",
+            "fromHash": "0000000000000000000000000000000000000000",
+            "toHash": "3a32194600dbd0f39bc921d15a785e93994b26da",
+            "type": "ADD"
+        }
+    ]
+}
