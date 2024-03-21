@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/tofutf/tofutf/compare/v0.6.0...v0.7.0) (2024-03-21)
+
+
+### Features
+
+* finished implementing bitbucketserver support ([#54](https://github.com/tofutf/tofutf/issues/54)) ([49ebecd](https://github.com/tofutf/tofutf/commit/49ebecd911f408925d074146ebbd675d460ee52e))
+
 ## [0.6.0](https://github.com/tofutf/tofutf/compare/v0.5.0...v0.6.0) (2024-03-20)
 
 
