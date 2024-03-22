@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"time"
 
 	"log/slog"
 
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/bitbucketserver"
+	"github.com/tofutf/tofutf/internal/gitea"
 	"github.com/tofutf/tofutf/internal/github"
 	"github.com/tofutf/tofutf/internal/gitlab"
 	"github.com/tofutf/tofutf/internal/vcs"
@@ -23,7 +25,9 @@ type (
 		Name         string
 		CreatedAt    time.Time
 		Organization string // name of OTF organization
-		Hostname     string // hostname of github/gitlab etc
+
+		// URL is the base URL that the service is hosted at.
+		URL *url.URL
 
 		Kind  vcs.Kind // github/gitlab etc. Not necessary if GithubApp is non-nil.
 		Token *string  // personal access token.
@@ -37,10 +41,11 @@ type (
 	factory struct {
 		githubapps *github.Service
 
-		githubHostname          string
-		gitlabHostname          string
-		bitbucketServerHostname string
-		skipTLSVerification     bool // toggle skipping verification of VCS host's TLS cert.
+		githubURL           *url.URL
+		gitlabURL           *url.URL
+		bitbucketServerURL  *url.URL
+		giteaURL            *url.URL
+		skipTLSVerification bool // toggle skipping verification of VCS host's TLS cert.
 	}
 
 	CreateOptions struct {
@@ -88,11 +93,13 @@ func (f *factory) newWithGithubCredentials(ctx context.Context, opts CreateOptio
 		provider.Kind = *opts.Kind
 		switch provider.Kind {
 		case vcs.GithubKind:
-			provider.Hostname = f.githubHostname
+			provider.URL = f.githubURL
 		case vcs.GitlabKind:
-			provider.Hostname = f.gitlabHostname
-		case vcs.BitbucketServer:
-			provider.Hostname = f.bitbucketServerHostname
+			provider.URL = f.gitlabURL
+		case vcs.BitbucketServerKind:
+			provider.URL = f.bitbucketServerURL
+		case vcs.GiteaKind:
+			provider.URL = f.giteaURL
 		default:
 			return nil, errors.New("no hostname found for vcs kind")
 		}
@@ -102,7 +109,7 @@ func (f *factory) newWithGithubCredentials(ctx context.Context, opts CreateOptio
 	} else if creds != nil {
 		provider.GithubApp = creds
 		provider.Kind = vcs.GithubKind
-		provider.Hostname = f.githubHostname
+		provider.URL = f.githubURL
 	} else {
 		return nil, errors.New("must specify either token or github app installation ID")
 	}
@@ -139,13 +146,13 @@ func (t *VCSProvider) String() string {
 func (t *VCSProvider) NewClient() (vcs.Client, error) {
 	if t.GithubApp != nil {
 		return github.NewClient(github.ClientOptions{
-			Hostname:            t.Hostname,
+			URL:                 t.URL,
 			InstallCredentials:  t.GithubApp,
 			SkipTLSVerification: t.skipTLSVerification,
 		})
 	} else if t.Token != nil {
 		opts := vcs.NewTokenClientOptions{
-			Hostname:            t.Hostname,
+			URL:                 t.URL,
 			Token:               *t.Token,
 			SkipTLSVerification: t.skipTLSVerification,
 		}
@@ -154,8 +161,10 @@ func (t *VCSProvider) NewClient() (vcs.Client, error) {
 			return github.NewTokenClient(opts)
 		case vcs.GitlabKind:
 			return gitlab.NewTokenClient(opts)
-		case vcs.BitbucketServer:
+		case vcs.BitbucketServerKind:
 			return bitbucketserver.NewTokenClient(opts)
+		case vcs.GiteaKind:
+			return gitea.NewTokenClient(opts)
 		default:
 			return nil, fmt.Errorf("unknown kind: %s", t.Kind)
 		}

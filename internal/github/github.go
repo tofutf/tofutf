@@ -7,6 +7,7 @@ import (
 
 const (
 	DefaultHostname = "github.com"
+	DefaultURL      = "https://github.com"
 )
 
 var (

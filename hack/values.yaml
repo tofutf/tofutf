@@ -1,16 +1,9 @@
-# Default values for otf.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
-# -- Number of tofutf nodes in cluster
 replicaCount: 1
-
-agent:
-  override: "ko://github.com/tofutf/tofutf/cmd/tofutf-agent"
-
-image:
-  override: "ko://github.com/tofutf/tofutf/cmd/tofutfd"
-  pullPolicy: Always
 
 postgres:
   postgresPassword: password
+
+gitea:
+  url: "http://gitea:3000/"
+
+hostname: tofutf

@@ -11,6 +11,7 @@ deploy:
         valuesFiles:
           - charts/tofutf/values.yaml
           - charts/tofutf/test-values.yaml
+          - hack/values.yaml
         version: 0.5.0-dev
         setValueTemplates:
           image.override: "{{.IMAGE_REPO_ghcr_io_tofutf_tofutf_tofutfd }}"
@@ -33,4 +34,10 @@ portForward:
     namespace: default
     port: 80
     localPort: 8080
+    address: 0.0.0.0
+  - resourceType: service
+    resourceName: tofutf-postgresql
+    namespace: default
+    port: 5432
+    localPort: 5432
     address: 0.0.0.0
