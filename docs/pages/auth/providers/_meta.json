@@ -1,0 +1,6 @@
+{
+    "github":"GitHub",
+    "gitlab":"GitLab",
+    "iap":"Google IAP",
+    "oidc":"OpenID Connect"
+}

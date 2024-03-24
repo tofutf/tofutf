@@ -1,0 +1,9 @@
+{
+    "rbac": "RBAC",
+    "vcs_providers": "VCS Providers",
+    "github_app": "Github App",
+    "agents": "Agents",
+    "registry": "Module Registry",
+    "cli": "CLI",
+    "notifications": "Notifications"
+}
