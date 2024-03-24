@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
@@ -180,7 +181,7 @@ func (a *Service) DeleteInstallation(ctx context.Context, installID int64) error
 
 func (a *Service) newClient(app *App) (*Client, error) {
 	return NewClient(ClientOptions{
-		Hostname:            a.GithubHostname,
+		URL:                 &url.URL{Scheme: "https", Host: a.GithubHostname},
 		SkipTLSVerification: true,
 		AppCredentials: &AppCredentials{
 			ID:         app.ID,

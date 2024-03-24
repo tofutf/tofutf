@@ -28,6 +28,10 @@
       <button class="btn">New BitbucketServer VCS Provider (Personal Token)</button>
       <input type="hidden" name="kind" id="kind" value="bitbucketserver">
     </form>
+    <form action="{{ newVCSProviderPath $.Organization }}" method="GET">
+      <button class="btn">New Gitea VCS Provider (Personal Token)</button>
+      <input type="hidden" name="kind" id="kind" value="gitea">
+    </form>
     {{ if .GithubApp }}
       <form action="{{ newGithubAppVCSProviderPath $.Organization }}" method="GET">
         <button class="btn">New Github VCS Provider (App)</button>

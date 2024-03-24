@@ -23,7 +23,7 @@ type TokenClient struct {
 var _ vcs.Client = &TokenClient{}
 
 func NewTokenClient(opts vcs.NewTokenClientOptions) (*TokenClient, error) {
-	basepath, err := url.JoinPath("https://"+opts.Hostname, "/rest")
+	basepath, err := url.JoinPath(opts.URL.String(), "/rest")
 	if err != nil {
 		return nil, err
 	}

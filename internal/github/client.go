@@ -33,7 +33,7 @@ type (
 	}
 
 	ClientOptions struct {
-		Hostname            string
+		URL                 *url.URL
 		SkipTLSVerification bool
 
 		// Only specify one of the following
@@ -69,8 +69,13 @@ type (
 )
 
 func NewClient(cfg ClientOptions) (*Client, error) {
-	if cfg.Hostname == "" {
-		cfg.Hostname = DefaultHostname
+	if cfg.URL == nil {
+		url, err := url.Parse(DefaultURL)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.URL = url
 	}
 	// build http roundtripper using provided credentials
 	var (
@@ -95,10 +100,12 @@ func NewClient(cfg ClientOptions) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		// ghinstallation defaults to https://api.github.com
-		if cfg.Hostname != DefaultHostname {
-			installTransport.BaseURL = (&url.URL{Scheme: "https", Path: "/api/v3", Host: cfg.Hostname}).String()
+		if cfg.URL.Host != DefaultHostname {
+			installTransport.BaseURL = (&url.URL{Scheme: "https", Path: "/api/v3", Host: cfg.URL.Host}).String()
 		}
+
 		tripper = installTransport
 	case cfg.PersonalToken != nil:
 		// personal token is actually an OAuth2 *access token, so wrap
@@ -115,10 +122,10 @@ func NewClient(cfg ClientOptions) (*Client, error) {
 	// create upstream client with roundtripper
 	client := github.NewClient(&http.Client{Transport: tripper})
 	// Assume github enterprise if using non-default hostname
-	if cfg.Hostname != DefaultHostname {
+	if cfg.URL.Host != DefaultHostname {
 		client, err = client.WithEnterpriseURLs(
-			"https://"+cfg.Hostname,
-			"https://"+cfg.Hostname,
+			"https://"+cfg.URL.Host,
+			"https://"+cfg.URL.Host,
 		)
 		if err != nil {
 			return nil, err
@@ -129,7 +136,7 @@ func NewClient(cfg ClientOptions) (*Client, error) {
 
 func NewTokenClient(opts vcs.NewTokenClientOptions) (vcs.Client, error) {
 	return NewClient(ClientOptions{
-		Hostname:            opts.Hostname,
+		URL:                 opts.URL,
 		PersonalToken:       &opts.Token,
 		SkipTLSVerification: opts.SkipTLSVerification,
 	})
@@ -137,7 +144,7 @@ func NewTokenClient(opts vcs.NewTokenClientOptions) (vcs.Client, error) {
 
 func NewOAuthClient(cfg authenticator.OAuthConfig, token *oauth2.Token) (authenticator.IdentityProviderClient, error) {
 	return NewClient(ClientOptions{
-		Hostname:            cfg.Hostname,
+		URL:                 &url.URL{Scheme: "https", Host: cfg.Hostname},
 		OAuthToken:          token,
 		SkipTLSVerification: cfg.SkipTLSVerification,
 	})

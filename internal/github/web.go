@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
@@ -153,7 +154,7 @@ func (h *webHandlers) exchangeCode(w http.ResponseWriter, r *http.Request) {
 
 	// exchange code for credentials using an anonymous client
 	client, err := NewClient(ClientOptions{
-		Hostname:            h.GithubHostname,
+		URL:                 &url.URL{Scheme: "https", Host: h.GithubHostname},
 		SkipTLSVerification: h.GithubSkipTLS,
 	})
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 
 const (
 	DefaultHostname string = "gitlab.com"
+	DefaultURL      string = "https://gitlab.com"
 )
 
 var (
