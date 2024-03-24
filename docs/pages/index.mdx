@@ -1,0 +1,42 @@
+import { Bleed } from 'nextra-theme-docs';
+
+# What is TofuTF?
+
+tofutf is an open-source alternative to Terraform Enterprise, sharing many of its features:
+
+# Why TofuTF?
+
+* Full Terraform CLI integration
+* Remote execution mode: plans and applies run on servers
+* Agent execution mode: plans and applies run on [agents](agents.md)
+* Remote state backend: state stored in PostgreSQL
+* SSO: sign in using an identity provider via OIDC, OAuth, etc.
+* RBAC: control team access to workspaces
+* VCS integration: trigger runs and publish modules from git commits
+* Create and install a [Github app](github_app.md) to integrate tofutf with Github
+* Compatible with much of the Terraform Enterprise/Cloud API
+* Minimal dependencies: requires only PostgreSQL
+* Stateless: horizontally scale servers in pods on Kubernetes, etc
+* Module registry (provider registry coming soon)
+
+
+![Real-time streaming of a terraform plan](./images/run_page_planned_and_finished_state.png)
+> Real-time streaming of a terraform plan
+
+![run page planned and finished state](./images/github_pull_request_status_check_planned.png)
+> A status check for a pull request on github.com
+
+![workspace main page](./images/workspace_page.png)
+> Real-time streaming of a terraform plan
+
+![workspace main page](./images/workspace_edit_trigger_patterns.png)
+> Setting VCS triggers
+
+![team permissions](./images/team_permissions_added_workspace_manager.png)
+> Setting organization-level permissions for a team
+
+![new variable form](./images/variables_entering_top_secret.png)
+> Editing a workspace variable
+
+![agent pools](./images/agent_pool_workspace_granted_and_assigned.png)
+> Managing workspace access to specific agent pool

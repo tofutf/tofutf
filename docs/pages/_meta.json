@@ -1,0 +1,10 @@
+{
+  "index": "Introduction",
+  "quickstart":"Quickstart",
+  "install":"Installation",
+  "guides":"Guides",
+  "auth":"Authentication",
+  "topics":"Topics",
+  "config":"Configuration",
+  "advanced":"Advanced"
+}
