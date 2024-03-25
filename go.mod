@@ -16,7 +16,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.5.0
 	github.com/fatih/color v1.16.0
 	github.com/felixge/httpsnoop v1.0.4
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230830121038-6e30c5760c87
 	github.com/go-logr/logr v1.4.1
 	github.com/gobwas/glob v0.2.3
