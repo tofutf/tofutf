@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	cloud.google.com/go/pubsub v1.36.1
-	github.com/DataDog/jsonapi v0.8.3
+	github.com/DataDog/jsonapi v0.8.6
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/allegro/bigcache v1.2.1
 	github.com/antchfx/htmlquery v1.3.0
