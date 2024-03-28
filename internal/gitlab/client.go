@@ -26,7 +26,7 @@ type (
 	}
 
 	ClientOptions struct {
-		Hostname            string
+		URL                 *url.URL
 		SkipTLSVerification bool
 
 		OAuthToken    *oauth2.Token
@@ -40,7 +40,7 @@ func NewClient(cfg ClientOptions) (*Client, error) {
 		err     error
 		options = []gitlab.ClientOptionFunc{
 			gitlab.WithBaseURL(
-				(&url.URL{Scheme: "https", Host: cfg.Hostname}).String(),
+				cfg.URL.String(),
 			),
 		}
 	)
@@ -65,7 +65,7 @@ func NewClient(cfg ClientOptions) (*Client, error) {
 
 func NewTokenClient(opts vcs.NewTokenClientOptions) (vcs.Client, error) {
 	return NewClient(ClientOptions{
-		Hostname:            opts.Hostname,
+		URL:                 opts.URL,
 		PersonalToken:       &opts.Token,
 		SkipTLSVerification: opts.SkipTLSVerification,
 	})
@@ -73,7 +73,7 @@ func NewTokenClient(opts vcs.NewTokenClientOptions) (vcs.Client, error) {
 
 func NewOAuthClient(cfg authenticator.OAuthConfig, token *oauth2.Token) (authenticator.IdentityProviderClient, error) {
 	return NewClient(ClientOptions{
-		Hostname:            cfg.Hostname,
+		URL:                 &url.URL{Scheme: "https", Host: cfg.Hostname},
 		OAuthToken:          token,
 		SkipTLSVerification: cfg.SkipTLSVerification,
 	})

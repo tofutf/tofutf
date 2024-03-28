@@ -47,7 +47,7 @@ func TestEventHandler(t *testing.T) {
 			"push",
 			"./testdata/bitbucketserver_push.json",
 			&vcs.EventPayload{
-				VCSKind:         vcs.BitbucketServer,
+				VCSKind:         vcs.BitbucketServerKind,
 				Type:            vcs.EventTypePush,
 				RepoPath:        "tft/terraform-tofutf-test",
 				Branch:          "main",
@@ -110,7 +110,7 @@ func TestEventHandler(t *testing.T) {
 			"tag pushed",
 			"./testdata/bitbucketserver_push_tag.json",
 			&vcs.EventPayload{
-				VCSKind:         vcs.BitbucketServer,
+				VCSKind:         vcs.BitbucketServerKind,
 				Type:            vcs.EventTypeTag,
 				RepoPath:        "tft/terraform-tofutf-test",
 				Tag:             "v1.2.3",

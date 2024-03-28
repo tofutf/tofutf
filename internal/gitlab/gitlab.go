@@ -6,7 +6,12 @@ import (
 )
 
 const (
+	// DefaultHostname is the default host for the gitlab vcs provider.
+	//
+	// Deprecated: use DefaultURL instead.
 	DefaultHostname string = "gitlab.com"
+
+	DefaultURL string = "https://gitlab.com"
 )
 
 var (

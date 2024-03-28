@@ -84,12 +84,20 @@ spec:
               value: {{ .Values.github.clientSecret }}
             - name: OTF_GITHUB_HOSTNAME
               value: {{ .Values.github.hostname }}
+            - name: OTF_GITHUB_URL
+              value: {{ .Values.github.url }}
             - name: OTF_GITLAB_CLIENT_ID
               value: {{ .Values.gitlab.clientID }}
             - name: OTF_GITLAB_CLIENT_SECRET
               value: {{ .Values.gitlab.clientSecret }}
             - name: OTF_GITLAB_HOSTNAME
               value: {{ .Values.gitlab.hostname }}
+            - name: OTF_GITLAB_URL
+              value: {{ .Values.gitlab.url }}
+            - name: OTF_BITBUCKETSERVER_HOSTNAME
+              value: {{ .Values.bitbucketserver.hostname }}
+            - name: OTF_BITBUCKETSERVER_URL
+              value: {{ .Values.bitbucketserver.url }}
             {{ with .Values.google.audience -}}
             - name: OTF_GOOGLE_JWT_AUDIENCE
               value: {{ . }}
