@@ -78,6 +78,8 @@ spec:
             - name: OTF_MAX_CONFIG_SIZE
               value: "{{ .Values.maxConfigSize }}"
             {{ end }}
+            - name: OTF_PROVIDER_PROXY_URL
+              value: {{ .Values.providerProxy.upstream | quote }}
             - name: OTF_GITHUB_CLIENT_ID
               value: {{ .Values.github.clientID }}
             - name: OTF_GITHUB_CLIENT_SECRET
