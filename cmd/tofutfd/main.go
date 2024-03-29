@@ -111,6 +111,9 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 
 	cmd.Flags().StringVar(&cfg.GoogleIAPConfig.Audience, "google-jwt-audience", "", "The Google JWT audience claim for validation. If unspecified then validation is skipped")
 
+	cmd.Flags().StringVar(&cfg.ProviderProxy.URL, "provider-proxy-url", "", "The URL of the provider registry to proxy provider registry requests to")
+	cmd.Flags().BoolVar(&cfg.ProviderProxy.IsArtifactory, "provider-proxy-is-artifactory", false, "Set to true if using artifactory as the backing provider registry")
+
 	loggerConfig = logr.NewConfigFromFlags(cmd.Flags())
 	cfg.AgentConfig = agent.NewConfigFromFlags(cmd.Flags())
 

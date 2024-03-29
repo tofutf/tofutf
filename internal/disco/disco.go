@@ -13,21 +13,23 @@ import (
 )
 
 var discoveryPayload = json.MustMarshal(struct {
-	ModulesV1 string                    `json:"modules.v1"`
-	MotdV1    string                    `json:"motd.v1"`
-	StateV2   string                    `json:"state.v2"`
-	TfeV2     string                    `json:"tfe.v2"`
-	TfeV21    string                    `json:"tfe.v2.1"`
-	TfeV22    string                    `json:"tfe.v2.2"`
-	LoginV1   loginserver.DiscoverySpec `json:"login.v1"`
+	ModulesV1   string                    `json:"modules.v1"`
+	ProvidersV1 string                    `json:"providers.v1"`
+	MotdV1      string                    `json:"motd.v1"`
+	StateV2     string                    `json:"state.v2"`
+	TfeV2       string                    `json:"tfe.v2"`
+	TfeV21      string                    `json:"tfe.v2.1"`
+	TfeV22      string                    `json:"tfe.v2.2"`
+	LoginV1     loginserver.DiscoverySpec `json:"login.v1"`
 }{
-	ModulesV1: tfeapi.ModuleV1Prefix,
-	MotdV1:    "/api/terraform/motd",
-	StateV2:   tfeapi.APIPrefixV2,
-	TfeV2:     tfeapi.APIPrefixV2,
-	TfeV21:    tfeapi.APIPrefixV2,
-	TfeV22:    tfeapi.APIPrefixV2,
-	LoginV1:   loginserver.Discovery,
+	ModulesV1:   tfeapi.ModuleV1Prefix,
+	ProvidersV1: tfeapi.ProviderV1Prefix,
+	MotdV1:      "/api/terraform/motd",
+	StateV2:     tfeapi.APIPrefixV2,
+	TfeV2:       tfeapi.APIPrefixV2,
+	TfeV21:      tfeapi.APIPrefixV2,
+	TfeV22:      tfeapi.APIPrefixV2,
+	LoginV1:     loginserver.Discovery,
 })
 
 type Service struct{}

@@ -35,7 +35,7 @@ spec:
           env:
 {{- range $key, $value := .Values.extraEnvs }}
             - name: {{ $key }}
-              value: {{ $value }}
+              value: {{ $value | quote }}
 {{- end }}
             - name: OTF_HOSTNAME
               value: "{{ .Values.hostname }}"

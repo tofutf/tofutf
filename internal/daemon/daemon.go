@@ -28,6 +28,7 @@ import (
 	"github.com/tofutf/tofutf/internal/module"
 	"github.com/tofutf/tofutf/internal/notifications"
 	"github.com/tofutf/tofutf/internal/organization"
+	"github.com/tofutf/tofutf/internal/provider"
 	"github.com/tofutf/tofutf/internal/releases"
 	"github.com/tofutf/tofutf/internal/repohooks"
 	"github.com/tofutf/tofutf/internal/run"
@@ -61,6 +62,7 @@ type (
 		State         *state.Service
 		Configs       *configversion.Service
 		Modules       *module.Service
+		Providers     *provider.Service
 		VCSProviders  *vcsprovider.Service
 		Tokens        *tokens.Service
 		Teams         *team.Service
@@ -285,6 +287,15 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 		RepohookService:    repoService,
 		VCSEventSubscriber: vcsEventBroker,
 	})
+	providerService := provider.NewService(provider.Options{
+		Logger:             logger,
+		DB:                 db,
+		HostnameService:    hostnameService,
+		Signer:             signer,
+		Renderer:           renderer,
+		ProxyURL:           cfg.ProviderProxy.URL,
+		ProxyIsArtifactory: cfg.ProviderProxy.IsArtifactory,
+	})
 	stateService := state.NewService(state.Options{
 		Logger:           logger,
 		DB:               db,
@@ -386,6 +397,7 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 		variableService,
 		vcsProviderService,
 		moduleService,
+		providerService,
 		runService,
 		logsService,
 		repoService,
@@ -424,6 +436,7 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 		State:         stateService,
 		Configs:       configService,
 		Modules:       moduleService,
+		Providers:     providerService,
 		VCSProviders:  vcsProviderService,
 		Tokens:        tokensService,
 		Teams:         teamService,
