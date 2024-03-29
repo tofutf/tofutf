@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/tofutf/tofutf/compare/v0.8.0-beta2...v0.8.0) (2024-03-29)
+
+
+### Miscellaneous Chores
+
+* updated docs to target new v0.8.0 release ([#75](https://github.com/tofutf/tofutf/issues/75)) ([7b7c87a](https://github.com/tofutf/tofutf/commit/7b7c87a1c03405d3cb96923bf1b0b999b057b614))
+
 ## [0.7.0](https://github.com/tofutf/tofutf/compare/v0.6.0...v0.7.0) (2024-03-21)
 
 
