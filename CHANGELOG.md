@@ -2,6 +2,10 @@
 
 ## [0.8.0](https://github.com/tofutf/tofutf/compare/v0.8.0-beta2...v0.8.0) (2024-03-29)
 
+### Features
+
+* added a provider registry proxy as a first step ([#72](https://github.com/tofutf/tofutf/issues/72)) ([1cb751d](https://github.com/tofutf/tofutf/commit/1cb751dd19b41e6f3b01cec59d21da75315bcde7))
+* added the ability to configure the provider registry proxy to the helm chart ([#74](https://github.com/tofutf/tofutf/issues/74)) ([d852b70](https://github.com/tofutf/tofutf/commit/d852b7059c988b548735ae8de5df5fa3a713211f))
 
 ### Miscellaneous Chores
 
