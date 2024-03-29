@@ -119,6 +119,11 @@ oidc:
     # key within secret containing password
     # key: ""
 
+providerProxy:
+  # -- The upstream registry to proxy requests to. Defaults to terraform's registry.
+  upstream: "https://registry.terraform.io/v1/providers/"
+  # upstream: "https://registry.opentofu.org/v1/providers/"
+
 serviceAccount:
   # -- Specifies whether a service account should be created
   create: true
