@@ -48,6 +48,12 @@ type Config struct {
 	// skip checks for latest terraform version
 	DisableLatestChecker *bool
 
+	// ProviderProxy configures tofutf's built in provider proxy.
+	ProviderProxy struct {
+		URL           string
+		IsArtifactory bool
+	}
+
 	tokens.GoogleIAPConfig
 }
 

@@ -15,8 +15,12 @@ import (
 const (
 	// APIPrefixV2 is the URL path prefix for TFE API endpoints
 	APIPrefixV2 = "/api/v2/"
+
 	// ModuleV1Prefix is the URL path prefix for module registry endpoints
 	ModuleV1Prefix = "/v1/modules/"
+
+	// ProviderV1Prefix is the URL path prefix for provider registry endpoints
+	ProviderV1Prefix = "/v1/providers/"
 )
 
 func Unmarshal(r io.Reader, v any) error {
