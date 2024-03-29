@@ -41,7 +41,7 @@ databasePasswordFromSecret:
 Then run the following command to install tofutf.
 
 ```
-helm install my-release -f values.yaml oci://ghcr.io/tofutf/tofutf/charts/tofutf --version v0.7.0
+helm install my-release -f values.yaml oci://ghcr.io/tofutf/tofutf/charts/tofutf --version v0.8.0
 ```
 
 ### Congrats! 🎉
