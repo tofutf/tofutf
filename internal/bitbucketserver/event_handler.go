@@ -151,7 +151,7 @@ func BaseHandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) 
 
 				return &vcs.EventPayload{
 					RepoPath:        repoPath,
-					VCSKind:         vcs.BitbucketServer,
+					VCSKind:         vcs.BitbucketServerKind,
 					Tag:             tag,
 					Action:          vcs.ActionCreated,
 					CommitSHA:       commitSHA,
@@ -195,7 +195,7 @@ func BaseHandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) 
 
 				return &vcs.EventPayload{
 					RepoPath:        repoPath,
-					VCSKind:         vcs.BitbucketServer,
+					VCSKind:         vcs.BitbucketServerKind,
 					Tag:             tag,
 					Action:          vcs.ActionCreated,
 					CommitSHA:       commitSHA,
@@ -238,7 +238,7 @@ func BaseHandleEvent(r *http.Request, secret string) (*vcs.EventPayload, error) 
 
 				return &vcs.EventPayload{
 					RepoPath:        repoPath,
-					VCSKind:         vcs.BitbucketServer,
+					VCSKind:         vcs.BitbucketServerKind,
 					Type:            vcs.EventTypePush,
 					Action:          vcs.ActionCreated,
 					CommitSHA:       commitSHA,

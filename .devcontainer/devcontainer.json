@@ -18,7 +18,6 @@
 		"ghcr.io/rio/features/k9s:1.1.5": {},
 		"ghcr.io/rio/features/skaffold:2":{},
 		"ghcr.io/devcontainers/features/terraform:1": {},
-		// "ghcr.io/devcontainers/features/python:1": {},
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
 		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1":{}
 	},

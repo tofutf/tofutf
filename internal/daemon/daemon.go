@@ -192,17 +192,17 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 	vcsEventBroker := &vcs.Broker{}
 
 	vcsProviderService := vcsprovider.NewService(vcsprovider.Options{
-		Logger:                  logger,
-		DB:                      db,
-		Renderer:                renderer,
-		Responder:               responder,
-		HostnameService:         hostnameService,
-		GithubAppService:        githubAppService,
-		GithubHostname:          cfg.GithubHostname,
-		GitlabHostname:          cfg.GitlabHostname,
-		BitbucketServerHostname: cfg.BitbucketServerHostname,
-		SkipTLSVerification:     cfg.SkipTLSVerification,
-		Subscriber:              vcsEventBroker,
+		Logger:              logger,
+		DB:                  db,
+		Renderer:            renderer,
+		Responder:           responder,
+		HostnameService:     hostnameService,
+		GithubAppService:    githubAppService,
+		GithubURL:           getURLFromHostnameAndURL(cfg.GithubHostname, cfg.GithubURL),
+		GitlabURL:           getURLFromHostnameAndURL(cfg.GitlabHostname, cfg.GitlabURL),
+		BitbucketServerURL:  getURLFromHostnameAndURL(cfg.BitbucketServerHostname, cfg.BitbucketServerURL),
+		SkipTLSVerification: cfg.SkipTLSVerification,
+		Subscriber:          vcsEventBroker,
 	})
 	repoService := repohooks.NewService(ctx, repohooks.Options{
 		Logger:              logger,
@@ -215,7 +215,7 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 	})
 	repoService.RegisterCloudHandler(vcs.GithubKind, github.HandleEvent)
 	repoService.RegisterCloudHandler(vcs.GitlabKind, gitlab.HandleEvent)
-	repoService.RegisterCloudHandler(vcs.BitbucketServer, bitbucketserver.HandleEvent)
+	repoService.RegisterCloudHandler(vcs.BitbucketServerKind, bitbucketserver.HandleEvent)
 
 	connectionService := connections.NewService(ctx, connections.Options{
 		Logger:             logger,

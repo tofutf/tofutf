@@ -91,14 +91,17 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 	cmd.Flags().BoolVar(&cfg.DevMode, "dev-mode", false, "Enable developer mode.")
 
 	cmd.Flags().StringVar(&cfg.GithubHostname, "github-hostname", github.DefaultHostname, "github hostname")
+	cmd.Flags().StringVar(&cfg.GithubURL, "github-url", github.DefaultURL, "github url, eg: https://github.tofutf.io:8080/")
 	cmd.Flags().StringVar(&cfg.GithubClientID, "github-client-id", "", "github client ID")
 	cmd.Flags().StringVar(&cfg.GithubClientSecret, "github-client-secret", "", "github client secret")
 
 	cmd.Flags().StringVar(&cfg.GitlabHostname, "gitlab-hostname", gitlab.DefaultHostname, "gitlab hostname")
+	cmd.Flags().StringVar(&cfg.GitlabURL, "gitlab-url", gitlab.DefaultURL, "gitlab hostname. eg: https://gitlab.tofutf.io:8080/")
 	cmd.Flags().StringVar(&cfg.GitlabClientID, "gitlab-client-id", "", "gitlab client ID")
 	cmd.Flags().StringVar(&cfg.GitlabClientSecret, "gitlab-client-secret", "", "gitlab client secret")
 
-	cmd.Flags().StringVar(&cfg.BitbucketServerHostname, "bitbucketserver-hostname", cfg.BitbucketServerHostname, "bitbucket server hostname")
+	cmd.Flags().StringVar(&cfg.BitbucketServerHostname, "bitbucketserver-hostname", "", "bitbucket server hostname, eg: bitbucket.tofutf.io")
+	cmd.Flags().StringVar(&cfg.BitbucketServerURL, "bitbucketserver-url", "", "bitbucket server hostname, eg: https://bitbucket.tofutf.io:8080/")
 
 	cmd.Flags().StringVar(&cfg.OIDC.Name, "oidc-name", "", "User friendly OIDC name")
 	cmd.Flags().StringVar(&cfg.OIDC.IssuerURL, "oidc-issuer-url", "", "OIDC issuer URL")

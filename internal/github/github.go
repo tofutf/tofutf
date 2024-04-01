@@ -6,7 +6,11 @@ import (
 )
 
 const (
+	// DefaultHostname is the default hostname for the github vcs provider.
+	//
+	// Deprecated: use DefaultURL instead.
 	DefaultHostname = "github.com"
+	DefaultURL = "https://github.com"
 )
 
 var (

@@ -2,6 +2,7 @@ package vcs
 
 import (
 	"context"
+	"net/url"
 )
 
 type (
@@ -31,7 +32,7 @@ type (
 	// access token (PAT).
 	NewTokenClientOptions struct {
 		Token               string
-		Hostname            string
+		URL                 *url.URL
 		SkipTLSVerification bool
 	}
 

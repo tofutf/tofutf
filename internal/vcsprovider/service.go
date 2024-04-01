@@ -2,6 +2,7 @@ package vcsprovider
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
@@ -40,21 +41,21 @@ type (
 		logr.Logger
 		vcs.Subscriber
 
-		GithubAppService        *github.Service
-		GithubHostname          string
-		GitlabHostname          string
-		BitbucketServerHostname string
-		SkipTLSVerification     bool
+		GithubAppService    *github.Service
+		GithubURL           *url.URL
+		GitlabURL           *url.URL
+		BitbucketServerURL  *url.URL
+		SkipTLSVerification bool
 	}
 )
 
 func NewService(opts Options) *Service {
 	factory := factory{
-		githubapps:              opts.GithubAppService,
-		githubHostname:          opts.GithubHostname,
-		bitbucketServerHostname: opts.BitbucketServerHostname,
-		gitlabHostname:          opts.GitlabHostname,
-		skipTLSVerification:     opts.SkipTLSVerification,
+		githubapps:          opts.GithubAppService,
+		githubURL:           opts.GithubURL,
+		bitbucketServerURL:  opts.BitbucketServerURL,
+		gitlabURL:           opts.GitlabURL,
+		skipTLSVerification: opts.SkipTLSVerification,
 	}
 	svc := Service{
 		Logger:          opts.Logger,
