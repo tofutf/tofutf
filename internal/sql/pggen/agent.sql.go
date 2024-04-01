@@ -310,6 +310,41 @@ type Querier interface {
 	// InsertGithubAppInstallScan scans the result of an executed InsertGithubAppInstallBatch query.
 	InsertGithubAppInstallScan(results pgx.BatchResults) (pgconn.CommandTag, error)
 
+	InsertGPGKey(ctx context.Context, params InsertGPGKeyParams) (pgconn.CommandTag, error)
+	// InsertGPGKeyBatch enqueues a InsertGPGKey query into batch to be executed
+	// later by the batch.
+	InsertGPGKeyBatch(batch genericBatch, params InsertGPGKeyParams)
+	// InsertGPGKeyScan scans the result of an executed InsertGPGKeyBatch query.
+	InsertGPGKeyScan(results pgx.BatchResults) (pgconn.CommandTag, error)
+
+	UpdateGPGKey(ctx context.Context, params UpdateGPGKeyParams) (pgconn.CommandTag, error)
+	// UpdateGPGKeyBatch enqueues a UpdateGPGKey query into batch to be executed
+	// later by the batch.
+	UpdateGPGKeyBatch(batch genericBatch, params UpdateGPGKeyParams)
+	// UpdateGPGKeyScan scans the result of an executed UpdateGPGKeyBatch query.
+	UpdateGPGKeyScan(results pgx.BatchResults) (pgconn.CommandTag, error)
+
+	DeleteGPGKey(ctx context.Context, keyID pgtype.Text, organizationName pgtype.Text) (pgconn.CommandTag, error)
+	// DeleteGPGKeyBatch enqueues a DeleteGPGKey query into batch to be executed
+	// later by the batch.
+	DeleteGPGKeyBatch(batch genericBatch, keyID pgtype.Text, organizationName pgtype.Text)
+	// DeleteGPGKeyScan scans the result of an executed DeleteGPGKeyBatch query.
+	DeleteGPGKeyScan(results pgx.BatchResults) (pgconn.CommandTag, error)
+
+	ListGPGKeys(ctx context.Context, organizationNames []string) ([]ListGPGKeysRow, error)
+	// ListGPGKeysBatch enqueues a ListGPGKeys query into batch to be executed
+	// later by the batch.
+	ListGPGKeysBatch(batch genericBatch, organizationNames []string)
+	// ListGPGKeysScan scans the result of an executed ListGPGKeysBatch query.
+	ListGPGKeysScan(results pgx.BatchResults) ([]ListGPGKeysRow, error)
+
+	GetGPGKey(ctx context.Context, keyID pgtype.Text, organizationName pgtype.Text) (GetGPGKeyRow, error)
+	// GetGPGKeyBatch enqueues a GetGPGKey query into batch to be executed
+	// later by the batch.
+	GetGPGKeyBatch(batch genericBatch, keyID pgtype.Text, organizationName pgtype.Text)
+	// GetGPGKeyScan scans the result of an executed GetGPGKeyBatch query.
+	GetGPGKeyScan(results pgx.BatchResults) (GetGPGKeyRow, error)
+
 	InsertIngressAttributes(ctx context.Context, params InsertIngressAttributesParams) (pgconn.CommandTag, error)
 	// InsertIngressAttributesBatch enqueues a InsertIngressAttributes query into batch to be executed
 	// later by the batch.
@@ -1734,6 +1769,21 @@ func PrepareAllQueries(ctx context.Context, p preparer) error {
 	}
 	if _, err := p.Prepare(ctx, insertGithubAppInstallSQL, insertGithubAppInstallSQL); err != nil {
 		return fmt.Errorf("prepare query 'InsertGithubAppInstall': %w", err)
+	}
+	if _, err := p.Prepare(ctx, insertGPGKeySQL, insertGPGKeySQL); err != nil {
+		return fmt.Errorf("prepare query 'InsertGPGKey': %w", err)
+	}
+	if _, err := p.Prepare(ctx, updateGPGKeySQL, updateGPGKeySQL); err != nil {
+		return fmt.Errorf("prepare query 'UpdateGPGKey': %w", err)
+	}
+	if _, err := p.Prepare(ctx, deleteGPGKeySQL, deleteGPGKeySQL); err != nil {
+		return fmt.Errorf("prepare query 'DeleteGPGKey': %w", err)
+	}
+	if _, err := p.Prepare(ctx, listGPGKeysSQL, listGPGKeysSQL); err != nil {
+		return fmt.Errorf("prepare query 'ListGPGKeys': %w", err)
+	}
+	if _, err := p.Prepare(ctx, getGPGKeySQL, getGPGKeySQL); err != nil {
+		return fmt.Errorf("prepare query 'GetGPGKey': %w", err)
 	}
 	if _, err := p.Prepare(ctx, insertIngressAttributesSQL, insertIngressAttributesSQL); err != nil {
 		return fmt.Errorf("prepare query 'InsertIngressAttributes': %w", err)

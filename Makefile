@@ -1,5 +1,8 @@
 VERSION ?= $(shell git describe --tags --dirty --always)
 
+GIT_COMMIT = $(shell git rev-parse HEAD)
+RANDOM_SUFFIX := $(shell cat /dev/urandom | tr -dc 'a-z0-9' | head -c5)
+
 # Provide some sane defaults for connecting to postgres.
 PGPASSWORD ?= $(shell kubectl get secrets postgres-postgresql -oyaml | yq '.data["password"]' -r | base64 -d)
 PGUSER ?= tofutf
@@ -89,7 +92,8 @@ sql: install-pggen
 		--acronym tls \
 		--acronym sso \
 		--acronym hcl \
-		--acronym ip
+		--acronym ip \
+		--acronym gpg
 	goimports -w ./internal/sql/pggen
 	go fmt ./internal/sql/pggen
 

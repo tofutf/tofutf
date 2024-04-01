@@ -13,6 +13,8 @@ import (
 )
 
 const (
+	APIPrefixV1 = "/api/"
+
 	// APIPrefixV2 is the URL path prefix for TFE API endpoints
 	APIPrefixV2 = "/api/v2/"
 
