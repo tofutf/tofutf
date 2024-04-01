@@ -35,7 +35,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgtype v1.14.3
-	github.com/jackc/pgx/v4 v4.18.2
+	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jaschaephraim/lrserver v0.0.0-20171129202958-50d19f603f71
 	github.com/leg100/surl v0.0.5
 	github.com/lestrrat-go/jwx/v2 v2.0.21
