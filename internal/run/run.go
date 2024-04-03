@@ -4,7 +4,6 @@ package run
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -30,7 +29,16 @@ const (
 	defaultRefresh = true
 )
 
-var ErrInvalidRunStateTransition = errors.New("invalid run state transition")
+// InvalidRunStateTransitionError is an error that occurs when the run is in
+// an invalid state.
+type InvalidRunStateTransitionError struct {
+	Status Status
+}
+
+// Error returns the error messag
+func (e InvalidRunStateTransitionError) Error() string {
+	return "invalid run state transition"
+}
 
 type (
 	PlanFormat string
@@ -494,7 +502,7 @@ func (r *Run) Start() error {
 	case RunPlanning, RunApplying:
 		return ErrPhaseAlreadyStarted
 	default:
-		return ErrInvalidRunStateTransition
+		return InvalidRunStateTransitionError{Status: r.Status}
 	}
 	return nil
 }
@@ -510,7 +518,7 @@ func (r *Run) Finish(phase internal.PhaseType, opts PhaseFinishOptions) (autoapp
 	switch phase {
 	case internal.PlanPhase:
 		if r.Status != RunPlanning {
-			return false, ErrInvalidRunStateTransition
+			return false, InvalidRunStateTransitionError{Status: r.Status}
 		}
 		if opts.Errored {
 			r.updateStatus(RunErrored, nil)
@@ -536,7 +544,7 @@ func (r *Run) Finish(phase internal.PhaseType, opts PhaseFinishOptions) (autoapp
 		return r.AutoApply, nil
 	case internal.ApplyPhase:
 		if r.Status != RunApplying {
-			return false, ErrInvalidRunStateTransition
+			return false, InvalidRunStateTransitionError{Status: r.Status}
 		}
 		if opts.Errored {
 			r.updateStatus(RunErrored, nil)
