@@ -120,7 +120,7 @@ func (a *api) createAgentToken(w http.ResponseWriter, r *http.Request) {
 		tfeapi.Error(w, err)
 		return
 	}
-	w.Write(token)
+	w.Write(token) //nolint:errcheck
 }
 
 func (a *api) startJob(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +134,7 @@ func (a *api) startJob(w http.ResponseWriter, r *http.Request) {
 		tfeapi.Error(w, err)
 		return
 	}
-	w.Write(token)
+	w.Write(token) //nolint:errcheck
 }
 
 func (a *api) finishJob(w http.ResponseWriter, r *http.Request) {

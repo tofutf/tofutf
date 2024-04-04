@@ -45,5 +45,5 @@ func (res *Responder) Respond(w http.ResponseWriter, r *http.Request, payload an
 	}
 	w.Header().Set("Content-type", mediaType)
 	w.WriteHeader(status)
-	w.Write(b)
+	w.Write(b) //nolint:errcheck
 }

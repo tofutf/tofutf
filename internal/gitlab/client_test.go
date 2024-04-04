@@ -63,7 +63,7 @@ func TestClient_GetRepoTarball(t *testing.T) {
 
 	mux.HandleFunc("/api/v4/projects/acme/terraform/repository/archive.tar.gz", func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "GET", r.Method)
-		w.Write(testutils.ReadFile(t, "../testdata/gitlab.tar.gz"))
+		w.Write(testutils.ReadFile(t, "../testdata/gitlab.tar.gz")) //nolint:errcheck
 	})
 
 	got, ref, err := client.GetRepoTarball(context.Background(), vcs.GetRepoTarballOptions{

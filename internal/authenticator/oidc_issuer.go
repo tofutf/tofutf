@@ -52,7 +52,7 @@ func NewOIDCIssuer(t *testing.T, username, aud, name string) string {
 		})
 		require.NoError(t, err)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write(out)
+		w.Write(out) //nolint:errcheck
 	})
 	// auth endpoint
 	mux.HandleFunc("/login/oauth/authorize", func(w http.ResponseWriter, r *http.Request) {
@@ -89,18 +89,18 @@ func NewOIDCIssuer(t *testing.T, username, aud, name string) string {
 		})
 		require.NoError(t, err)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write(out)
+		w.Write(out) //nolint:errcheck
 	})
 	// keyset endpoint
 	mux.HandleFunc("/keys", func(w http.ResponseWriter, r *http.Request) {
 		key, err := jwk.FromRaw(priv.Public())
 		set := jwk.NewSet()
-		set.AddKey(key)
+		set.AddKey(key) //nolint:errcheck
 		require.NoError(t, err)
 		out, err := json.Marshal(set)
 		require.NoError(t, err)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write(out)
+		w.Write(out) //nolint:errcheck
 	})
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

@@ -39,7 +39,8 @@ func TestIntegration_WorkspaceAPI_IncludeOutputs(t *testing.T) {
 	defer resp.Body.Close()
 	if !assert.Equal(t, 200, resp.StatusCode) {
 		var buf bytes.Buffer
-		io.Copy(&buf, resp.Body)
+		_, err := io.Copy(&buf, resp.Body)
+		require.NoError(t, err)
 		t.Log(buf.String())
 		return
 	}

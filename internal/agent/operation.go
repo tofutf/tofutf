@@ -259,10 +259,10 @@ func (o *operation) cancel(force, sendSignal bool) {
 	if sendSignal && o.proc != nil {
 		if force {
 			o.V(2).Info("sending SIGKILL to terraform process", "pid", o.proc.Pid)
-			o.proc.Signal(os.Kill)
+			o.proc.Signal(os.Kill) //nolint:errcheck
 		} else {
 			o.V(2).Info("sending SIGINT to terraform process", "pid", o.proc.Pid)
-			o.proc.Signal(os.Interrupt)
+			o.proc.Signal(os.Interrupt) //nolint:errcheck
 		}
 	}
 }

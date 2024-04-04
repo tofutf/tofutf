@@ -134,9 +134,9 @@ func (a *membershipCLI) addTeamMembershipCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&organization, "organization", "", "OTF organization in which to perform action")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 	cmd.Flags().StringVar(&name, "team", "", "Team in which to perform action")
-	cmd.MarkFlagRequired("team")
+	cmd.MarkFlagRequired("team") //nolint:errcheck
 
 	return cmd
 }
@@ -167,9 +167,9 @@ func (a *membershipCLI) deleteTeamMembershipCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&organization, "organization", "", "OTF organization in which to perform action")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 	cmd.Flags().StringVar(&name, "team", "", "Team in which to perform action")
-	cmd.MarkFlagRequired("team")
+	cmd.MarkFlagRequired("team") //nolint:errcheck
 
 	return cmd
 }

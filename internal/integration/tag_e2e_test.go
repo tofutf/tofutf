@@ -50,11 +50,12 @@ resource "null_resource" "tags_e2e" {}
 	defer e.Close()
 
 	// create tagged workspace when prompted
-	e.ExpectBatch([]expect.Batcher{
+	_, err = e.ExpectBatch([]expect.Batcher{
 		&expect.BExp{R: "Enter a value: "},
 		&expect.BSnd{S: "tagged\n"},
 		&expect.BExp{R: "Terraform Cloud has been successfully initialized!"},
 	}, time.Second*5)
+	require.NoError(t, err)
 	// Terraform should return with exit code 0
 	require.NoError(t, <-tferr, e.String)
 

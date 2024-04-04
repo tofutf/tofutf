@@ -98,10 +98,10 @@ func (a *CLI) stateListCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&opts.Organization, "organization", "", "Name of the organization the workspace belongs to")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 
 	cmd.Flags().StringVar(&opts.Workspace, "workspace", "", "Name of workspace for which to retreive state versions")
-	cmd.MarkFlagRequired("workspace")
+	cmd.MarkFlagRequired("workspace") //nolint:errcheck
 
 	return cmd
 }

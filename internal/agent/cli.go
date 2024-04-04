@@ -71,10 +71,10 @@ func (a *agentCLI) agentTokenNewCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&poolID, "agent-pool-id", "", "ID of the agent pool in which the token is to be created.")
-	cmd.MarkFlagRequired("agent-pool-id")
+	cmd.MarkFlagRequired("agent-pool-id") //nolint:errcheck
 
 	cmd.Flags().StringVar(&opts.Description, "description", "", "Provide a description for the token.")
-	cmd.MarkFlagRequired("description")
+	cmd.MarkFlagRequired("description") //nolint:errcheck
 
 	return cmd
 }

@@ -251,7 +251,7 @@ func (g *TokenClient) UpdateWebhook(ctx context.Context, id string, opts vcs.Upd
 		return fmt.Errorf("failed to find a webhook with the name of: %s", id)
 	}
 
-	g.client.DefaultApi.UpdateWebhook(owner, name, int32(webhook.ID), bitbucketapi.Webhook{
+	_, err = g.client.DefaultApi.UpdateWebhook(owner, name, int32(webhook.ID), bitbucketapi.Webhook{
 		Name: webhook.Name,
 		Events: []string{
 			eventPush,
@@ -268,6 +268,10 @@ func (g *TokenClient) UpdateWebhook(ctx context.Context, id string, opts vcs.Upd
 			Secret: opts.Secret,
 		},
 	}, nil)
+	if err != nil {
+		return fmt.Errorf("failed to update webhook: %w", err)
+	}
+
 	return nil
 }
 

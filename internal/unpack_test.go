@@ -20,12 +20,13 @@ func TestUnpack(t *testing.T) {
 	require.NoError(t, Unpack(tarball, dst))
 
 	var got []string
-	filepath.Walk(dst, func(path string, _ os.FileInfo, _ error) error {
+	err = filepath.Walk(dst, func(path string, _ os.FileInfo, _ error) error {
 		path, err := filepath.Rel(dst, path)
 		require.NoError(t, err)
 		got = append(got, path)
 		return nil
 	})
+	require.NoError(t, err)
 	assert.Equal(t, []string{
 		".",
 		"dir",

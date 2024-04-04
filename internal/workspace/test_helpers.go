@@ -25,7 +25,7 @@ func (f *FakeService) Create(context.Context, CreateOptions) (*Workspace, error)
 }
 
 func (f *FakeService) Update(_ context.Context, _ string, opts UpdateOptions) (*Workspace, error) {
-	f.Workspaces[0].Update(opts)
+	f.Workspaces[0].Update(opts) //nolint:errcheck
 	return f.Workspaces[0], nil
 }
 

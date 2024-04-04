@@ -26,7 +26,10 @@ func migrate(logger logr.Logger, connStr string) error {
 
 	goose.SetBaseFS(migrations)
 
-	goose.SetDialect("pgx")
+	err := goose.SetDialect("pgx")
+	if err != nil {
+		return fmt.Errorf("failed to set goose dialect: %w", err)
+	}
 
 	db, err := goose.OpenDBWithDriver("pgx", connStr)
 	if err != nil {

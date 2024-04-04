@@ -127,7 +127,7 @@ func versionGenerator() string {
 	// tfe appears to use 32 hex-encoded random bytes for its version
 	// ID, so OTF does the same
 	b := make([]byte, 32)
-	rand.Read(b)
+	rand.Read(b) //nolint:errcheck
 	return fmt.Sprintf("%x", b)
 }
 
@@ -299,7 +299,7 @@ func WriteTerraformVars(dir string, vars []*Variable) error {
 			b.WriteRune('\n')
 		}
 	}
-	f.WriteString(b.String())
+	f.WriteString(b.String()) //nolint:errcheck
 
 	return nil
 }

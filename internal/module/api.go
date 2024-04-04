@@ -143,5 +143,5 @@ func (h *api) downloadModuleVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(tarball)
+	w.Write(tarball) //nolint:errcheck
 }

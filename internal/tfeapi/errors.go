@@ -49,5 +49,5 @@ func Error(w http.ResponseWriter, err error) {
 	}
 	w.Header().Set("Content-type", mediaType)
 	w.WriteHeader(code)
-	w.Write(b)
+	w.Write(b) //nolint:errcheck
 }

@@ -188,7 +188,7 @@ func (a *tfe) downloadConfigurationVersion(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	w.Write(resp)
+	w.Write(resp) //nolint:errcheck
 }
 
 func (a *tfe) include(ctx context.Context, v any) ([]any, error) {

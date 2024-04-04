@@ -45,7 +45,7 @@ func startLiveReloadServer(logger logr.Logger) error {
 	srv.SetStatusLog(log.New(io.Discard, "", 0))
 	srv.SetErrorLog(log.New(io.Discard, "", 0))
 
-	go srv.ListenAndServe()
+	go srv.ListenAndServe() //nolint:errcheck
 	go func() {
 		for {
 			select {

@@ -88,11 +88,11 @@ func NewServer(logger logr.Logger, cfg ServerConfig) (*Server, error) {
 
 	r.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json")
-		w.Write(healthzPayload)
+		w.Write(healthzPayload) //nolint:errcheck
 	})
 	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json")
-		w.Write([]byte(`{"status":"OK"}`))
+		w.Write([]byte(`{"status":"OK"}`)) //nolint:errcheck
 	})
 
 	// Subrouter for service routes

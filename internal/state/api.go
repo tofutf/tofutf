@@ -104,5 +104,5 @@ func (a *api) downloadState(w http.ResponseWriter, r *http.Request) {
 		tfeapi.Error(w, err)
 		return
 	}
-	w.Write(resp)
+	w.Write(resp) //nolint:errcheck
 }

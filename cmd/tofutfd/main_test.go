@@ -22,7 +22,8 @@ func TestVersion(t *testing.T) {
 	err := parseFlags(ctx, []string{"--version"}, got)
 	require.NoError(t, err)
 
-	regexp.MatchString(want, got.String())
+	_, err = regexp.MatchString(want, got.String())
+	require.NoError(t, err)
 }
 
 func TestHelp(t *testing.T) {

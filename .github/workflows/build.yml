@@ -10,6 +10,11 @@ on:
     branches:
       - '*'
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,8 +25,10 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: 'go.mod'
-      - name: Lint check
-        run: make install-linter lint
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.54
       - name: Vet check
         run: make vet
       # - name: Add hosts to /etc/hosts

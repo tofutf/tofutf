@@ -42,9 +42,10 @@ func TestIntegration_NotificationGCPPubSub(t *testing.T) {
 	require.NoError(t, err)
 	received := make(chan *pubsub.Message)
 	go func() {
-		sub.Receive(ctx, func(_ context.Context, m *pubsub.Message) {
+		err := sub.Receive(ctx, func(_ context.Context, m *pubsub.Message) {
 			received <- m
 		})
+		require.Nil(t, err)
 	}()
 
 	daemon, _, ctx := setup(t, nil)
