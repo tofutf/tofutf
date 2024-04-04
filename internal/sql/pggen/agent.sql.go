@@ -2320,6 +2320,12 @@ type ConfigurationVersionStatusTimestamps struct {
 	Timestamp              pgtype.Timestamptz `json:"timestamp"`
 }
 
+// Engine represents the Postgres composite type "engine".
+type Engine struct {
+	Kind    queries.EngineKinds `json:"kind"`
+	Version pgtype.Text         `json:"version"`
+}
+
 // GithubAppInstalls represents the Postgres composite type "github_app_installs".
 type GithubAppInstalls struct {
 	GithubAppID   pgtype.Int8 `json:"github_app_id"`
@@ -2474,6 +2480,28 @@ type Variables struct {
 	VersionID   pgtype.Text `json:"version_id"`
 }
 
+// newEngineKindsEnum creates a new pgtype.ValueTranscoder for the
+// Postgres enum type 'engine_kinds'.
+func newEngineKindsEnum() pgtype.ValueTranscoder {
+	return pgtype.NewEnumType(
+		"engine_kinds",
+		[]string{
+			string(EngineKindsTerraform),
+			string(EngineKindsOpentofu),
+		},
+	)
+}
+
+// EngineKinds represents the Postgres enum "engine_kinds".
+type EngineKinds string
+
+const (
+	EngineKindsTerraform EngineKinds = "terraform"
+	EngineKindsOpentofu  EngineKinds = "opentofu"
+)
+
+func (e EngineKinds) String() string { return string(e) }
+
 // typeResolver looks up the pgtype.ValueTranscoder by Postgres type name.
 type typeResolver struct {
 	connInfo *pgtype.ConnInfo // types by Postgres type name
@@ -2568,6 +2596,16 @@ func (tr *typeResolver) newConfigurationVersionStatusTimestamps() pgtype.ValueTr
 		compositeField{"configuration_version_id", "text", &pgtype.Text{}},
 		compositeField{"status", "text", &pgtype.Text{}},
 		compositeField{"timestamp", "timestamptz", &pgtype.Timestamptz{}},
+	)
+}
+
+// newEngine creates a new pgtype.ValueTranscoder for the Postgres
+// composite type 'engine'.
+func (tr *typeResolver) newEngine() pgtype.ValueTranscoder {
+	return tr.newCompositeValue(
+		"engine",
+		compositeField{"kind", "engine_kinds", newEngineKindsEnum()},
+		compositeField{"version", "text", &pgtype.Text{}},
 	)
 }
 
