@@ -11,7 +11,10 @@
 		"ghcr.io/rio/features/k9s:1.1.5": {},
 		"ghcr.io/rio/features/skaffold:2":{},
 		"ghcr.io/devcontainers/features/terraform:1": {},
-		"ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {},
+		"ghcr.io/robbert229/devcontainer-features/opentofu:1": {},
+		"ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {
+			"yqVersion": "4"
+		},
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
 		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1":{},
 		"ghcr.io/devcontainers-contrib/features/caddy:1":{}

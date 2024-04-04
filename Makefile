@@ -63,6 +63,10 @@ vet:
 install-pggen:
 	@sh -c "which pggen > /dev/null || go install github.com/leg100/pggen/cmd/pggen@latest"
 
+.PHONY: install-air
+install-air:
+	@sh -c "which air > /dev/null || go install github.com/cosmtrek/air@latest"
+
 # Generate sql code
 .PHONY: sql
 sql: install-pggen
