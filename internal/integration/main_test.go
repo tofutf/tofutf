@@ -132,7 +132,7 @@ func doMain(m *testing.M) (int, error) {
 	// fails if ~/.terraform.d doesn't exist yet. This only happens when
 	// CHECKPOINT_DISABLE is set, because the checkpoint would otherwise handle
 	// creating that directory first.
-	os.MkdirAll(path.Join(os.Getenv("HOME"), ".terraform.d"), 0o755)
+	os.MkdirAll(path.Join(os.Getenv("HOME"), ".terraform.d"), 0o755) //nolint:errcheck
 
 	// Create a secret with which to (1) create user session tokens and (2)
 	// for assignment to daemons so that the token passes verification

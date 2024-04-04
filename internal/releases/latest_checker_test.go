@@ -29,7 +29,7 @@ func Test_latestChecker(t *testing.T) {
 				mux := http.NewServeMux()
 				mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Add("Content-Type", "application/json")
-					w.Write(testutils.ReadFile(t, "./testdata/latest.json"))
+					w.Write(testutils.ReadFile(t, "./testdata/latest.json")) //nolint:errcheck
 				})
 				srv := httptest.NewServer(mux)
 				t.Cleanup(srv.Close)

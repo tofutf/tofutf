@@ -62,7 +62,7 @@ func Unpack(r io.Reader, dst string) error {
 			// and it allowing later ones to clobber earlier ones even if the file
 			// has perms that don't allow overwriting.
 			if os.IsPermission(err) {
-				os.Chmod(path, 0o600)
+				os.Chmod(path, 0o600) //nolint:errcheck
 				fh, err = os.Create(path)
 			}
 

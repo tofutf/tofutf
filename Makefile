@@ -46,7 +46,7 @@ k3d-down:
 # Run staticcheck metalinter recursively against code
 .PHONY: lint
 lint:
-	go list ./... | grep -v pggen | xargs staticcheck
+	golangci-lint run ./...
 
 # Run go fmt against code
 .PHONY: fmt
@@ -132,11 +132,6 @@ paths:
 .PHONY: actions
 actions:
 	stringer -type Action ./internal/rbac
-
-# Install staticcheck linter
-.PHONY: install-linter
-install-linter:
-	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 .PHONY: publish
 publish:

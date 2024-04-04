@@ -59,7 +59,7 @@ func TestWebHandlers_exchangeCode(t *testing.T) {
 			})
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 		stub := httptest.NewTLSServer(mux)
 		t.Cleanup(stub.Close)

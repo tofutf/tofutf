@@ -37,6 +37,6 @@ type Service struct{}
 func (Service) AddHandlers(r *mux.Router) {
 	r.HandleFunc("/.well-known/terraform.json", func(w gohttp.ResponseWriter, r *gohttp.Request) {
 		w.Header().Set("Content-type", "application/json")
-		w.Write(discoveryPayload)
+		w.Write(discoveryPayload) //nolint:errcheck
 	})
 }

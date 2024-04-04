@@ -67,7 +67,7 @@ func (d *download) getZipfile(ctx context.Context) (string, error) {
 	}
 	defer tmp.Close()
 
-	d.Write([]byte("downloading terraform, version " + d.version + "\n"))
+	d.Write([]byte("downloading terraform, version " + d.version + "\n")) //nolint:errcheck
 
 	_, err = io.Copy(tmp, res.Body)
 	if err != nil {

@@ -255,7 +255,7 @@ func (a *tfe) downloadState(w http.ResponseWriter, r *http.Request) {
 		tfeapi.Error(w, err)
 		return
 	}
-	w.Write(resp)
+	w.Write(resp) //nolint:errcheck
 }
 
 func (a *tfe) getCurrentVersionOutputs(w http.ResponseWriter, r *http.Request) {

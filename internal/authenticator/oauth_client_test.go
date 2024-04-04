@@ -48,7 +48,7 @@ func newTestOAuthServerClient(t *testing.T, username string) *OAuthClient {
 		out, err := json.Marshal(&oauth2.Token{AccessToken: "fake_token"})
 		require.NoError(t, err)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write(out)
+		w.Write(out) //nolint:errcheck
 	}))
 	t.Cleanup(srv.Close)
 	u, err := url.Parse(srv.URL)

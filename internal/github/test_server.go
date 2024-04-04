@@ -110,14 +110,14 @@ func NewTestServer(t *testing.T, opts ...TestServerOption) (*TestServer, *url.UR
 		out, err := json.Marshal(&oauth2.Token{AccessToken: "stub_token"})
 		require.NoError(t, err)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write(out)
+		w.Write(out) //nolint:errcheck
 	})
 	if srv.username != nil {
 		srv.mux.HandleFunc("/api/v3/user", func(w http.ResponseWriter, r *http.Request) {
 			out, err := json.Marshal(&github.User{Login: srv.username})
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 	}
 	srv.mux.HandleFunc("/api/v3/user/repos", func(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +125,7 @@ func NewTestServer(t *testing.T, opts ...TestServerOption) (*TestServer, *url.UR
 		out, err := json.Marshal(repos)
 		require.NoError(t, err)
 		w.Header().Add("Content-Type", "application/json")
-		w.Write(out)
+		w.Write(out) //nolint:errcheck
 	})
 	if srv.repo != nil {
 		srv.mux.HandleFunc("/api/v3/repos/"+*srv.repo+"/git/matching-refs/", func(w http.ResponseWriter, r *http.Request) {
@@ -136,14 +136,14 @@ func NewTestServer(t *testing.T, opts ...TestServerOption) (*TestServer, *url.UR
 			out, err := json.Marshal(refs)
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 		srv.mux.HandleFunc("/api/v3/repos/"+*srv.repo, func(w http.ResponseWriter, r *http.Request) {
 			repo := &github.Repository{FullName: srv.repo, DefaultBranch: srv.defaultBranch}
 			out, err := json.Marshal(repo)
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 		srv.mux.HandleFunc("/api/v3/repos/"+*srv.repo+"/tarball/", func(w http.ResponseWriter, r *http.Request) {
 			link := url.URL{Scheme: "https", Host: r.Host, Path: "/mytarball"}
@@ -184,7 +184,7 @@ func NewTestServer(t *testing.T, opts ...TestServerOption) (*TestServer, *url.UR
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 		// https://docs.github.com/en/rest/webhooks/repos?apiVersion=2022-11-28#get-a-repository-webhook
 		// https://docs.github.com/en/rest/webhooks/repos?apiVersion=2022-11-28#update-a-repository-webhook
@@ -224,7 +224,7 @@ func NewTestServer(t *testing.T, opts ...TestServerOption) (*TestServer, *url.UR
 				out, err := json.Marshal(srv.testdb.webhook)
 				require.NoError(t, err)
 				w.Header().Add("Content-Type", "application/json")
-				w.Write(out)
+				w.Write(out) //nolint:errcheck
 			case "DELETE":
 				// notify tests
 				srv.WebhookEvents <- webhookEvent{
@@ -264,7 +264,7 @@ func NewTestServer(t *testing.T, opts ...TestServerOption) (*TestServer, *url.UR
 				return
 			}
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 		if srv.commit != nil {
 			// https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#get-a-commit
@@ -281,14 +281,14 @@ func NewTestServer(t *testing.T, opts ...TestServerOption) (*TestServer, *url.UR
 					return
 				}
 				w.Header().Add("Content-Type", "application/json")
-				w.Write(out)
+				w.Write(out) //nolint:errcheck
 			})
 		}
 	}
 
 	if srv.tarball != nil {
 		srv.mux.HandleFunc("/mytarball", func(w http.ResponseWriter, r *http.Request) {
-			w.Write(srv.tarball)
+			w.Write(srv.tarball) //nolint:errcheck
 		})
 	}
 

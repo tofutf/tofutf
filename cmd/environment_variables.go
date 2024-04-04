@@ -47,7 +47,7 @@ func SetFlagsFromEnvVariables(fs *pflag.FlagSet) (err error) {
 			return errors.Wrapf(err, "failed to read file %s", envVar)
 		}
 
-		fs.Set(f.Name, string(value))
+		fs.Set(f.Name, string(value)) //nolint:errcheck
 	}
 
 	return err

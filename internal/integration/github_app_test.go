@@ -85,7 +85,7 @@ func TestIntegration_GithubAppNewUI(t *testing.T) {
 					err = json.Unmarshal([]byte(params.Manifest), &manifest)
 					require.NoError(t, err)
 					require.Equal(t, public, manifest.Public)
-					w.Write([]byte(`<html><body>success</body></html>`))
+					w.Write([]byte(`<html><body>success</body></html>`)) //nolint:errcheck
 				})
 				mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 					t.Fatalf("form submitted to wrong path: %s", r.URL.Path)
@@ -139,7 +139,7 @@ func TestIntegration_GithubAppNewUI(t *testing.T) {
 				})
 				require.NoError(t, err)
 				w.Header().Add("Content-Type", "application/json")
-				w.Write(out)
+				w.Write(out) //nolint:errcheck
 			}),
 			github.WithHandler("/api/v3/app/installations", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Add("Content-Type", "application/json")
@@ -172,7 +172,7 @@ func TestIntegration_GithubAppNewUI(t *testing.T) {
 				})
 				require.NoError(t, err)
 				w.Header().Add("Content-Type", "application/json")
-				w.Write(out)
+				w.Write(out) //nolint:errcheck
 			}),
 		}
 		daemon, _, _ := setup(t, nil, handlers...)
@@ -206,13 +206,13 @@ func TestIntegration_GithubApp_Event(t *testing.T) {
 			})
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		}),
 		github.WithHandler("/api/v3/app/installations/42997659/access_tokens", func(w http.ResponseWriter, r *http.Request) {
 			out, err := json.Marshal(&gogithub.InstallationToken{})
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		}),
 	)
 	// creating a github app requires site-admin role

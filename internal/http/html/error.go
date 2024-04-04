@@ -36,7 +36,7 @@ var errorTemplate = template.Must(template.New("error").Parse(errorTemplateConte
 func Error(w http.ResponseWriter, err string, code int, devMode bool) {
 	w.WriteHeader(code)
 
-	errorTemplate.Execute(w, struct {
+	errorTemplate.Execute(w, struct { //nolint:errcheck
 		Error   string
 		DevMode bool
 	}{

@@ -73,7 +73,7 @@ func (a *CLI) workspaceListCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&org, "organization", "", "Organization workspace belongs to")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 
 	return cmd
 }
@@ -106,7 +106,7 @@ func (a *CLI) workspaceShowCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&organization, "organization", "", "Organization workspace belongs to")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 
 	return cmd
 }
@@ -150,7 +150,7 @@ func (a *CLI) workspaceEditCommand() *cobra.Command {
 	cmd.Flags().StringVar(&poolID, "agent-pool-id", "", "ID of the agent pool to use for runs. Required if execution-mode is set to agent.")
 
 	cmd.Flags().StringVar(&organization, "organization", "", "Organization workspace belongs to")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 
 	return cmd
 }
@@ -182,7 +182,7 @@ func (a *CLI) workspaceLockCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&organization, "organization", "", "Organization workspace belongs to")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 
 	return cmd
 }
@@ -219,7 +219,7 @@ func (a *CLI) workspaceUnlockCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&organization, "organization", "", "Organization workspace belongs to")
 	cmd.Flags().BoolVar(&force, "force", false, "Forceably unlock workspace.")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 
 	return cmd
 }

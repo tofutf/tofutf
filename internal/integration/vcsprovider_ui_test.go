@@ -87,13 +87,13 @@ func TestIntegration_VCSProviderAppUI(t *testing.T) {
 			out, err := json.Marshal([]*gogithub.Installation{install})
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 		mux.HandleFunc("/api/v3/app/installations/123", func(w http.ResponseWriter, r *http.Request) {
 			out, err := json.Marshal(install)
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 		mux.HandleFunc("/api/v3/installation/repositories", func(w http.ResponseWriter, r *http.Request) {
 			out, err := json.Marshal(&gogithub.ListRepositories{
@@ -101,7 +101,7 @@ func TestIntegration_VCSProviderAppUI(t *testing.T) {
 			})
 			require.NoError(t, err)
 			w.Header().Add("Content-Type", "application/json")
-			w.Write(out)
+			w.Write(out) //nolint:errcheck
 		})
 		stub := httptest.NewTLSServer(mux)
 		t.Cleanup(stub.Close)

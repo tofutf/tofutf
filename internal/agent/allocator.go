@@ -67,7 +67,7 @@ func (a *allocator) Start(ctx context.Context) error {
 	a.seed(pools, agents, jobs)
 
 	// allocate jobs to agents
-	a.allocate(ctx)
+	a.allocate(ctx) //nolint:errcheck
 
 	// consume events until a subscriber is closed, and allocate jobs.
 	for {

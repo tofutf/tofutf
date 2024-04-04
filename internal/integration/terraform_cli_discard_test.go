@@ -40,11 +40,12 @@ func TestIntegration_TerraformCLIDiscard(t *testing.T) {
 	defer e.Close()
 
 	// Discard run
-	e.ExpectBatch([]expect.Batcher{
+	_, err = e.ExpectBatch([]expect.Batcher{
 		&expect.BExp{R: fmt.Sprintf(`Do you want to perform these actions in workspace "%s"`, t.Name())},
 		&expect.BExp{R: "Enter a value:"}, &expect.BSnd{S: "no\n"},
 		&expect.BExp{R: "Error: Apply discarded."},
 	}, time.Minute)
+	require.NoError(t, err)
 
 	var exitError *exec.ExitError
 	require.True(t, errors.As(<-tferr, &exitError))

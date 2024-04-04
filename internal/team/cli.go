@@ -61,7 +61,7 @@ func (a *teamCLI) teamNewCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&organization, "organization", "", "OTF organization in which to perform action")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 
 	return cmd
 }
@@ -89,7 +89,7 @@ func (a *teamCLI) teamDeleteCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&organization, "organization", "", "OTF organization in which to perform action")
-	cmd.MarkFlagRequired("organization")
+	cmd.MarkFlagRequired("organization") //nolint:errcheck
 
 	return cmd
 }

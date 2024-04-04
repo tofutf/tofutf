@@ -70,14 +70,16 @@ data "http" "wait" {
 	require.NoError(t, err)
 
 	// Send Ctrl-C now that terraform apply is in-flow.
-	e.SendSignal(os.Interrupt)
+	err = e.SendSignal(os.Interrupt)
+	require.NoError(t, err)
 
 	// Confirm canceling run
-	e.ExpectBatch([]expect.Batcher{
+	_, err = e.ExpectBatch([]expect.Batcher{
 		&expect.BExp{R: "Do you want to cancel the remote operation?"},
 		&expect.BExp{R: "Enter a value:"}, &expect.BSnd{S: "yes\n"},
 		&expect.BExp{R: "The remote operation was successfully cancelled."},
 	}, time.Minute)
+	require.NoError(t, err)
 	// Terraform should return with exit code 0
 	require.NoError(t, <-tferr, string(testutils.ReadFile(t, out.Name())))
 	t.Log(string(testutils.ReadFile(t, out.Name())))
