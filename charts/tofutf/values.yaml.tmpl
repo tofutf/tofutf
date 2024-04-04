@@ -53,7 +53,7 @@ extraEnvs: []
 # -- Environment variables to be passed to the deployment from the named kubernetes secret.
 envsFromSecret: ""
 
-# -- Cryptographic secret. Must be a hex-encoded 16-byte string. See [docs](https://docs.otf.ninja/latest/config/flags/#-secret).
+# -- Cryptographic secret. Must be a hex-encoded 16-byte string. See [docs](https://docs.tofutf.io/config/flags/#-secret).
 secret: ""
 # -- Source cryptographic secret from a kubernetes secret instead.
 secretFromSecret: {}
@@ -62,57 +62,63 @@ secretFromSecret: {}
   # key within secret containing cryptographic secret
   # key: ""
 
-# -- Site admin token - empty string disables the site admin account. See [docs](https://docs.otf.ninja/latest/config/flags/#-site-token).
+# -- Site admin token - empty string disables the site admin account. See [docs](https://docs.tofutf.io/config/flags/#-site-token).
 siteToken: ""
+# -- Source admin token from a kubernetes secret instead.
+siteTokenFromSecret: {}
+  # name of secret
+  # name: ""
+  # key within secret containing site admin token
+  # key: ""
 
-# -- Site admins - list of user accounts promoted to site admin. See [docs](https://docs.otf.ninja/latest/config/flags/#-site-admins).
+# -- Site admins - list of user accounts promoted to site admin. See [docs](https://docs.tofutf.io/config/flags/#-site-admins).
 siteAdmins: []
 
-# -- Max config upload size in bytes. See [docs](https://docs.otf.ninja/latest/config/flags/#-max-config-size).
+# -- Max config upload size in bytes. See [docs](https://docs.tofutf.io/config/flags/#-max-config-size).
 maxConfigSize: ""
 
 logging:
-  # -- Logging verbosity, the higher the number the more verbose the logs. See [docs](https://docs.otf.ninja/latest/config/flags/#-v).
+  # -- Logging verbosity, the higher the number the more verbose the logs. See [docs](https://docs.tofutf.io/config/flags/#-v).
   verbosity: 0
-  # -- Logging format: default, text, or json. See [docs](https://docs.otf.ninja/latest/config/flags/#-log-format)
+  # -- Logging format: default, text, or json. See [docs](https://docs.tofutf.io/config/flags/#-log-format)
   format: default
   # -- Log http requests.
   http: false
 
 github:
-  # -- Github OAuth client ID. See [docs](https://docs.otf.ninja/latest/config/flags/#-github-client-id).
+  # -- Github OAuth client ID. See [docs](https://docs.tofutf.io/config/flags/#-github-client-id).
   clientID: ""
-  # -- Github OAuth client secret. See [docs](https://docs.otf.ninja/latest/config/flags/#-github-client-secret).
+  # -- Github OAuth client secret. See [docs](https://docs.tofutf.io/config/flags/#-github-client-secret).
   clientSecret: ""
   # -- Github hostname to use for all interactions with Github.
   hostname: "github.com"
 
 gitlab:
-  # -- Gitlab OAuth client ID. See [docs](https://docs.otf.ninja/latest/config/flags/#-gitlab-client-id).
+  # -- Gitlab OAuth client ID. See [docs](https://docs.tofutf.io/config/flags/#-gitlab-client-id).
   clientID: ""
-  # -- Gitlab OAuth client secret. See [docs](https://docs.otf.ninja/latest/config/flags/#-gitlab-client-secret).
+  # -- Gitlab OAuth client secret. See [docs](https://docs.tofutf.io/config/flags/#-gitlab-client-secret).
   clientSecret: ""
   # -- Gitlab hostname to use for all interactions with Gitlab.
   hostname: "gitlab.com"
 
 google:
-  # -- The Google JWT audience claim for validation. Validation is skipped if empty. See [docs](https://docs.otf.ninja/latest/config/flags/#-google-jwt-audience).
+  # -- The Google JWT audience claim for validation. Validation is skipped if empty. See [docs](https://docs.tofutf.io/config/flags/#-google-jwt-audience).
   audience: ""
 
 oidc:
-  # -- values for configuring OIDC authentication. See [docs](https://docs.otf.ninja/latest/auth/providers/oidc/)
+  # -- values for configuring OIDC authentication. See [docs](https://docs.tofutf.io/auth/providers/oidc/)
 
-  # -- OIDC provider name. See [docs](https://docs.otf.ninja/latest/auth/providers/oidc/).
+  # -- OIDC provider name. See [docs](https://docs.tofutf.io/auth/providers/oidc/).
   name: ""
-  # -- OIDC issuer URL. See [docs](https://docs.otf.ninja/latest/auth/providers/oidc/).
+  # -- OIDC issuer URL. See [docs](https://docs.tofutf.io/auth/providers/oidc/).
   issuerURL: ""
-  # -- OIDC client ID. See [docs](https://docs.otf.ninja/latest/auth/providers/oidc/).
+  # -- OIDC client ID. See [docs](https://docs.tofutf.io/auth/providers/oidc/).
   clientID: ""
-  # -- Override OIDC claim used for username. See [docs](https://docs.otf.ninja/latest/auth/providers/oidc/).
+  # -- Override OIDC claim used for username. See [docs](https://docs.tofutf.io/auth/providers/oidc/).
   usernameClaim: ""
-  # -- Override OIDC scopes. See [docs](https://docs.otf.ninja/latest/auth/providers/oidc/).
+  # -- Override OIDC scopes. See [docs](https://docs.tofutf.io/auth/providers/oidc/).
   scopes: []
-  # -- (object) Source OIDC client secret from a k8s secret. See [docs](https://docs.otf.ninja/latest/auth/providers/oidc/).
+  # -- (object) Source OIDC client secret from a k8s secret. See [docs](https://docs.tofutf.io/auth/providers/oidc/).
   clientSecretFromSecret:
     # name of secret
     # name: ""
