@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/pubsub v1.37.0
 	github.com/DataDog/jsonapi v0.8.6
 	github.com/Masterminds/sprig/v3 v3.2.3
+	github.com/ProtonMail/go-crypto v1.0.0
 	github.com/allegro/bigcache v1.2.1
 	github.com/antchfx/htmlquery v1.3.0
 	github.com/bradleyfalzon/ghinstallation/v2 v2.7.0
@@ -64,7 +65,6 @@ require (
 	cloud.google.com/go/iam v1.1.6 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/agext/levenshtein v1.2.2 // indirect
 	github.com/antchfx/xpath v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect

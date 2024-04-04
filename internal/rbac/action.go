@@ -150,4 +150,10 @@ const (
 	DeleteGithubAppAction
 	CreateGithubAppInstallAction
 	DeleteGithubAppInstallAction
+
+	CreateGPGKeyAction
+	ListGPGKeyAction
+	UpdateGPGKeyAction
+	GetGPGKeyAction
+	DeleteGPGKeyAction
 )

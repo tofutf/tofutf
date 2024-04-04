@@ -20,6 +20,7 @@ import (
 	"github.com/tofutf/tofutf/internal/ghapphandler"
 	"github.com/tofutf/tofutf/internal/github"
 	"github.com/tofutf/tofutf/internal/gitlab"
+	"github.com/tofutf/tofutf/internal/gpgkeys"
 	"github.com/tofutf/tofutf/internal/http"
 	"github.com/tofutf/tofutf/internal/http/html"
 	"github.com/tofutf/tofutf/internal/inmem"
@@ -388,6 +389,19 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 		WorkspaceAuthorizer: workspaceService,
 	})
 
+	privateregistryService, err := gpgkeys.NewService(gpgkeys.Options{
+		Logger:                 logger,
+		DB:                     db,
+		HostnameService:        hostnameService,
+		Signer:                 signer,
+		Renderer:               renderer,
+		OrganizationAuthorizer: orgService,
+		Responder:              responder,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	handlers := []internal.Handlers{
 		teamService,
 		userService,
@@ -402,6 +416,7 @@ func New(ctx context.Context, logger logr.Logger, cfg Config) (*Daemon, error) {
 		logsService,
 		repoService,
 		authenticatorService,
+		privateregistryService,
 		loginserver.NewServer(loginserver.Options{
 			Secret:      cfg.Secret,
 			Renderer:    renderer,

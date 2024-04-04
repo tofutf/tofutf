@@ -28,6 +28,7 @@ const (
 // AuthenticatedPrefixes are those URL path prefixes requiring authentication.
 var AuthenticatedPrefixes = []string{
 	tfeapi.APIPrefixV2,
+	tfeapi.APIPrefixV1,
 	tfeapi.ModuleV1Prefix,
 	otfapi.DefaultBasePath,
 	paths.UIPrefix,
