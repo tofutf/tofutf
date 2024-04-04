@@ -11,6 +11,9 @@
 			]
 		}
 	},
+	"mounts":[
+		"source=${env:HOME}${env:USERPROFILE}/.kube,target=/home/vscode/.kube,type=bind"
+	],
 	"runArgs": [
 		"--network=host"
 	]
