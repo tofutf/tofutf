@@ -1,8 +1,9 @@
 VERSION ?= $(shell git describe --tags --dirty --always)
 
-GIT_COMMIT = $(shell git rev-parse HEAD)
-RANDOM_SUFFIX := $(shell cat /dev/urandom | tr -dc 'a-z0-9' | head -c5)
-DBSTRING=postgres:///otf
+# Provide some sane defaults for connecting to postgres.
+PGPASSWORD ?= $(shell kubectl get secrets postgres-postgresql -oyaml | yq '.data["password"]' -r | base64 -d)
+PGUSER ?= tofutf
+DBSTRING ?= postgres://$(PGUSER):$(PGPASSWORD)@localhost:5432/postgres
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -13,18 +14,14 @@ endif
 
 .PHONY: dev
 dev: 
-	skaffold build --push -b ghcr.io/tofutf/tofutfd
+	./hack/dev.sh
 
 .PHONY: go-tfe-tests
 go-tfe-tests: image compose-up
 	./hack/go-tfe-tests.bash
 
 .PHONY: watch
-watch: tailwind-watch modd
-
-.PHONY: modd
-modd:
-	+modd
+watch: tailwind-watch
 
 .PHONY: tailwind
 tailwind:
@@ -46,21 +43,6 @@ k3d-up:
 k3d-down:
 	k3d cluster delete tofutf
 
-# Run docker compose stack
-.PHONY: compose-up
-compose-up: image
-	docker compose up -d --wait --wait-timeout 60
-
-# Remove docker compose stack
-.PHONY: compose-rm
-compose-rm:
-	docker compose rm -sf
-
-# Run postgresql via docker compose
-.PHONY: postgres
-postgres:
-	docker compose up -d postgres
-
 # Run staticcheck metalinter recursively against code
 .PHONY: lint
 lint:
@@ -75,12 +57,6 @@ fmt:
 .PHONY: vet
 vet:
 	go vet ./...
-
-# Install pre-commit
-.PHONY: install-pre-commit
-install-pre-commit:
-	pip install pre-commit==3.2.2
-	pre-commit install
 
 # Install sql code generator
 .PHONY: install-pggen
@@ -137,11 +113,6 @@ migrate-rollback: install-goose
 .PHONY: migrate-status
 migrate-status: install-goose
 	GOOSE_DBSTRING=$(DBSTRING) GOOSE_DRIVER=postgres goose -dir ./internal/sql/migrations status
-
-# Run docs server with live reload
-.PHONY: serve-docs
-serve-docs:
-	mkdocs serve -a localhost:9999
 
 .PHONY: doc-screenshots
 doc-screenshots: # update documentation screenshots

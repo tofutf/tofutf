@@ -102,5 +102,4 @@ Session.vim
 .history
 # allow anything under testdata
 !**/testdata/**
-
-dirty.sh
+tmp
