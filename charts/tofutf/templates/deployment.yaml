@@ -118,7 +118,7 @@ spec:
             {{- end }}
             {{- end }}
             - name: OTF_SITE_TOKEN
-            {{ with .siteTokenFromSecret }}
+            {{ with .Values.siteTokenFromSecret }}
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
