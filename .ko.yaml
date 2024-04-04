@@ -1,5 +1,21 @@
 defaultBaseImage: ghcr.io/tofutf/tofutf/tofutf-base:v1.0.0
 
 defaultPlatforms:
-- linux/arm64
-- linux/amd64
+  - linux/arm64
+  - linux/amd64
+
+builds:
+  - id: tofutfd
+    dir: ./cmd/tofutfd
+    ldflags:
+      - -s -w
+      - -X github.com/tofutf/tofutf/internal.Version={{ .Env.VERSION }}
+      # - -X github.com/tofutf/tofutf/internal.Commit={{ .Env.Commit}}
+      # - -X github.com/tofutf/tofutf/internal.Built={{ .Env.Date}}
+  - id: tofutfd
+    dir: ./cmd/tofutf-agent
+    ldflags:
+      - -s -w
+      - -X github.com/tofutf/tofutf/internal.Version={{ .Env.VERSION}}
+      # - -X github.com/tofutf/tofutf/internal.Commit={{ .Env.Commit}}
+      # - -X github.com/tofutf/tofutf/internal.Built={{ .Env.Date}}
