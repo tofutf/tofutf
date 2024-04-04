@@ -28,8 +28,8 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
+          args: --timeout=30m
           version: v1.54
-        args: --timeout=30m
       - name: Vet check
         run: make vet
       # - name: Add hosts to /etc/hosts
