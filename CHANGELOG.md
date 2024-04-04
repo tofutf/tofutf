@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/tofutf/tofutf/compare/v0.8.0...v0.9.0) (2024-04-04)
+
+
+### Features
+
+* added the ability to configure the site token using a secret ([#89](https://github.com/tofutf/tofutf/issues/89)) ([eb98224](https://github.com/tofutf/tofutf/commit/eb98224ffb0d241a4cc41ca2984d7655a7b97da9))
+* implemented tfe gpg keys api ([#82](https://github.com/tofutf/tofutf/issues/82)) ([db9a2c0](https://github.com/tofutf/tofutf/commit/db9a2c05ecc7280532de1cc9e2fccffbde6ad8e3))
+
 ## [0.8.0](https://github.com/tofutf/tofutf/compare/v0.8.0-beta2...v0.8.0) (2024-03-29)
 
 ### Features
