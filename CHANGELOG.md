@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/tofutf/tofutf/compare/v0.9.0...v0.9.1) (2024-04-04)
+
+
+### Bug Fixes
+
+* fixed the version number being ommitted from the build ([#93](https://github.com/tofutf/tofutf/issues/93)) ([90c36ca](https://github.com/tofutf/tofutf/commit/90c36ca4598e4f921d60fdcf02f67b68364d0393))
+
 ## [0.9.0](https://github.com/tofutf/tofutf/compare/v0.8.0...v0.9.0) (2024-04-04)
 
 
