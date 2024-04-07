@@ -36,10 +36,11 @@ func (s *Service) Lock(ctx context.Context, workspaceID string, runID *string) (
 		return ws.Enlock(id, kind)
 	})
 	if err != nil {
-		s.Error(err, "locking workspace", "subject", id, "workspace", workspaceID)
+		s.logger.Error("locking workspace", "subject", id, "workspace", workspaceID, "err", err)
 		return nil, err
 	}
-	s.V(1).Info("locked workspace", "subject", id, "workspace", workspaceID)
+
+	s.logger.Info("locked workspace", "subject", id, "workspace", workspaceID)
 
 	return ws, nil
 }
@@ -78,10 +79,10 @@ func (s *Service) Unlock(ctx context.Context, workspaceID string, runID *string,
 		return ws.Unlock(id, kind, force)
 	})
 	if err != nil {
-		s.Error(err, "unlocking workspace", "subject", id, "workspace", workspaceID, "forced", force)
+		s.logger.Error("unlocking workspace", "subject", id, "workspace", workspaceID, "forced", force, "err", err)
 		return nil, err
 	}
-	s.V(1).Info("unlocked workspace", "subject", id, "workspace", workspaceID, "forced", force)
+	s.logger.Info("unlocked workspace", "subject", id, "workspace", workspaceID, "forced", force)
 
 	return ws, nil
 }

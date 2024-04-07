@@ -2,14 +2,15 @@ package scheduler
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/workspace"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 // TestScheduler checks the scheduler is creating workspace queues and
@@ -20,7 +21,7 @@ func TestScheduler(t *testing.T) {
 	t.Run("create workspace queue", func(t *testing.T) {
 		qf := &fakeQueueFactory{}
 		scheduler := scheduler{
-			Logger:       logr.Discard(),
+			logger:       slog.New(&xslog.NoopHandler{}),
 			queues:       make(map[string]eventHandler),
 			queueFactory: qf,
 		}
@@ -36,7 +37,7 @@ func TestScheduler(t *testing.T) {
 
 	t.Run("delete workspace queue", func(t *testing.T) {
 		scheduler := scheduler{
-			Logger: logr.Discard(),
+			logger: slog.New(&xslog.NoopHandler{}),
 			queues: map[string]eventHandler{
 				"ws-123": &fakeQueue{},
 			},
@@ -54,7 +55,7 @@ func TestScheduler(t *testing.T) {
 		q := &fakeQueue{}
 		want := &run.Run{WorkspaceID: "ws-123"}
 		scheduler := scheduler{
-			Logger: logr.Discard(),
+			logger: slog.New(&xslog.NoopHandler{}),
 			queues: map[string]eventHandler{
 				"ws-123": q,
 			},

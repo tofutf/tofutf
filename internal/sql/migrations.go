@@ -3,9 +3,9 @@ package sql
 import (
 	"embed"
 	"fmt"
+	"log/slog"
 	"sync"
 
-	"github.com/go-logr/logr"
 	"github.com/pressly/goose/v3"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -18,7 +18,7 @@ var (
 	migrations embed.FS
 )
 
-func migrate(logger logr.Logger, connStr string) error {
+func migrate(logger *slog.Logger, connStr string) error {
 	mu.Lock()
 	defer mu.Unlock()
 

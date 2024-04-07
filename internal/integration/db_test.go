@@ -2,15 +2,16 @@ package integration
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/sql"
 	"github.com/tofutf/tofutf/internal/sql/pggen"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 // TestWaitAndLock tests acquiring a connection from a pool, obtaining a session
@@ -22,7 +23,7 @@ func TestWaitAndLock(t *testing.T) {
 
 	ctx := context.Background()
 	db, err := sql.New(ctx, sql.Options{
-		Logger:     logr.Discard(),
+		Logger:     slog.New(&xslog.NoopHandler{}),
 		ConnString: sql.NewTestDB(t),
 	})
 	require.NoError(t, err)
@@ -42,7 +43,7 @@ func TestTx(t *testing.T) {
 
 	ctx := context.Background()
 	db, err := sql.New(ctx, sql.Options{
-		Logger:     logr.Discard(),
+		Logger:     slog.New(&xslog.NoopHandler{}),
 		ConnString: sql.NewTestDB(t),
 	})
 	require.NoError(t, err)

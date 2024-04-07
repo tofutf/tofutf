@@ -2,8 +2,8 @@ package vcsprovider
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/github"
@@ -18,8 +18,7 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
-
+		logger            *slog.Logger
 		site              internal.Authorizer
 		organization      internal.Authorizer
 		db                *pgdb
@@ -37,7 +36,7 @@ type (
 		*sql.DB
 		*tfeapi.Responder
 		html.Renderer
-		logr.Logger
+		Logger *slog.Logger
 		vcs.Subscriber
 
 		GithubAppService        *github.Service
@@ -57,7 +56,7 @@ func NewService(opts Options) *Service {
 		skipTLSVerification:     opts.SkipTLSVerification,
 	}
 	svc := Service{
-		Logger:          opts.Logger,
+		logger:          opts.Logger,
 		HostnameService: opts.HostnameService,
 		githubapps:      opts.GithubAppService,
 		site:            &internal.SiteAuthorizer{Logger: opts.Logger},
@@ -121,10 +120,11 @@ func (a *Service) Create(ctx context.Context, opts CreateOptions) (*VCSProvider,
 	}
 
 	if err := a.db.create(ctx, provider); err != nil {
-		a.Error(err, "creating vcs provider", "provider", provider, "subject", subject)
+		a.logger.Error("creating vcs provider", "provider", provider, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(0).Info("created vcs provider", "provider", provider, "subject", subject)
+
+	a.logger.Info("created vcs provider", "provider", provider, "subject", subject)
 	return provider, nil
 }
 
@@ -148,10 +148,11 @@ func (a *Service) Update(ctx context.Context, id string, opts UpdateOptions) (*V
 		return err
 	})
 	if err != nil {
-		a.Error(err, "updating vcs provider", "vcs_provider_id", id)
+		a.logger.Error("updating vcs provider", "vcs_provider_id", id, "err", err)
 		return nil, err
 	}
-	a.V(0).Info("updated vcs provider", "before", &before, "after", after, "subject", subject)
+
+	a.logger.Info("updated vcs provider", "before", &before, "after", after, "subject", subject)
 	return after, nil
 }
 
@@ -163,10 +164,11 @@ func (a *Service) List(ctx context.Context, organization string) ([]*VCSProvider
 
 	providers, err := a.db.listByOrganization(ctx, organization)
 	if err != nil {
-		a.Error(err, "listing vcs providers", "organization", organization, "subject", subject)
+		a.logger.Error("listing vcs providers", "organization", organization, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(9).Info("listed vcs providers", "organization", organization, "subject", subject)
+
+	a.logger.Debug("listed vcs providers", "organization", organization, "subject", subject)
 	return providers, nil
 }
 
@@ -178,10 +180,10 @@ func (a *Service) ListAllVCSProviders(ctx context.Context) ([]*VCSProvider, erro
 
 	providers, err := a.db.list(ctx)
 	if err != nil {
-		a.Error(err, "listing vcs providers", "subject", subject)
+		a.logger.Error("listing vcs providers", "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(9).Info("listed vcs providers", "subject", subject)
+	a.logger.Debug("listed vcs providers", "subject", subject)
 	return providers, nil
 }
 
@@ -194,10 +196,10 @@ func (a *Service) ListVCSProvidersByGithubAppInstall(ctx context.Context, instal
 
 	providers, err := a.db.listByGithubAppInstall(ctx, installID)
 	if err != nil {
-		a.Error(err, "listing github app installation vcs providers", "subject", subject, "install", installID)
+		a.logger.Error("listing github app installation vcs providers", "subject", subject, "install", installID, "err", err)
 		return nil, err
 	}
-	a.V(9).Info("listed github app installation vcs providers", "count", len(providers), "subject", subject, "install", installID)
+	a.logger.Debug("listed github app installation vcs providers", "count", len(providers), "subject", subject, "install", installID)
 	return providers, nil
 }
 
@@ -206,7 +208,7 @@ func (a *Service) Get(ctx context.Context, id string) (*VCSProvider, error) {
 	// authorization _after_ retrieving the provider
 	provider, err := a.db.get(ctx, id)
 	if err != nil {
-		a.Error(err, "retrieving vcs provider", "id", id)
+		a.logger.Error("retrieving vcs provider", "id", id, "err", err)
 		return nil, err
 	}
 
@@ -214,7 +216,7 @@ func (a *Service) Get(ctx context.Context, id string) (*VCSProvider, error) {
 	if err != nil {
 		return nil, err
 	}
-	a.V(9).Info("retrieved vcs provider", "provider", provider, "subject", subject)
+	a.logger.Debug("retrieved vcs provider", "provider", provider, "subject", subject)
 
 	return provider, nil
 }
@@ -224,6 +226,7 @@ func (a *Service) GetVCSClient(ctx context.Context, providerID string) (vcs.Clie
 	if err != nil {
 		return nil, err
 	}
+
 	return provider.NewClient()
 }
 
@@ -236,7 +239,7 @@ func (a *Service) Delete(ctx context.Context, id string) (*VCSProvider, error) {
 		// retrieve vcs provider first in order to get organization for authorization
 		provider, err = a.db.get(ctx, id)
 		if err != nil {
-			a.Error(err, "retrieving vcs provider", "id", id)
+			a.logger.Error("retrieving vcs provider", "id", id, "err", err)
 			return err
 		}
 
@@ -253,10 +256,11 @@ func (a *Service) Delete(ctx context.Context, id string) (*VCSProvider, error) {
 		return a.db.delete(ctx, id)
 	})
 	if err != nil {
-		a.Error(err, "deleting vcs provider", "provider", provider, "subject", subject)
+		a.logger.Error("deleting vcs provider", "provider", provider, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(0).Info("deleted vcs provider", "provider", provider, "subject", subject)
+
+	a.logger.Info("deleted vcs provider", "provider", provider, "subject", subject)
 	return provider, nil
 }
 

@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/leg100/surl"
 	"github.com/tofutf/tofutf/internal"
@@ -24,7 +24,7 @@ import (
 type tfe struct {
 	tfeClient
 
-	logr.Logger
+	logger *slog.Logger
 	*surl.Signer
 	*tfeapi.Responder
 
@@ -161,7 +161,7 @@ func (a *tfe) uploadConfigurationVersion() http.HandlerFunc {
 				// was received, and they aren't informed that their config
 				// exceeds the max size. To help them diagnose the cause, the
 				// error is logged on the server side too.
-				a.Error(err, "uploaded config exceeds max size", "bytes", a.maxConfigSize)
+				a.logger.Error("uploaded config exceeds max size", "bytes", a.maxConfigSize, "err", err)
 			} else {
 				tfeapi.Error(w, err)
 			}

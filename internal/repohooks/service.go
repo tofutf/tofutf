@@ -3,8 +3,8 @@ package repohooks
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/github"
@@ -17,22 +17,20 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
-
 		*db
 		*handlers     // handles incoming vcs events
 		*synchroniser // synchronise hooks
 
+		logger       *slog.Logger
 		vcsproviders *vcsprovider.Service
 	}
 
 	Options struct {
-		logr.Logger
-
 		OrganizationService *organization.Service
 		VCSProviderService  *vcsprovider.Service
 		GithubAppService    *github.Service
 		VCSEventBroker      *vcs.Broker
+		Logger              *slog.Logger
 
 		*sql.DB
 		*internal.HostnameService
@@ -47,7 +45,7 @@ type (
 func NewService(ctx context.Context, opts Options) *Service {
 	db := &db{opts.DB, opts.HostnameService}
 	svc := &Service{
-		Logger:       opts.Logger,
+		logger:       opts.Logger,
 		vcsproviders: opts.VCSProviderService,
 		db:           db,
 		handlers: newHandler(
@@ -55,7 +53,7 @@ func NewService(ctx context.Context, opts Options) *Service {
 			opts.VCSEventBroker,
 			db,
 		),
-		synchroniser: &synchroniser{Logger: opts.Logger, syncdb: db},
+		synchroniser: &synchroniser{logger: opts.Logger, syncdb: db},
 	}
 	// Delete webhooks prior to the deletion of VCS providers. VCS providers are
 	// necessary for the deletion of webhooks from VCS repos. Hence we need to
@@ -121,11 +119,13 @@ func (s *Service) DeleteUnreferencedRepohooks(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("listing unreferenced webhooks: %w", err)
 	}
+
 	for _, h := range hooks {
 		if err := s.deleteRepohook(ctx, h); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -134,10 +134,12 @@ func (s *Service) deleteOrganizationRepohooks(ctx context.Context, org *organiza
 	if err != nil {
 		return err
 	}
+
 	hooks, err := s.db.listHooks(ctx)
 	if err != nil {
 		return err
 	}
+
 	for _, p := range providers {
 		for _, h := range hooks {
 			if h.vcsProviderID == p.ID {
@@ -147,6 +149,7 @@ func (s *Service) deleteOrganizationRepohooks(ctx context.Context, org *organiza
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -155,6 +158,7 @@ func (s *Service) deleteProviderRepohooks(ctx context.Context, provider *vcsprov
 	if err != nil {
 		return err
 	}
+
 	for _, h := range hooks {
 		if h.vcsProviderID == provider.ID {
 			if err := s.deleteRepohook(ctx, h); err != nil {
@@ -162,6 +166,7 @@ func (s *Service) deleteProviderRepohooks(ctx context.Context, provider *vcsprov
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -178,9 +183,9 @@ func (s *Service) deleteRepohook(ctx context.Context, repohook *hook) error {
 		ID:   *repohook.cloudID,
 	})
 	if err != nil {
-		s.Error(err, "deleting webhook", "repo", repohook.repoPath, "cloud", repohook.cloud)
+		s.logger.Error("deleting webhook", "repo", repohook.repoPath, "cloud", repohook.cloud, "err", err)
 	} else {
-		s.V(0).Info("deleted webhook", "repo", repohook.repoPath, "cloud", repohook.cloud)
+		s.logger.Info("deleted webhook", "repo", repohook.repoPath, "cloud", repohook.cloud)
 	}
 	// Failure to delete the webhook from the cloud provider is not deemed a
 	// fatal error.

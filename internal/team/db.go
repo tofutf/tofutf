@@ -2,8 +2,8 @@ package team
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/jackc/pgtype"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/sql"
@@ -51,7 +51,7 @@ func (row TeamRow) ToTeam() *Team {
 // pgdb stores team resources in a postgres database
 type pgdb struct {
 	*sql.DB // provides access to generated SQL queries
-	logr.Logger
+	Logger  *slog.Logger
 }
 
 func (db *pgdb) createTeam(ctx context.Context, team *Team) error {

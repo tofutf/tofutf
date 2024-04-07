@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/leg100/surl"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/rbac"
 	"github.com/tofutf/tofutf/internal/sql"
@@ -23,8 +23,7 @@ import (
 
 type (
 	Options struct {
-		logr.Logger
-
+		Logger *slog.Logger
 		*sql.DB
 		*internal.HostnameService
 		*surl.Signer
@@ -34,7 +33,7 @@ type (
 	}
 
 	Service struct {
-		logger       logr.Logger
+		logger       *slog.Logger
 		organization internal.Authorizer
 
 		db *pgdb

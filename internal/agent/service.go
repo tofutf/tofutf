@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	otfhttp "github.com/tofutf/tofutf/internal/http"
 	"github.com/tofutf/tofutf/internal/http/html"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/rbac"
@@ -24,7 +24,7 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
+		logger *slog.Logger
 
 		organization internal.Authorizer
 
@@ -42,7 +42,7 @@ type (
 	}
 
 	ServiceOptions struct {
-		logr.Logger
+		Logger *slog.Logger
 		*sql.DB
 		*sql.Listener
 		html.Renderer
@@ -62,7 +62,7 @@ type (
 
 func NewService(opts ServiceOptions) *Service {
 	svc := &Service{
-		Logger:       opts.Logger,
+		logger:       opts.Logger,
 		db:           &db{DB: opts.DB},
 		organization: &organization.Authorizer{Logger: opts.Logger},
 		tokenFactory: &tokenFactory{
@@ -182,9 +182,9 @@ func (s *Service) AddHandlers(r *mux.Router) {
 	s.web.addHandlers(r)
 }
 
-func (s *Service) NewAllocator(logger logr.Logger) *allocator {
+func (s *Service) NewAllocator(logger *slog.Logger) *allocator {
 	return &allocator{
-		Logger: logger,
+		logger: logger,
 		client: s,
 	}
 }
@@ -198,13 +198,13 @@ func (s *Service) CreateAgentPool(ctx context.Context, opts CreateAgentPoolOptio
 	}
 	pool, err := newPool(opts)
 	if err != nil {
-		s.Error(err, "creating agent pool", "subject", subject)
+		s.logger.Error("creating agent pool", "subject", subject, "err", err)
 		return nil, err
 	}
 	if err := s.db.createPool(ctx, pool); err != nil {
 		return nil, err
 	}
-	s.V(0).Info("created agent pool", "subject", subject, "pool", pool)
+	s.logger.Info("created agent pool", "subject", subject, "pool", pool)
 	return pool, nil
 }
 
@@ -246,24 +246,26 @@ func (s *Service) updateAgentPool(ctx context.Context, poolID string, opts updat
 		return nil
 	})
 	if err != nil {
-		s.Error(err, "updating agent pool", "agent_pool_id", poolID, "subject", subject)
+		s.logger.Error("updating agent pool", "agent_pool_id", poolID, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("updated agent pool", "subject", subject, "before", &before, "after", &after)
+	s.logger.Info("updated agent pool", "subject", subject, "before", &before, "after", &after)
 	return &after, nil
 }
 
 func (s *Service) GetAgentPool(ctx context.Context, poolID string) (*Pool, error) {
 	pool, err := s.db.getPool(ctx, poolID)
 	if err != nil {
-		s.Error(err, "retrieving agent pool", "agent_pool_id", poolID)
+		s.logger.Error("retrieving agent pool", "agent_pool_id", poolID, "err", err)
 		return nil, err
 	}
+
 	subject, err := s.organization.CanAccess(ctx, rbac.GetAgentPoolAction, pool.Organization)
 	if err != nil {
 		return nil, err
 	}
-	s.V(9).Info("retrieved agent pool", "subject", subject, "organization", pool.Organization)
+
+	s.logger.Debug("retrieved agent pool", "subject", subject, "organization", pool.Organization)
 	return pool, nil
 }
 
@@ -274,10 +276,10 @@ func (s *Service) listAllAgentPools(ctx context.Context) ([]*Pool, error) {
 	}
 	pools, err := s.db.listPools(ctx)
 	if err != nil {
-		s.Error(err, "listing all agent pools", "subject", subject)
+		s.logger.Error("listing all agent pools", "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("listed all agent pools", "subject", subject, "count", len(pools))
+	s.logger.Debug("listed all agent pools", "subject", subject, "count", len(pools))
 	return pools, nil
 }
 
@@ -288,10 +290,10 @@ func (s *Service) listAgentPoolsByOrganization(ctx context.Context, organization
 	}
 	pools, err := s.db.listPoolsByOrganization(ctx, organization, opts)
 	if err != nil {
-		s.Error(err, "listing agent pools", "subject", subject)
+		s.logger.Error("listing agent pools", "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("listed agent pools", "subject", subject, "count", len(pools))
+	s.logger.Debug("listed agent pools", "subject", subject, "count", len(pools))
 	return pools, nil
 }
 
@@ -318,10 +320,10 @@ func (s *Service) deleteAgentPool(ctx context.Context, poolID string) (*Pool, er
 		return pool, subject, nil
 	}()
 	if err != nil {
-		s.Error(err, "deleting agent pool", "agent_pool_id", poolID, "subject", subject)
+		s.logger.Error("deleting agent pool", "agent_pool_id", poolID, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("deleted agent pool", "pool", pool, "subject", subject)
+	s.logger.Debug("deleted agent pool", "pool", pool, "subject", subject)
 	return pool, nil
 }
 
@@ -390,10 +392,10 @@ func (s *Service) registerAgent(ctx context.Context, opts registerAgentOptions) 
 		return agent, nil
 	}()
 	if err != nil {
-		s.Error(err, "registering agent")
+		s.logger.Error("registering agent", "err", err)
 		return nil, err
 	}
-	s.V(0).Info("registered agent", "agent", agent)
+	s.logger.Info("registered agent", "agent", agent)
 	return agent, nil
 }
 
@@ -430,14 +432,14 @@ func (s *Service) updateAgentStatus(ctx context.Context, agentID string, to Agen
 		return agent.setStatus(to, isAgent)
 	})
 	if err != nil {
-		s.Error(err, "updating agent status", "agent_id", agentID, "status", to, "subject", subject)
+		s.logger.Error("updating agent status", "agent_id", agentID, "status", to, "subject", subject, "err", err)
 		return err
 	}
 	if isAgent && from == to {
 		// if no change in status then log it as a ping
-		s.V(9).Info("received agent ping", "agent_id", agentID)
+		s.logger.Debug("received agent ping", "agent_id", agentID)
 	} else {
-		s.V(9).Info("updated agent status", "agent_id", agentID, "from", from, "to", to, "subject", subject)
+		s.logger.Debug("updated agent status", "agent_id", agentID, "from", from, "to", to, "subject", subject)
 	}
 	return nil
 }
@@ -464,10 +466,10 @@ func (s *Service) listAgentsByPool(ctx context.Context, poolID string) ([]*Agent
 
 func (s *Service) deleteAgent(ctx context.Context, agentID string) error {
 	if err := s.db.deleteAgent(ctx, agentID); err != nil {
-		s.Error(err, "deleting agent", "agent_id", agentID)
+		s.logger.Error("deleting agent", "agent_id", agentID, "err", err)
 		return err
 	}
-	s.V(2).Info("deleted agent", "agent_id", agentID)
+	s.logger.Debug("deleted agent", "agent_id", agentID)
 	return nil
 }
 
@@ -496,14 +498,15 @@ func (s *Service) cancelJob(ctx context.Context, run *otfrun.Run) error {
 			// ignore when no job has yet been created for the run.
 			return nil
 		}
-		s.Error(err, "canceling job", "spec", spec)
+		s.logger.Error("canceling job", "spec", spec, "err", err)
 		return err
 	}
 	if signal != nil {
-		s.V(4).Info("sending cancelation signal to job", "force-cancel", *signal, "job", job)
+		s.logger.Debug("sending cancelation signal to job", "force-cancel", *signal, "job", job)
 	} else {
-		s.V(4).Info("canceled job", "job", job)
+		s.logger.Info("canceled job", "job", job)
 	}
+
 	return nil
 }
 
@@ -570,10 +573,11 @@ func (s *Service) allocateJob(ctx context.Context, spec JobSpec, agentID string)
 		return job.allocate(agentID)
 	})
 	if err != nil {
-		s.Error(err, "allocating job", "spec", spec, "agent_id", agentID)
+		s.logger.Error("allocating job", "spec", spec, "agent_id", agentID, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("allocated job", "job", allocated, "agent_id", agentID)
+
+	s.logger.Info("allocated job", "job", allocated, "agent_id", agentID)
 	return allocated, nil
 }
 
@@ -587,10 +591,10 @@ func (s *Service) reallocateJob(ctx context.Context, spec JobSpec, agentID strin
 		return job.reallocate(agentID)
 	})
 	if err != nil {
-		s.Error(err, "re-allocating job", "spec", spec, "from", from, "to", agentID)
+		s.logger.Error("re-allocating job", "spec", spec, "from", from, "to", agentID, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("re-allocated job", "spec", spec, "from", from, "to", agentID)
+	s.logger.Info("re-allocated job", "spec", spec, "from", from, "to", agentID)
 	return reallocated, nil
 }
 
@@ -622,10 +626,10 @@ func (s *Service) startJob(ctx context.Context, spec JobSpec) ([]byte, error) {
 		return nil
 	})
 	if err != nil {
-		s.Error(err, "starting job", "spec", spec, "agent", subject)
+		s.logger.Error("starting job", "spec", spec, "agent", subject, "err", err)
 		return nil, err
 	}
-	s.V(2).Info("started job", "spec", spec, "agent", subject)
+	s.logger.Debug("started job", "spec", spec, "agent", subject)
 	return token, nil
 }
 
@@ -663,13 +667,13 @@ func (s *Service) finishJob(ctx context.Context, spec JobSpec, opts finishJobOpt
 		return job.finishJob(opts.Status)
 	})
 	if err != nil {
-		s.Error(err, "finishing job", "spec", spec)
+		s.logger.Error("finishing job", "spec", spec, "err", err)
 		return err
 	}
 	if opts.Error != "" {
-		s.V(2).Info("finished job with error", "job", job, "status", opts.Status, "job_error", opts.Error)
+		s.logger.Debug("finished job with error", "job", job, "status", opts.Status, "job_error", opts.Error)
 	} else {
-		s.V(2).Info("finished job", "job", job, "status", opts.Status)
+		s.logger.Debug("finished job", "job", job, "status", opts.Status)
 	}
 	return nil
 }
@@ -682,25 +686,29 @@ func (s *Service) CreateAgentToken(ctx context.Context, poolID string, opts Crea
 		if err != nil {
 			return nil, nil, nil, err
 		}
+
 		subject, err := s.organization.CanAccess(ctx, rbac.CreateAgentTokenAction, pool.Organization)
 		if err != nil {
 			return nil, nil, nil, err
 		}
+
 		at, token, err := s.NewAgentToken(poolID, opts)
 		if err != nil {
 			return nil, nil, nil, err
 		}
+
 		if err := s.db.createAgentToken(ctx, at); err != nil {
-			s.Error(err, "creating agent token", "organization", poolID, "id", at.ID, "subject", subject)
+			s.logger.Error("creating agent token", "organization", poolID, "id", at.ID, "subject", subject, "err", err)
 			return nil, nil, nil, err
 		}
+
 		return at, token, subject, nil
 	}()
 	if err != nil {
-		s.Error(err, "creating agent token", "agent_pool_id", poolID, "subject", subject)
+		s.logger.Error("creating agent token", "agent_pool_id", poolID, "subject", subject, "err", err)
 		return nil, nil, err
 	}
-	s.V(0).Info("created agent token", "token", at, "subject", subject)
+	s.logger.Info("created agent token", "token", at, "subject", subject)
 	return at, token, nil
 }
 
@@ -721,10 +729,10 @@ func (s *Service) GetAgentToken(ctx context.Context, tokenID string) (*agentToke
 		return at, subject, nil
 	}()
 	if err != nil {
-		s.Error(err, "retrieving agent token", "id", tokenID)
+		s.logger.Error("retrieving agent token", "id", tokenID, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("retrieved agent token", "token", at, "subject", subject)
+	s.logger.Debug("retrieved agent token", "token", at, "subject", subject)
 	return at, nil
 }
 
@@ -740,10 +748,10 @@ func (s *Service) ListAgentTokens(ctx context.Context, poolID string) ([]*agentT
 
 	tokens, err := s.db.listAgentTokens(ctx, poolID)
 	if err != nil {
-		s.Error(err, "listing agent tokens", "organization", poolID, "subject", subject)
+		s.logger.Error("listing agent tokens", "organization", poolID, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("listed agent tokens", "organization", poolID, "subject", subject)
+	s.logger.Info("listed agent tokens", "organization", poolID, "subject", subject)
 	return tokens, nil
 }
 
@@ -768,10 +776,10 @@ func (s *Service) DeleteAgentToken(ctx context.Context, tokenID string) (*agentT
 		return at, subject, nil
 	}()
 	if err != nil {
-		s.Error(err, "deleting agent token", "id", tokenID)
+		s.logger.Error("deleting agent token", "id", tokenID, "err", err)
 		return nil, err
 	}
 
-	s.V(0).Info("deleted agent token", "token", at, "subject", subject)
+	s.logger.Info("deleted agent token", "token", at, "subject", subject)
 	return at, nil
 }

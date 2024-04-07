@@ -2,10 +2,10 @@ package notifications
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/rbac"
 	"github.com/tofutf/tofutf/internal/sql"
@@ -14,8 +14,7 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
-
+		logger              *slog.Logger
 		workspaceAuthorizer internal.Authorizer // authorize workspaces actions
 		db                  *pgdb
 		api                 *tfe
@@ -26,7 +25,7 @@ type (
 		*sql.DB
 		*sql.Listener
 		*tfeapi.Responder
-		logr.Logger
+		Logger *slog.Logger
 
 		WorkspaceAuthorizer internal.Authorizer
 	}
@@ -34,7 +33,7 @@ type (
 
 func NewService(opts Options) *Service {
 	svc := Service{
-		Logger:              opts.Logger,
+		logger:              opts.Logger,
 		workspaceAuthorizer: opts.WorkspaceAuthorizer,
 		db:                  &pgdb{opts.DB},
 	}
@@ -70,16 +69,19 @@ func (s *Service) Create(ctx context.Context, workspaceID string, opts CreateCon
 	if err != nil {
 		return nil, err
 	}
+
 	nc, err := NewConfig(workspaceID, opts)
 	if err != nil {
-		s.Error(err, "constructing notification config", "subject", subject)
+		s.logger.Error("constructing notification config", "subject", subject, "err", err)
 		return nil, err
 	}
+
 	if err := s.db.create(ctx, nc); err != nil {
-		s.Error(err, "creating notification config", "config", nc, "subject", subject)
+		s.logger.Error("creating notification config", "config", nc, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.Info("creating notification config", "config", nc, "subject", subject)
+
+	s.logger.Info("creating notification config", "config", nc, "subject", subject)
 	return nc, nil
 }
 
@@ -93,24 +95,26 @@ func (s *Service) Update(ctx context.Context, id string, opts UpdateConfigOption
 		return nc.update(opts)
 	})
 	if err != nil {
-		s.Error(err, "updating notification config", "id", id, "subject", subject)
+		s.logger.Error("updating notification config", "id", id, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.Info("updated notification config", "updated", updated, "subject", subject)
+	s.logger.Info("updated notification config", "updated", updated, "subject", subject)
 	return updated, nil
 }
 
 func (s *Service) Get(ctx context.Context, id string) (*Config, error) {
 	nc, err := s.db.get(ctx, id)
 	if err != nil {
-		s.Error(err, "retrieving notification config", "id", id)
+		s.logger.Error("retrieving notification config", "id", id, "err", err)
 		return nil, err
 	}
+
 	subject, err := s.workspaceAuthorizer.CanAccess(ctx, rbac.GetNotificationConfigurationAction, nc.WorkspaceID)
 	if err != nil {
 		return nil, err
 	}
-	s.V(9).Info("retrieved notification config", "config", nc, "subject", subject)
+
+	s.logger.Debug("retrieved notification config", "config", nc, "subject", subject)
 	return nc, nil
 }
 
@@ -121,27 +125,30 @@ func (s *Service) List(ctx context.Context, workspaceID string) ([]*Config, erro
 	}
 	configs, err := s.db.list(ctx, workspaceID)
 	if err != nil {
-		s.Error(err, "listing notification configs", "id", workspaceID)
+		s.logger.Error("listing notification configs", "id", workspaceID, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("listed notification configs", "total", len(configs), "subject", subject)
+	s.logger.Debug("listed notification configs", "total", len(configs), "subject", subject)
 	return configs, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id string) error {
 	nc, err := s.db.get(ctx, id)
 	if err != nil {
-		s.Error(err, "retrieving notification config", "id", id)
+		s.logger.Error("retrieving notification config", "id", id, "err", err)
 		return err
 	}
+
 	subject, err := s.workspaceAuthorizer.CanAccess(ctx, rbac.DeleteNotificationConfigurationAction, nc.WorkspaceID)
 	if err != nil {
 		return err
 	}
+
 	if err := s.db.delete(ctx, id); err != nil {
-		s.Error(err, "deleting notification config", "id", id)
+		s.logger.Error("deleting notification config", "id", id, "err", err)
 		return err
 	}
-	s.Info("deleted notification config", "config", nc, "subject", subject)
+
+	s.logger.Info("deleted notification config", "config", nc, "subject", subject)
 	return nil
 }

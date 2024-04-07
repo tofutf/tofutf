@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/semver"
 	"github.com/tofutf/tofutf/internal/sql"
 )
@@ -20,7 +20,7 @@ const (
 
 type (
 	Service struct {
-		logr.Logger
+		logger *slog.Logger
 		*downloader
 		latestChecker
 
@@ -28,16 +28,16 @@ type (
 	}
 
 	Options struct {
-		logr.Logger
 		*sql.DB
 
+		Logger          *slog.Logger
 		TerraformBinDir string // destination directory for terraform binaries
 	}
 )
 
 func NewService(opts Options) *Service {
 	svc := &Service{
-		Logger:        opts.Logger,
+		logger:        opts.Logger,
 		db:            &db{opts.DB},
 		latestChecker: latestChecker{latestEndpoint},
 		downloader:    NewDownloader(opts.TerraformBinDir),
@@ -71,11 +71,12 @@ func (s *Service) StartLatestChecker(ctx context.Context) {
 			if err := s.db.updateLatestVersion(ctx, after); err != nil {
 				return err
 			}
-			s.V(1).Info("checked latest terraform version", "before", before, "after", after)
+
+			s.logger.Debug("checked latest terraform version", "before", before, "after", after)
 			return nil
 		}()
 		if err != nil {
-			s.Error(err, "checking latest terraform version")
+			s.logger.Error("checking latest terraform version", "err", err)
 		}
 	}
 	// check once at startup

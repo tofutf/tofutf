@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -18,7 +18,7 @@ import (
 type (
 	// Service is the service for github app management
 	Service struct {
-		logr.Logger
+		logger *slog.Logger
 
 		GithubHostname string
 
@@ -31,10 +31,10 @@ type (
 	Options struct {
 		*sql.DB
 		html.Renderer
-		logr.Logger
 		vcs.Publisher
 		*internal.HostnameService
 
+		Logger              *slog.Logger
 		GithubHostname      string
 		SkipTLSVerification bool
 	}
@@ -42,7 +42,7 @@ type (
 
 func NewService(opts Options) *Service {
 	svc := Service{
-		Logger:         opts.Logger,
+		logger:         opts.Logger,
 		GithubHostname: opts.GithubHostname,
 		site:           &internal.SiteAuthorizer{Logger: opts.Logger},
 		organization:   &organization.Authorizer{Logger: opts.Logger},
@@ -71,10 +71,11 @@ func (a *Service) CreateApp(ctx context.Context, opts CreateAppOptions) (*App, e
 	app := newApp(opts)
 
 	if err := a.db.create(ctx, app); err != nil {
-		a.Error(err, "creating github app", "app", app, "subject", subject)
+		a.logger.Error("creating github app", "app", app, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(0).Info("created github app", "app", app, "subject", subject)
+
+	a.logger.Info("created github app", "app", app, "subject", subject)
 	return app, nil
 }
 
@@ -90,7 +91,7 @@ func (a *Service) GetApp(ctx context.Context) (*App, error) {
 	} else if err != nil {
 		return nil, err
 	}
-	a.V(9).Info("retrieved github app", "app", app, "subject", subject)
+	a.logger.Debug("retrieved github app", "app", app, "subject", subject)
 
 	return app, nil
 }
@@ -103,10 +104,11 @@ func (a *Service) DeleteApp(ctx context.Context) error {
 
 	err = a.db.delete(ctx)
 	if err != nil {
-		a.Error(err, "deleting github app", "subject", subject)
+		a.logger.Error("deleting github app", "subject", subject, "err", err)
 		return err
 	}
-	a.V(0).Info("deleted github app", "subject", subject)
+
+	a.logger.Info("deleted github app", "subject", subject)
 	return nil
 }
 
@@ -117,18 +119,22 @@ func (a *Service) ListInstallations(ctx context.Context) ([]*Installation, error
 	} else if err != nil {
 		return nil, err
 	}
+
 	client, err := a.newClient(app)
 	if err != nil {
 		return nil, err
 	}
+
 	from, err := client.ListInstallations(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	to := make([]*Installation, len(from))
 	for i, f := range from {
 		to[i] = &Installation{Installation: f}
 	}
+
 	return to, nil
 }
 

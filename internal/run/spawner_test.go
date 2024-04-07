@@ -2,14 +2,15 @@ package run
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/vcs"
 	"github.com/tofutf/tofutf/internal/workspace"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestSpawner(t *testing.T) {
@@ -204,7 +205,7 @@ func TestSpawner(t *testing.T) {
 					pullFiles: tt.pullFiles,
 				},
 			}
-			err := spawner.handleWithError(logr.Discard(), tt.event)
+			err := spawner.handleWithError(slog.New(&xslog.NoopHandler{}), tt.event)
 			require.NoError(t, err)
 
 			assert.Equal(t, tt.spawn, runClient.spawned)

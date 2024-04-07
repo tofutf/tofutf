@@ -4,8 +4,8 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/run"
@@ -21,7 +21,7 @@ type (
 	// (a) manages lifecycle of workspace queues, creating/destroying them
 	// (b) relays run and workspace events onto queues.
 	scheduler struct {
-		logr.Logger
+		logger *slog.Logger
 
 		workspaces workspaceClient
 		runs       runClient
@@ -45,7 +45,7 @@ type (
 	}
 
 	Options struct {
-		logr.Logger
+		Logger *slog.Logger
 
 		WorkspaceClient workspaceClient
 		RunClient       runClient
@@ -54,7 +54,7 @@ type (
 
 func NewScheduler(opts Options) *scheduler {
 	return &scheduler{
-		Logger:       opts.Logger.WithValues("component", "scheduler"),
+		logger:       opts.Logger.With("component", "scheduler"),
 		workspaces:   opts.WorkspaceClient,
 		runs:         opts.RunClient,
 		queueFactory: queueMaker{},
@@ -155,7 +155,7 @@ func (s *scheduler) handleWorkspaceEvent(ctx context.Context, event pubsub.Event
 	q, ok := s.queues[event.Payload.ID]
 	if !ok {
 		q = s.newQueue(queueOptions{
-			Logger:          s.Logger,
+			logger:          s.logger,
 			runClient:       s.runs,
 			workspaceClient: s.workspaces,
 			Workspace:       event.Payload,
@@ -178,7 +178,7 @@ func (s *scheduler) handleRunEvent(ctx context.Context, event pubsub.Event[*run.
 	q, ok := s.queues[event.Payload.WorkspaceID]
 	if !ok {
 		// should never happen
-		s.Error(nil, "workspace queue does not exist for run event", "workspace", event.Payload.WorkspaceID, "run", event.Payload.ID, "event", event.Type)
+		s.logger.Error("workspace queue does not exist for run event", "workspace", event.Payload.WorkspaceID, "run", event.Payload.ID, "event", event.Type)
 		return nil
 	}
 	if err := q.handleRun(ctx, event.Payload); err != nil {

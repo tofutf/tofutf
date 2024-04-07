@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
 	"github.com/tofutf/tofutf/internal/json"
@@ -53,9 +53,9 @@ type (
 
 	// Server is the http server for OTF
 	Server struct {
-		logr.Logger
 		ServerConfig
 
+		logger *slog.Logger
 		server *http.Server
 	}
 
@@ -64,7 +64,7 @@ type (
 )
 
 // NewServer constructs the http server for OTF
-func NewServer(logger logr.Logger, cfg ServerConfig) (*Server, error) {
+func NewServer(logger *slog.Logger, cfg ServerConfig) (*Server, error) {
 	if cfg.SSL {
 		if cfg.CertFile == "" || cfg.KeyFile == "" {
 			return nil, fmt.Errorf("must provide both --cert-file and --key-file")
@@ -130,7 +130,7 @@ func NewServer(logger logr.Logger, cfg ServerConfig) (*Server, error) {
 	}
 
 	return &Server{
-		Logger:       logger,
+		logger:       logger,
 		ServerConfig: cfg,
 		server:       &http.Server{Handler: r},
 	}, nil
@@ -149,7 +149,7 @@ func (s *Server) Start(ctx context.Context, ln net.Listener) (err error) {
 		}
 	}()
 
-	s.Info("started server", "address", ln.Addr().String(), "ssl", s.SSL)
+	s.logger.Info("started server", "address", ln.Addr().String(), "ssl", s.SSL)
 
 	// Block until server stops listening or context is cancelled.
 	select {
@@ -159,7 +159,7 @@ func (s *Server) Start(ctx context.Context, ln net.Listener) (err error) {
 		}
 		return err
 	case <-ctx.Done():
-		s.Info("gracefully shutting down server...")
+		s.logger.Info("gracefully shutting down server...")
 
 		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()

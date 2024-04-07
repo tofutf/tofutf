@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,13 +16,13 @@ import (
 	"github.com/tofutf/tofutf/internal"
 	otfapi "github.com/tofutf/tofutf/internal/api"
 	"github.com/tofutf/tofutf/internal/configversion"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/logs"
 	"github.com/tofutf/tofutf/internal/releases"
 	"github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/state"
 	"github.com/tofutf/tofutf/internal/variable"
 	"github.com/tofutf/tofutf/internal/workspace"
+	"github.com/tofutf/tofutf/internal/xslog"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -65,14 +66,14 @@ type daemon struct {
 	config     Config
 	downloader downloader
 	registered chan *Agent
-	logger     logr.Logger // logger that logs messages regardless of whether agent is a pool agent or not.
-	poolLogger logr.Logger // logger that only logs messages if the agent is a pool agent.
+	logger     *slog.Logger // logger that logs messages regardless of whether agent is a pool agent or not.
+	poolLogger *slog.Logger // logger that only logs messages if the agent is a pool agent.
 
 	isPoolAgent bool
 }
 
 type DaemonOptions struct {
-	Logger logr.Logger
+	Logger *slog.Logger
 	Config Config
 	client *daemonClient
 
@@ -93,19 +94,19 @@ func newDaemon(opts DaemonOptions) (*daemon, error) {
 		// likely to contain duplicate logs from both the agent daemon and the
 		// agent service, but still make logger available to server agent when
 		// it does need to log something.
-		poolLogger = logr.NewNoopLogger()
+		poolLogger = slog.New(&xslog.NoopHandler{})
 	}
 	if opts.Config.Concurrency == 0 {
 		opts.Config.Concurrency = DefaultConcurrency
 	}
 	if opts.Config.Debug {
-		opts.Logger.V(0).Info("enabled debug mode")
+		opts.Logger.Debug("enabled debug mode")
 	}
 	if opts.Config.Sandbox {
 		if _, err := exec.LookPath("bwrap"); errors.Is(err, exec.ErrNotFound) {
 			return nil, fmt.Errorf("sandbox mode requires bubblewrap: %w", err)
 		}
-		opts.Logger.V(0).Info("enabled sandbox mode")
+		opts.Logger.Debug("enabled sandbox mode")
 	}
 	d := &daemon{
 		daemonClient: opts.client,
@@ -122,13 +123,13 @@ func newDaemon(opts DaemonOptions) (*daemon, error) {
 			return nil, fmt.Errorf("creating plugin cache directory: %w", err)
 		}
 		d.envs = append(d.envs, "TF_PLUGIN_CACHE_DIR="+PluginCacheDir)
-		opts.Logger.V(0).Info("enabled plugin cache", "path", PluginCacheDir)
+		opts.Logger.Debug("enabled plugin cache", "path", PluginCacheDir)
 	}
 	return d, nil
 }
 
 type ServerDaemonOptions struct {
-	Logger                      logr.Logger
+	Logger                      *slog.Logger
 	Config                      Config
 	RunService                  *run.Service
 	WorkspaceService            *workspace.Service
@@ -142,7 +143,7 @@ type ServerDaemonOptions struct {
 
 // NewServerDaemon constructs a server agent daemon that is part of the otfd
 // server.
-func NewServerDaemon(logger logr.Logger, cfg Config, opts ServerDaemonOptions) (*daemon, error) {
+func NewServerDaemon(logger *slog.Logger, cfg Config, opts ServerDaemonOptions) (*daemon, error) {
 	return newDaemon(DaemonOptions{
 		Logger: logger,
 		Config: cfg,
@@ -160,7 +161,7 @@ func NewServerDaemon(logger logr.Logger, cfg Config, opts ServerDaemonOptions) (
 }
 
 // NewPoolDaemon constructs a pool agent daemon that communicates with the otfd server via RPC.
-func NewPoolDaemon(logger logr.Logger, cfg Config, apiConfig otfapi.Config) (*daemon, error) {
+func NewPoolDaemon(logger *slog.Logger, cfg Config, apiConfig otfapi.Config) (*daemon, error) {
 	rpcClient, err := newRPCDaemonClient(apiConfig, nil)
 	if err != nil {
 		return nil, err
@@ -249,10 +250,10 @@ func (d *daemon) Start(ctx context.Context) error {
 						// sending an update.
 						return errors.New("agent status update failed due to conflict; agent needs to re-register")
 					} else {
-						d.poolLogger.Error(err, "sending agent status update", "status", status)
+						d.poolLogger.Error("sending agent status update", "status", status, "err", err)
 					}
 				} else {
-					d.poolLogger.V(9).Info("sent agent status update", "status", status)
+					d.poolLogger.Debug("sent agent status update", "status", status)
 				}
 			case <-ctx.Done():
 				// context canceled
@@ -292,12 +293,12 @@ func (d *daemon) Start(ctx context.Context) error {
 							if ctx.Err() != nil {
 								return nil
 							}
-							d.poolLogger.Error(err, "starting job")
+							d.poolLogger.Error("starting job", "err", err)
 							continue
 						}
-						d.poolLogger.V(0).Info("started job")
+						d.poolLogger.Debug("started job")
 						op := newOperation(newOperationOptions{
-							logger:      d.poolLogger.WithValues("job", j),
+							logger:      d.poolLogger.With("job", j),
 							client:      d.daemonClient,
 							config:      d.config,
 							agentID:     agent.ID,
@@ -310,7 +311,7 @@ func (d *daemon) Start(ctx context.Context) error {
 						// check operation in with the terminator, so that if a cancelation signal
 						// arrives it can be handled accordingly for the duration of the operation.
 						terminator.checkIn(j.Spec, op)
-						op.V(0).Info("started job")
+						op.logger.Debug("started job")
 						g.Go(func() error {
 							op.doAndFinish()
 							terminator.checkOut(op.job.Spec)
@@ -325,7 +326,7 @@ func (d *daemon) Start(ctx context.Context) error {
 			}
 			policy := backoff.WithContext(backoff.NewExponentialBackOff(), ctx)
 			_ = backoff.RetryNotify(processJobs, policy, func(err error, next time.Duration) {
-				d.poolLogger.Error(err, "waiting for next job", "backoff", next)
+				d.poolLogger.Error("waiting for next job", "backoff", next, "err", err)
 			})
 			// only stop retrying if context is canceled
 			if ctx.Err() != nil {

@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"math"
 	"net/http"
 	"slices"
@@ -12,7 +13,6 @@ import (
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/http/html"
 	"github.com/tofutf/tofutf/internal/http/html/paths"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/rbac"
 	"github.com/tofutf/tofutf/internal/resource"
@@ -26,7 +26,7 @@ type webHandlers struct {
 
 	svc        webClient
 	workspaces *workspacepkg.Service
-	logger     logr.Logger
+	logger     *slog.Logger
 }
 
 // webClient gives web handlers access to the agents service endpoints

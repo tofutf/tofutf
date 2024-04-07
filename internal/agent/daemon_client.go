@@ -2,13 +2,13 @@ package agent
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/tofutf/tofutf/internal"
 	otfapi "github.com/tofutf/tofutf/internal/api"
 	"github.com/tofutf/tofutf/internal/configversion"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/logs"
 	"github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/state"
@@ -99,7 +99,7 @@ func newRPCDaemonClient(cfg otfapi.Config, agentID *string) (*daemonClient, erro
 
 // newJobClient constructs a client for communicating with services via RPC on
 // behalf of a job, authenticating as a job using the job token arg.
-func (c *daemonClient) newJobClient(agentID string, token []byte, logger logr.Logger) (*daemonClient, error) {
+func (c *daemonClient) newJobClient(agentID string, token []byte, logger *slog.Logger) (*daemonClient, error) {
 	return newRPCDaemonClient(otfapi.Config{
 		Address:       c.address,
 		Token:         string(token),
@@ -109,7 +109,7 @@ func (c *daemonClient) newJobClient(agentID string, token []byte, logger logr.Lo
 			if n == 0 {
 				return
 			}
-			logger.Error(nil, "retrying request", "url", r.URL, "attempt", n)
+			logger.Error("retrying request", "url", r.URL, "attempt", n)
 		},
 	}, &agentID)
 }

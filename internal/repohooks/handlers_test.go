@@ -2,16 +2,17 @@ package repohooks
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func Test_repohookHandler(t *testing.T) {
@@ -24,7 +25,7 @@ func Test_repohookHandler(t *testing.T) {
 
 	broker := &fakeBroker{}
 	handler := newHandler(
-		logr.Discard(),
+		slog.New(&xslog.NoopHandler{}),
 		broker,
 		&fakeHandlerDB{
 			hook: hook,

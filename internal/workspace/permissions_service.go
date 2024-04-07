@@ -22,11 +22,11 @@ func (s *Service) SetPermission(ctx context.Context, workspaceID, teamID string,
 	}
 
 	if err := s.db.SetWorkspacePermission(ctx, workspaceID, teamID, role); err != nil {
-		s.Error(err, "setting workspace permission", "subject", subject, "workspace", workspaceID)
+		s.logger.Error("setting workspace permission", "subject", subject, "workspace", workspaceID, "err", err)
 		return err
 	}
 
-	s.V(0).Info("set workspace permission", "team_id", teamID, "role", role, "subject", subject, "workspace", workspaceID)
+	s.logger.Info("set workspace permission", "team_id", teamID, "role", role, "subject", subject, "workspace", workspaceID)
 
 	// TODO: publish event
 
@@ -36,11 +36,12 @@ func (s *Service) SetPermission(ctx context.Context, workspaceID, teamID string,
 func (s *Service) UnsetPermission(ctx context.Context, workspaceID, teamID string) error {
 	subject, err := s.CanAccess(ctx, rbac.UnsetWorkspacePermissionAction, workspaceID)
 	if err != nil {
-		s.Error(err, "unsetting workspace permission", "team_id", teamID, "subject", subject, "workspace", workspaceID)
+		s.logger.Error("unsetting workspace permission", "team_id", teamID, "subject", subject, "workspace", workspaceID, "err", err)
 		return err
 	}
 
-	s.V(0).Info("unset workspace permission", "team_id", teamID, "subject", subject, "workspace", workspaceID)
+	s.logger.Info("unset workspace permission", "team_id", teamID, "subject", subject, "workspace", workspaceID)
 	// TODO: publish event
+
 	return s.db.UnsetWorkspacePermission(ctx, workspaceID, teamID)
 }

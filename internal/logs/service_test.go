@@ -2,13 +2,14 @@ package logs
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestTail(t *testing.T) {
@@ -19,7 +20,7 @@ func TestTail(t *testing.T) {
 		app := &Service{
 			chunkproxy: &fakeTailProxy{},
 			broker:     &fakeSubService{stream: sub},
-			Logger:     logr.Discard(),
+			logger:     slog.New(&xslog.NoopHandler{}),
 			run:        &fakeAuthorizer{},
 		}
 
@@ -50,7 +51,7 @@ func TestTail(t *testing.T) {
 			broker: &fakeSubService{
 				stream: make(chan pubsub.Event[internal.Chunk]),
 			},
-			Logger: logr.Discard(),
+			logger: slog.New(&xslog.NoopHandler{}),
 			run:    &fakeAuthorizer{},
 		}
 		stream, err := svc.Tail(ctx, internal.GetChunkOptions{
@@ -72,7 +73,7 @@ func TestTail(t *testing.T) {
 		svc := &Service{
 			chunkproxy: &fakeTailProxy{chunk: want},
 			broker:     &fakeSubService{stream: sub},
-			Logger:     logr.Discard(),
+			logger:     slog.New(&xslog.NoopHandler{}),
 			run:        &fakeAuthorizer{},
 		}
 
@@ -115,7 +116,7 @@ func TestTail(t *testing.T) {
 		svc := &Service{
 			chunkproxy: &fakeTailProxy{chunk: want},
 			broker:     &fakeSubService{stream: sub},
-			Logger:     logr.Discard(),
+			logger:     slog.New(&xslog.NoopHandler{}),
 			run:        &fakeAuthorizer{},
 		}
 
@@ -154,7 +155,7 @@ func TestTail(t *testing.T) {
 		svc := &Service{
 			chunkproxy: &fakeTailProxy{},
 			broker:     &fakeSubService{stream: sub},
-			Logger:     logr.Discard(),
+			logger:     slog.New(&xslog.NoopHandler{}),
 			run:        &fakeAuthorizer{},
 		}
 

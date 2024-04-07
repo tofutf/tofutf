@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -21,11 +21,10 @@ var ErrRemovingOwnersTeamNotPermitted = errors.New("the owners team cannot be de
 
 type (
 	Service struct {
-		logr.Logger
-
 		organization internal.Authorizer // authorizes org access
 		team         internal.Authorizer // authorizes team access
 
+		logger *slog.Logger
 		db     *pgdb
 		web    *webHandlers
 		tfeapi *tfe
@@ -40,7 +39,7 @@ type (
 		*sql.DB
 		*tfeapi.Responder
 		html.Renderer
-		logr.Logger
+		Logger *slog.Logger
 
 		OrganizationService *organization.Service
 		TokensService       *tokens.Service
@@ -49,7 +48,7 @@ type (
 
 func NewService(opts Options) *Service {
 	svc := Service{
-		Logger:       opts.Logger,
+		logger:       opts.Logger,
 		organization: &organization.Authorizer{Logger: opts.Logger},
 		team:         &authorizer{Logger: opts.Logger},
 		db:           &pgdb{opts.DB, opts.Logger},
@@ -125,10 +124,11 @@ func (a *Service) Create(ctx context.Context, organization string, opts CreateTe
 		return nil
 	})
 	if err != nil {
-		a.Error(err, "creating team", "name", team.Name, "organization", organization, "subject", subject)
+		a.logger.Error("creating team", "name", team.Name, "organization", organization, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(0).Info("created team", "name", team.Name, "organization", organization, "subject", subject)
+
+	a.logger.Info("created team", "name", team.Name, "organization", organization, "subject", subject)
 
 	return team, nil
 }
@@ -140,7 +140,7 @@ func (a *Service) AfterCreateTeam(hook func(context.Context, *Team) error) {
 func (a *Service) Update(ctx context.Context, teamID string, opts UpdateTeamOptions) (*Team, error) {
 	team, err := a.db.getTeamByID(ctx, teamID)
 	if err != nil {
-		a.Error(err, "retrieving team", "team_id", teamID)
+		a.logger.Error("retrieving team", "team_id", teamID, "err", err)
 		return nil, err
 	}
 	subject, err := a.organization.CanAccess(ctx, rbac.UpdateTeamAction, team.Organization)
@@ -152,11 +152,11 @@ func (a *Service) Update(ctx context.Context, teamID string, opts UpdateTeamOpti
 		return team.Update(opts)
 	})
 	if err != nil {
-		a.Error(err, "updating team", "name", team.Name, "organization", team.Organization, "subject", subject)
+		a.logger.Error("updating team", "name", team.Name, "organization", team.Organization, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	a.V(2).Info("updated team", "name", team.Name, "organization", team.Organization, "subject", subject)
+	a.logger.Info("updated team", "name", team.Name, "organization", team.Organization, "subject", subject)
 
 	return team, nil
 }
@@ -170,10 +170,10 @@ func (a *Service) List(ctx context.Context, organization string) ([]*Team, error
 
 	teams, err := a.db.listTeams(ctx, organization)
 	if err != nil {
-		a.Error(err, "listing teams", "organization", organization, "subject", subject)
+		a.logger.Error("listing teams", "organization", organization, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(9).Info("listed teams", "organization", organization, "subject", subject)
+	a.logger.Debug("listed teams", "organization", organization, "subject", subject)
 
 	return teams, nil
 }
@@ -186,11 +186,11 @@ func (a *Service) Get(ctx context.Context, organization, name string) (*Team, er
 
 	team, err := a.db.getTeam(ctx, name, organization)
 	if err != nil {
-		a.Error(err, "retrieving team", "team", name, "organization", organization, "subject", subject)
+		a.logger.Error("retrieving team", "team", name, "organization", organization, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	a.V(9).Info("retrieved team", "team", name, "organization", organization, "subject", subject)
+	a.logger.Debug("retrieved team", "team", name, "organization", organization, "subject", subject)
 
 	return team, nil
 }
@@ -198,7 +198,7 @@ func (a *Service) Get(ctx context.Context, organization, name string) (*Team, er
 func (a *Service) GetByID(ctx context.Context, teamID string) (*Team, error) {
 	team, err := a.db.getTeamByID(ctx, teamID)
 	if err != nil {
-		a.Error(err, "retrieving team", "team_id", teamID)
+		a.logger.Error("retrieving team", "team_id", teamID, "err", err)
 		return nil, err
 	}
 
@@ -207,7 +207,7 @@ func (a *Service) GetByID(ctx context.Context, teamID string) (*Team, error) {
 		return nil, err
 	}
 
-	a.V(9).Info("retrieved team", "team", team.Name, "organization", team.Organization, "subject", subject)
+	a.logger.Debug("retrieved team", "team", team.Name, "organization", team.Organization, "subject", subject)
 
 	return team, nil
 }
@@ -215,7 +215,7 @@ func (a *Service) GetByID(ctx context.Context, teamID string) (*Team, error) {
 func (a *Service) Delete(ctx context.Context, teamID string) error {
 	team, err := a.db.getTeamByID(ctx, teamID)
 	if err != nil {
-		a.Error(err, "retrieving team", "team_id", teamID)
+		a.logger.Error("retrieving team", "team_id", teamID, "err", err)
 		return err
 	}
 
@@ -230,11 +230,11 @@ func (a *Service) Delete(ctx context.Context, teamID string) error {
 
 	err = a.db.deleteTeam(ctx, teamID)
 	if err != nil {
-		a.Error(err, "deleting team", "team", team.Name, "organization", team.Organization, "subject", subject)
+		a.logger.Error("deleting team", "team", team.Name, "organization", team.Organization, "subject", subject, "err", err)
 		return err
 	}
 
-	a.V(2).Info("deleted team", "team", team.Name, "organization", team.Organization, "subject", subject)
+	a.logger.Info("deleted team", "team", team.Name, "organization", team.Organization, "subject", subject)
 
 	return nil
 }
@@ -242,7 +242,7 @@ func (a *Service) Delete(ctx context.Context, teamID string) error {
 func (a *Service) GetTeamByTokenID(ctx context.Context, tokenID string) (*Team, error) {
 	team, err := a.db.getTeamByTokenID(ctx, tokenID)
 	if err != nil {
-		a.Error(err, "retrieving team by team token ID", "token_id", tokenID)
+		a.logger.Error("retrieving team by team token ID", "token_id", tokenID, "err", err)
 		return nil, err
 	}
 
@@ -251,7 +251,7 @@ func (a *Service) GetTeamByTokenID(ctx context.Context, tokenID string) (*Team, 
 		return nil, err
 	}
 
-	a.V(9).Info("retrieved team", "team", team.Name, "organization", team.Organization, "subject", subject)
+	a.logger.Debug("retrieved team", "team", team.Name, "organization", team.Organization, "subject", subject)
 
 	return team, nil
 }

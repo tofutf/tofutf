@@ -2,11 +2,12 @@ package daemon
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/xslog"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -25,7 +26,7 @@ func TestSubsystem(t *testing.T) {
 			sub := &Subsystem{
 				Name:      tt.name,
 				System:    &fakeStartable{},
-				Logger:    logr.Discard(),
+				Logger:    slog.New(&xslog.NoopHandler{}),
 				Exclusive: tt.exclusive,
 			}
 			if tt.exclusive {

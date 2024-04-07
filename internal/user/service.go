@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/rbac"
 	"github.com/tofutf/tofutf/internal/sql"
@@ -22,12 +22,11 @@ var ErrCannotDeleteOnlyOwner = errors.New("cannot remove the last owner")
 
 type (
 	Service struct {
-		logr.Logger
-
 		site         internal.Authorizer // authorizes site access
 		organization internal.Authorizer // authorizes org access
 		teams        *team.Service
 
+		logger *slog.Logger
 		db     *pgdb
 		web    *webHandlers
 		tfeapi *tfe
@@ -40,17 +39,17 @@ type (
 		SiteToken     string
 		TokensService *tokens.Service
 		TeamService   *team.Service
+		Logger        *slog.Logger
 
 		*sql.DB
 		*tfeapi.Responder
 		html.Renderer
-		logr.Logger
 	}
 )
 
 func NewService(opts Options) *Service {
 	svc := Service{
-		Logger:       opts.Logger,
+		logger:       opts.Logger,
 		organization: &organization.Authorizer{Logger: opts.Logger},
 		site:         &internal.SiteAuthorizer{Logger: opts.Logger},
 		db:           &pgdb{opts.DB, opts.Logger},
@@ -133,11 +132,11 @@ func (a *Service) Create(ctx context.Context, username string, opts ...NewUserOp
 	user := NewUser(username, opts...)
 
 	if err := a.db.CreateUser(ctx, user); err != nil {
-		a.Error(err, "creating user", "username", username, "subject", subject)
+		a.logger.Error("creating user", "username", username, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	a.V(0).Info("created user", "username", username, "subject", subject)
+	a.logger.Info("created user", "username", username, "subject", subject)
 
 	return user, nil
 }
@@ -150,11 +149,11 @@ func (a *Service) GetUser(ctx context.Context, spec UserSpec) (*User, error) {
 
 	user, err := a.db.getUser(ctx, spec)
 	if err != nil {
-		a.V(9).Info("retrieving user", "spec", spec, "subject", subject)
+		a.logger.Debug("retrieving user", "spec", spec, "subject", subject)
 		return nil, err
 	}
 
-	a.V(9).Info("retrieved user", "username", user.Username, "subject", subject)
+	a.logger.Debug("retrieved user", "username", user.Username, "subject", subject)
 
 	return user, nil
 }
@@ -195,11 +194,11 @@ func (a *Service) ListTeamUsers(ctx context.Context, teamID string) ([]*User, er
 
 	members, err := a.db.listTeamUsers(ctx, teamID)
 	if err != nil {
-		a.Error(err, "listing team members", "team_id", teamID, "subject", subject)
+		a.logger.Error("listing team members", "team_id", teamID, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	a.V(9).Info("listed team members", "team_id", teamID, "subject", subject)
+	a.logger.Debug("listed team members", "team_id", teamID, "subject", subject)
 
 	return members, nil
 }
@@ -212,11 +211,11 @@ func (a *Service) Delete(ctx context.Context, username string) error {
 
 	err = a.db.DeleteUser(ctx, UserSpec{Username: internal.String(username)})
 	if err != nil {
-		a.Error(err, "deleting user", "username", username, "subject", subject)
+		a.logger.Error("deleting user", "username", username, "subject", subject, "err", err)
 		return err
 	}
 
-	a.V(2).Info("deleted user", "username", username, "subject", subject)
+	a.logger.Info("deleted user", "username", username, "subject", subject)
 
 	return nil
 }
@@ -252,11 +251,11 @@ func (a *Service) AddTeamMembership(ctx context.Context, teamID string, username
 		return nil
 	})
 	if err != nil {
-		a.Error(err, "adding team membership", "user", usernames, "team", teamID, "subject", subject)
+		a.logger.Error("adding team membership", "user", usernames, "team", teamID, "subject", subject, "err", err)
 		return err
 	}
 
-	a.V(0).Info("added team membership", "users", usernames, "team", teamID, "subject", subject)
+	a.logger.Info("added team membership", "users", usernames, "team", teamID, "subject", subject)
 
 	return nil
 }
@@ -277,7 +276,7 @@ func (a *Service) RemoveTeamMembership(ctx context.Context, teamID string, usern
 	// (which is not allowed)
 	if team.Name == "owners" {
 		if owners, err := a.ListTeamUsers(ctx, team.ID); err != nil {
-			a.Error(err, "removing team membership: listing team members", "team_id", team.ID, "subject", subject)
+			a.logger.Error("removing team membership: listing team members", "team_id", team.ID, "subject", subject, "err", err)
 			return err
 		} else if len(owners) <= len(usernames) {
 			return ErrCannotDeleteOnlyOwner
@@ -285,10 +284,10 @@ func (a *Service) RemoveTeamMembership(ctx context.Context, teamID string, usern
 	}
 
 	if err := a.db.removeTeamMembership(ctx, teamID, usernames...); err != nil {
-		a.Error(err, "removing team membership", "users", usernames, "team", teamID, "subject", subject)
+		a.logger.Error("removing team membership", "users", usernames, "team", teamID, "subject", subject, "err", err)
 		return err
 	}
-	a.V(0).Info("removed team membership", "users", usernames, "team", teamID, "subject", subject)
+	a.logger.Info("removed team membership", "users", usernames, "team", teamID, "subject", subject)
 
 	return nil
 }
@@ -307,10 +306,12 @@ func (a *Service) SetSiteAdmins(ctx context.Context, usernames ...string) error 
 	}
 	promoted, demoted, err := a.db.setSiteAdmins(ctx, usernames...)
 	if err != nil {
-		a.Error(err, "setting site admins", "users", usernames)
+		a.logger.Error("setting site admins", "users", usernames, "err", err)
 		return err
 	}
-	a.V(0).Info("set site admins", "admins", usernames, "promoted", promoted, "demoted", demoted)
+
+	a.logger.Info("set site admins", "admins", usernames, "promoted", promoted, "demoted", demoted)
+
 	return nil
 }
 
@@ -326,16 +327,16 @@ func (a *Service) CreateToken(ctx context.Context, opts CreateUserTokenOptions) 
 
 	ut, token, err := a.NewUserToken(user.Username, opts)
 	if err != nil {
-		a.Error(err, "constructing user token", "user", user)
+		a.logger.Error("constructing user token", "user", user, "err", err)
 		return nil, nil, err
 	}
 
 	if err := a.db.createUserToken(ctx, ut); err != nil {
-		a.Error(err, "creating token", "user", user)
+		a.logger.Error("creating token", "user", user, "err", err)
 		return nil, nil, err
 	}
 
-	a.V(1).Info("created user token", "user", user)
+	a.logger.Info("created user token", "user", user)
 
 	return ut, token, nil
 }
@@ -357,7 +358,7 @@ func (a *Service) DeleteToken(ctx context.Context, tokenID string) error {
 
 	token, err := a.db.getUserToken(ctx, tokenID)
 	if err != nil {
-		a.Error(err, "retrieving token", "user", user)
+		a.logger.Error("retrieving token", "user", user, "err", err)
 		return err
 	}
 
@@ -366,11 +367,11 @@ func (a *Service) DeleteToken(ctx context.Context, tokenID string) error {
 	}
 
 	if err := a.db.deleteUserToken(ctx, tokenID); err != nil {
-		a.Error(err, "deleting user token", "user", user)
+		a.logger.Error("deleting user token", "user", user, "err", err)
 		return err
 	}
 
-	a.V(1).Info("deleted user token", "username", user)
+	a.logger.Info("deleted user token", "username", user)
 
 	return nil
 }

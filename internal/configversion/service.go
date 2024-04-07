@@ -2,8 +2,8 @@ package configversion
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/leg100/surl"
 	"github.com/tofutf/tofutf/internal"
@@ -15,10 +15,9 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
-
 		workspace internal.Authorizer
 
+		logger *slog.Logger
 		db     *pgdb
 		cache  internal.Cache
 		tfeapi *tfe
@@ -26,7 +25,7 @@ type (
 	}
 
 	Options struct {
-		logr.Logger
+		Logger *slog.Logger
 
 		WorkspaceAuthorizer internal.Authorizer
 		MaxConfigSize       int64
@@ -40,7 +39,7 @@ type (
 
 func NewService(opts Options) *Service {
 	svc := Service{
-		Logger: opts.Logger,
+		logger: opts.Logger,
 	}
 
 	svc.workspace = opts.WorkspaceAuthorizer
@@ -48,7 +47,7 @@ func NewService(opts Options) *Service {
 	svc.db = &pgdb{opts.DB}
 	svc.cache = opts.Cache
 	svc.tfeapi = &tfe{
-		Logger:        opts.Logger,
+		logger:        opts.Logger,
 		tfeClient:     &svc,
 		Signer:        opts.Signer,
 		Responder:     opts.Responder,
@@ -82,14 +81,14 @@ func (s *Service) Create(ctx context.Context, workspaceID string, opts CreateOpt
 
 	cv, err := NewConfigurationVersion(workspaceID, opts)
 	if err != nil {
-		s.Error(err, "constructing configuration version", "id", cv.ID, "subject", subject)
+		s.logger.Error("constructing configuration version", "id", cv.ID, "subject", subject, "err", err)
 		return nil, err
 	}
 	if err := s.db.CreateConfigurationVersion(ctx, cv); err != nil {
-		s.Error(err, "creating configuration version", "id", cv.ID, "subject", subject)
+		s.logger.Error("creating configuration version", "id", cv.ID, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(1).Info("created configuration version", "id", cv.ID, "subject", subject)
+	s.logger.Info("created configuration version", "id", cv.ID, "subject", subject)
 	return cv, nil
 }
 
@@ -101,11 +100,11 @@ func (s *Service) List(ctx context.Context, workspaceID string, opts ListOptions
 
 	cvl, err := s.db.ListConfigurationVersions(ctx, workspaceID, ListOptions{PageOptions: opts.PageOptions})
 	if err != nil {
-		s.Error(err, "listing configuration versions")
+		s.logger.Error("listing configuration versions", "err", err)
 		return nil, err
 	}
 
-	s.V(9).Info("listed configuration versions", "subject", subject)
+	s.logger.Debug("listed configuration versions", "subject", subject)
 	return cvl, nil
 }
 
@@ -117,10 +116,10 @@ func (s *Service) Get(ctx context.Context, cvID string) (*ConfigurationVersion, 
 
 	cv, err := s.db.GetConfigurationVersion(ctx, ConfigurationVersionGetOptions{ID: &cvID})
 	if err != nil {
-		s.Error(err, "retrieving configuration version", "id", cvID, "subject", subject)
+		s.logger.Error("retrieving configuration version", "id", cvID, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("retrieved configuration version", "id", cvID, "subject", subject)
+	s.logger.Debug("retrieved configuration version", "id", cvID, "subject", subject)
 	return cv, nil
 }
 
@@ -132,10 +131,10 @@ func (s *Service) GetLatest(ctx context.Context, workspaceID string) (*Configura
 
 	cv, err := s.db.GetConfigurationVersion(ctx, ConfigurationVersionGetOptions{WorkspaceID: &workspaceID})
 	if err != nil {
-		s.Error(err, "retrieving latest configuration version", "workspace_id", workspaceID, "subject", subject)
+		s.logger.Error("retrieving latest configuration version", "workspace_id", workspaceID, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("retrieved latest configuration version", "workspace_id", workspaceID, "subject", subject)
+	s.logger.Debug("retrieved latest configuration version", "workspace_id", workspaceID, "subject", subject)
 	return cv, nil
 }
 
@@ -147,10 +146,10 @@ func (s *Service) Delete(ctx context.Context, cvID string) error {
 
 	err = s.db.DeleteConfigurationVersion(ctx, cvID)
 	if err != nil {
-		s.Error(err, "deleting configuration version", "id", cvID, "subject", subject)
+		s.logger.Error("deleting configuration version", "id", cvID, "subject", subject, "err", err)
 		return err
 	}
-	s.V(2).Info("deleted configuration version", "id", cvID, "subject", subject)
+	s.logger.Debug("deleted configuration version", "id", cvID, "subject", subject)
 	return nil
 }
 

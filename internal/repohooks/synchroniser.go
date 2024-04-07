@@ -3,8 +3,8 @@ package repohooks
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/tofutf/tofutf/internal"
@@ -14,7 +14,7 @@ import (
 type (
 	// synchroniser synchronises a hook with the vcs provider
 	synchroniser struct {
-		logr.Logger
+		logger *slog.Logger
 		syncdb
 	}
 
@@ -35,7 +35,7 @@ func (s *synchroniser) sync(ctx context.Context, client vcs.Client, hook *hook) 
 		if err != nil {
 			return err
 		}
-		s.Info("created webhook", "webhook", hook)
+		s.logger.Info("created webhook", "webhook", hook)
 		if err := s.updateHookCloudID(ctx, hook.id, cloudID); err != nil {
 			return err
 		}
@@ -64,6 +64,6 @@ func (s *synchroniser) sync(ctx context.Context, client vcs.Client, hook *hook) 
 	if err != nil {
 		return err
 	}
-	s.Info("updated webhook", "webhook", hook)
+	s.logger.Info("updated webhook", "webhook", hook)
 	return nil
 }

@@ -3,11 +3,11 @@ package html
 import (
 	"io"
 	"log"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/jaschaephraim/lrserver"
-	"github.com/tofutf/tofutf/internal/logr"
 )
 
 var (
@@ -29,7 +29,7 @@ var (
 	}
 )
 
-func startLiveReloadServer(logger logr.Logger) error {
+func startLiveReloadServer(logger *slog.Logger) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func startLiveReloadServer(logger logr.Logger) error {
 			case event := <-watcher.Events:
 				srv.Reload(event.Name)
 			case err := <-watcher.Errors:
-				logger.Error(err, "livereload watcher error")
+				logger.Error("livereload watcher error", "err", err)
 			}
 		}
 	}()

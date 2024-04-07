@@ -74,16 +74,16 @@ func (a *Service) CreateTeamToken(ctx context.Context, opts CreateTokenOptions) 
 
 	tt, token, err := a.NewTeamToken(opts)
 	if err != nil {
-		a.Error(err, "constructing team token", "team_id", opts.TeamID)
+		a.logger.Error("constructing team token", "team_id", opts.TeamID, "err", err)
 		return nil, nil, err
 	}
 
 	if err := a.db.createTeamToken(ctx, tt); err != nil {
-		a.Error(err, "creating team token", "token", tt)
+		a.logger.Error("creating team token", "token", tt, "err", err)
 		return nil, nil, err
 	}
 
-	a.V(0).Info("created team token", "token", tt)
+	a.logger.Info("created team token", "token", tt)
 
 	return tt, token, nil
 }
@@ -103,11 +103,11 @@ func (a *Service) DeleteTeamToken(ctx context.Context, teamID string) error {
 	}
 
 	if err := a.db.deleteTeamToken(ctx, teamID); err != nil {
-		a.Error(err, "deleting team token", "team", teamID)
+		a.logger.Error("deleting team token", "team", teamID, "err", err)
 		return err
 	}
 
-	a.V(0).Info("deleted team token", "team", teamID)
+	a.logger.Info("deleted team token", "team", teamID)
 
 	return nil
 }

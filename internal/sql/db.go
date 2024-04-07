@@ -3,11 +3,11 @@ package sql
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -24,12 +24,12 @@ type (
 	// SQL
 	DB struct {
 		*pgxpool.Pool // db connection pool
-		logr.Logger
+		logger        *slog.Logger
 	}
 
 	// Options for constructing a DB
 	Options struct {
-		Logger     logr.Logger
+		Logger     *slog.Logger
 		ConnString string
 	}
 
@@ -67,7 +67,7 @@ func New(ctx context.Context, opts Options) (*DB, error) {
 
 	return &DB{
 		Pool:   pool,
-		Logger: opts.Logger,
+		logger: opts.Logger,
 	}, nil
 }
 
@@ -133,7 +133,7 @@ func (db *DB) WaitAndLock(ctx context.Context, id int64, fn func(context.Context
 		defer func() {
 			_, closeErr := conn.Exec(ctx, "SELECT pg_advisory_unlock($1)", id)
 			if err != nil {
-				db.Error(err, "unlocking session-level advisory lock")
+				db.logger.Error("unlocking session-level advisory lock", "err", err)
 				return
 			}
 			err = closeErr

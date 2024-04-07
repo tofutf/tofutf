@@ -2,15 +2,15 @@ package team
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/rbac"
 )
 
 // authorizer authorizes access to a team
 type authorizer struct {
-	logr.Logger
+	Logger *slog.Logger
 }
 
 func (a *authorizer) CanAccess(ctx context.Context, action rbac.Action, teamID string) (internal.Subject, error) {
@@ -24,6 +24,6 @@ func (a *authorizer) CanAccess(ctx context.Context, action rbac.Action, teamID s
 	if subj.CanAccessTeam(action, teamID) {
 		return subj, nil
 	}
-	a.Error(nil, "unauthorized action", "team_id", teamID, "action", action.String(), "subject", subj)
+	a.Logger.Error("unauthorized action", "team_id", teamID, "action", action.String(), "subject", subj)
 	return nil, internal.ErrAccessNotPermitted
 }

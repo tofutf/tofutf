@@ -2,14 +2,14 @@ package internal
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal/rbac"
 )
 
 // SiteAuthorizer authorizes access to site-wide actions
 type SiteAuthorizer struct {
-	logr.Logger
+	Logger *slog.Logger
 }
 
 func (a *SiteAuthorizer) CanAccess(ctx context.Context, action rbac.Action, _ string) (Subject, error) {
@@ -20,6 +20,6 @@ func (a *SiteAuthorizer) CanAccess(ctx context.Context, action rbac.Action, _ st
 	if subj.CanAccessSite(action) {
 		return subj, nil
 	}
-	a.Error(nil, "unauthorized action", "action", action, "subject", subj)
+	a.Logger.Error("unauthorized action", "action", action, "subject", subj)
 	return nil, ErrAccessNotPermitted
 }

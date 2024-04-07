@@ -2,11 +2,12 @@ package organization
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestAuthorize(t *testing.T) {
@@ -24,7 +25,7 @@ func TestAuthorize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := internal.AddSubjectToContext(context.Background(), tt.subject)
 			svc := &Service{
-				Logger:                       logr.Discard(),
+				logger:                       slog.New(&xslog.NoopHandler{}),
 				RestrictOrganizationCreation: tt.restrict,
 			}
 			_, err := svc.restrictOrganizationCreation(ctx)

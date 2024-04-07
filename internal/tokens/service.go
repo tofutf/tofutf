@@ -1,7 +1,8 @@
 package tokens
 
 import (
-	"github.com/go-logr/logr"
+	"log/slog"
+
 	"github.com/gorilla/mux"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/tofutf/tofutf/internal"
@@ -9,27 +10,26 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
 		*factory
 		*registry
 		*sessionFactory
 
-		site internal.Authorizer // authorizes site access
-
+		site       internal.Authorizer // authorizes site access
+		logger     *slog.Logger
 		middleware mux.MiddlewareFunc
 	}
 
 	Options struct {
-		logr.Logger
 		GoogleIAPConfig
 
+		Logger *slog.Logger
 		Secret []byte
 	}
 )
 
 func NewService(opts Options) (*Service, error) {
 	svc := Service{
-		Logger: opts.Logger,
+		logger: opts.Logger,
 		site:   &internal.SiteAuthorizer{Logger: opts.Logger},
 	}
 	key, err := jwk.FromRaw([]byte(opts.Secret))
@@ -42,7 +42,7 @@ func NewService(opts Options) (*Service, error) {
 		kinds: make(map[Kind]SubjectGetter),
 	}
 	svc.middleware = newMiddleware(middlewareOptions{
-		Logger:          opts.Logger,
+		logger:          opts.Logger,
 		GoogleIAPConfig: opts.GoogleIAPConfig,
 		key:             key,
 		registry:        svc.registry,

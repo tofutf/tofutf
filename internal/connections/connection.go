@@ -5,8 +5,8 @@ package connections
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/repohooks"
 	"github.com/tofutf/tofutf/internal/sql"
 	"github.com/tofutf/tofutf/internal/sql/pggen"
@@ -48,18 +48,17 @@ type (
 	}
 
 	Options struct {
-		logr.Logger
 		*sql.DB
 
+		Logger             *slog.Logger
 		VCSProviderService *vcsprovider.Service
 		RepoHooksService   *repohooks.Service
 	}
 
 	Service struct {
-		logr.Logger
-
 		*db
 
+		logger       *slog.Logger
 		repohooks    *repohooks.Service
 		vcsproviders *vcsprovider.Service
 	}
@@ -67,7 +66,7 @@ type (
 
 func NewService(ctx context.Context, opts Options) *Service {
 	return &Service{
-		Logger:       opts.Logger,
+		logger:       opts.Logger,
 		vcsproviders: opts.VCSProviderService,
 		repohooks:    opts.RepoHooksService,
 		db:           &db{opts.DB},

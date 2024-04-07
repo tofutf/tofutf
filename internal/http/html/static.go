@@ -3,11 +3,11 @@ package html
 import (
 	"embed"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/tofutf/tofutf/internal/logr"
 )
 
 var (
@@ -25,7 +25,7 @@ var (
 // (JS, CSS, etc) from within go binary. Enabling developer mode sources files from
 // local disk instead and starts a live reload server, which reloads the browser
 // whenever static files change.
-func AddStaticHandler(logger logr.Logger, r *mux.Router, devMode bool) error {
+func AddStaticHandler(logger *slog.Logger, r *mux.Router, devMode bool) error {
 	var fs http.FileSystem
 	if devMode {
 		if err := startLiveReloadServer(logger); err != nil {

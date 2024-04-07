@@ -3,12 +3,13 @@ package configversion
 import (
 	"crypto/rand"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	otfhttp "github.com/tofutf/tofutf/internal/http"
-	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/xslog"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ import (
 
 func TestUploadConfigurationVersion(t *testing.T) {
 	api := &tfe{
-		Logger: logr.Discard(),
+		logger: slog.New(&xslog.NoopHandler{}),
 		// only permit upto 100 byte uploads
 		maxConfigSize: 100,
 		tfeClient:     &fakeConfigService{},

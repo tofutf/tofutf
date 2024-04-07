@@ -2,8 +2,8 @@ package workspace
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/connections"
@@ -22,12 +22,11 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
-
 		site                internal.Authorizer
 		organization        internal.Authorizer
 		internal.Authorizer // workspace authorizer
 
+		logger      *slog.Logger
 		db          *pgdb
 		web         *webHandlers
 		tfeapi      *tfe
@@ -46,7 +45,7 @@ type (
 		*tfeapi.Responder
 		html.Renderer
 
-		logr.Logger
+		Logger *slog.Logger
 
 		OrganizationService *organization.Service
 		VCSProviderService  *vcsprovider.Service
@@ -58,9 +57,9 @@ type (
 func NewService(opts Options) *Service {
 	db := &pgdb{opts.DB}
 	svc := Service{
-		Logger: opts.Logger,
+		logger: opts.Logger,
 		Authorizer: &authorizer{
-			Logger: opts.Logger,
+			logger: opts.Logger,
 			db:     db,
 		},
 		db:           db,
@@ -115,7 +114,7 @@ func (s *Service) Watch(ctx context.Context) (<-chan pubsub.Event[*Workspace], f
 func (s *Service) Create(ctx context.Context, opts CreateOptions) (*Workspace, error) {
 	ws, err := NewWorkspace(opts)
 	if err != nil {
-		s.Error(err, "constructing workspace")
+		s.logger.Error("constructing workspace", "err", err)
 		return nil, err
 	}
 
@@ -155,11 +154,11 @@ func (s *Service) Create(ctx context.Context, opts CreateOptions) (*Workspace, e
 		return nil
 	})
 	if err != nil {
-		s.Error(err, "creating workspace", "id", ws.ID, "name", ws.Name, "organization", ws.Organization, "subject", subject)
+		s.logger.Error("creating workspace", "id", ws.ID, "name", ws.Name, "organization", ws.Organization, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	s.V(0).Info("created workspace", "id", ws.ID, "name", ws.Name, "organization", ws.Organization, "subject", subject)
+	s.logger.Info("created workspace", "id", ws.ID, "name", ws.Name, "organization", ws.Organization, "subject", subject)
 
 	return ws, nil
 }
@@ -180,11 +179,11 @@ func (s *Service) Get(ctx context.Context, workspaceID string) (*Workspace, erro
 
 	ws, err := s.db.get(ctx, workspaceID)
 	if err != nil {
-		s.Error(err, "retrieving workspace", "subject", subject, "workspace", workspaceID)
+		s.logger.Error("retrieving workspace", "subject", subject, "workspace", workspaceID, "err", err)
 		return nil, err
 	}
 
-	s.V(9).Info("retrieved workspace", "subject", subject, "workspace", workspaceID)
+	s.logger.Debug("retrieved workspace", "subject", subject, "workspace", workspaceID)
 
 	return ws, nil
 }
@@ -192,7 +191,7 @@ func (s *Service) Get(ctx context.Context, workspaceID string) (*Workspace, erro
 func (s *Service) GetByName(ctx context.Context, organization, workspace string) (*Workspace, error) {
 	ws, err := s.db.getByName(ctx, organization, workspace)
 	if err != nil {
-		s.Error(err, "retrieving workspace", "organization", organization, "workspace", workspace)
+		s.logger.Error("retrieving workspace", "organization", organization, "workspace", workspace, "err", err)
 		return nil, err
 	}
 
@@ -201,7 +200,7 @@ func (s *Service) GetByName(ctx context.Context, organization, workspace string)
 		return nil, err
 	}
 
-	s.V(9).Info("retrieved workspace", "subject", subject, "organization", organization, "workspace", workspace)
+	s.logger.Debug("retrieved workspace", "subject", subject, "organization", organization, "workspace", workspace)
 
 	return ws, nil
 }
@@ -278,11 +277,11 @@ func (s *Service) Update(ctx context.Context, workspaceID string, opts UpdateOpt
 		return nil
 	})
 	if err != nil {
-		s.Error(err, "updating workspace", "workspace", workspaceID, "subject", subject)
+		s.logger.Error("updating workspace", "workspace", workspaceID, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	s.V(0).Info("updated workspace", "workspace", workspaceID, "subject", subject)
+	s.logger.Info("updated workspace", "workspace", workspaceID, "subject", subject)
 
 	return updated, nil
 }
@@ -306,11 +305,11 @@ func (s *Service) Delete(ctx context.Context, workspaceID string) (*Workspace, e
 	}
 
 	if err := s.db.delete(ctx, ws.ID); err != nil {
-		s.Error(err, "deleting workspace", "id", ws.ID, "name", ws.Name, "subject", subject)
+		s.logger.Error("deleting workspace", "id", ws.ID, "name", ws.Name, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	s.V(0).Info("deleted workspace", "id", ws.ID, "name", ws.Name, "subject", subject)
+	s.logger.Info("deleted workspace", "id", ws.ID, "name", ws.Name, "subject", subject)
 
 	return ws, nil
 }
@@ -329,10 +328,10 @@ func (s *Service) connect(ctx context.Context, workspaceID string, connection *C
 		RepoPath:       connection.Repo,
 	})
 	if err != nil {
-		s.Error(err, "connecting workspace", "workspace", workspaceID, "subject", subject, "repo", connection.Repo)
+		s.logger.Error("connecting workspace", "workspace", workspaceID, "subject", subject, "repo", connection.Repo, "err", err)
 		return err
 	}
-	s.V(0).Info("connected workspace repo", "workspace", workspaceID, "subject", subject, "repo", connection.Repo)
+	s.logger.Info("connected workspace repo", "workspace", workspaceID, "subject", subject, "repo", connection.Repo)
 
 	return nil
 }
@@ -348,11 +347,11 @@ func (s *Service) disconnect(ctx context.Context, workspaceID string) error {
 		ResourceID:     workspaceID,
 	})
 	if err != nil {
-		s.Error(err, "disconnecting workspace", "workspace", workspaceID, "subject", subject)
+		s.logger.Error("disconnecting workspace", "workspace", workspaceID, "subject", subject, "err", err)
 		return err
 	}
 
-	s.V(0).Info("disconnected workspace", "workspace", workspaceID, "subject", subject)
+	s.logger.Info("disconnected workspace", "workspace", workspaceID, "subject", subject)
 
 	return nil
 }

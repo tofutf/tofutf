@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log/slog"
 	"net/url"
 	"os"
 	"os/exec"
@@ -18,7 +19,6 @@ import (
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/daemon"
 	"github.com/tofutf/tofutf/internal/github"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/module"
 	"github.com/tofutf/tofutf/internal/notifications"
 	"github.com/tofutf/tofutf/internal/organization"
@@ -32,6 +32,7 @@ import (
 	"github.com/tofutf/tofutf/internal/vcs"
 	"github.com/tofutf/tofutf/internal/vcsprovider"
 	"github.com/tofutf/tofutf/internal/workspace"
+	xslog "github.com/tofutf/tofutf/internal/xslog"
 )
 
 type (
@@ -97,13 +98,13 @@ func setup(t *testing.T, cfg *config, gopts ...github.TestServerOption) (*testDa
 	}
 
 	// Configure logger; discard logs by default
-	var logger logr.Logger
+	var logger *slog.Logger
 	if _, ok := os.LookupEnv("OTF_INTEGRATION_TEST_ENABLE_LOGGER"); ok {
 		var err error
-		logger, err = logr.New(&logr.Config{Verbosity: 9, Format: "default"})
+		logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 		require.NoError(t, err)
 	} else {
-		logger = logr.Discard()
+		logger = slog.New(&xslog.NoopHandler{})
 	}
 
 	// Confer superuser privileges on all calls to service endpoints
@@ -406,13 +407,11 @@ func (s *testDaemon) startAgent(t *testing.T, ctx context.Context, org, poolID, 
 	t.Helper()
 
 	// Configure logger; discard logs by default
-	var logger logr.Logger
+	var logger *slog.Logger
 	if _, ok := os.LookupEnv("OTF_INTEGRATION_TEST_ENABLE_LOGGER"); ok {
-		var err error
-		logger, err = logr.New(&logr.Config{Verbosity: 1, Format: "default"})
-		require.NoError(t, err)
+		logger = slog.New(&xslog.NoopHandler{})
 	} else {
-		logger = logr.Discard()
+		logger = slog.New(&xslog.NoopHandler{})
 	}
 
 	if token == "" {

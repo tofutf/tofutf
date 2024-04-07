@@ -3,9 +3,9 @@ package run
 import (
 	"bytes"
 	"io"
+	"log/slog"
 	"net/http"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	otfapi "github.com/tofutf/tofutf/internal/api"
 	"github.com/tofutf/tofutf/internal/http/decode"
@@ -15,7 +15,7 @@ import (
 type api struct {
 	*Service
 	*tfeapi.Responder
-	logr.Logger
+	logger *slog.Logger
 }
 
 func (a *api) addHandlers(r *mux.Router) {

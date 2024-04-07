@@ -2,22 +2,22 @@ package authenticator
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/tokens"
 )
 
 type (
 	Options struct {
-		logr.Logger
 		html.Renderer
 
 		*internal.HostnameService
 
+		Logger               *slog.Logger
 		TokensService        *tokens.Service
 		OpaqueHandlerConfigs []OpaqueHandlerConfig
 		IDTokenHandlerConfig OIDCConfig
@@ -42,6 +42,7 @@ func NewAuthenticatorService(ctx context.Context, opts Options) (*service, error
 			// skip creating OAuth client when creds are unspecified
 			continue
 		}
+
 		cfg.SkipTLSVerification = opts.SkipTLSVerification
 		client, err := newOAuthClient(
 			&opaqueHandler{cfg},
@@ -52,8 +53,9 @@ func NewAuthenticatorService(ctx context.Context, opts Options) (*service, error
 		if err != nil {
 			return nil, err
 		}
+
 		svc.clients = append(svc.clients, client)
-		opts.V(0).Info("activated OAuth client", "name", cfg.Name, "hostname", cfg.Hostname)
+		opts.Logger.Info("activated OAuth client", "name", cfg.Name, "hostname", cfg.Hostname)
 	}
 	// Construct client with OIDC IDToken handler
 	if opts.IDTokenHandlerConfig.ClientID == "" && opts.IDTokenHandlerConfig.ClientSecret == "" {
@@ -82,7 +84,7 @@ func NewAuthenticatorService(ctx context.Context, opts Options) (*service, error
 		return nil, err
 	}
 	svc.clients = append(svc.clients, client)
-	opts.V(0).Info("activated OIDC client", "name", opts.IDTokenHandlerConfig.Name)
+	opts.Logger.Info("activated OIDC client", "name", opts.IDTokenHandlerConfig.Name)
 	return &svc, nil
 }
 

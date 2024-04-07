@@ -3,9 +3,9 @@ package notifications
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/sql"
@@ -19,7 +19,7 @@ const LockID int64 = 5577006791947779411
 type (
 	// Notifier relays run events onto interested parties
 	Notifier struct {
-		logr.Logger
+		logger *slog.Logger
 
 		workspaces    notifierWorkspaceClient
 		runs          notifierRunClient
@@ -34,8 +34,8 @@ type (
 		RunClient          notifierRunClient
 		WorkspaceClient    notifierWorkspaceClient
 		NotificationClient notifierNotificationClient
+		Logger             *slog.Logger
 
-		logr.Logger
 		*internal.HostnameService
 		*sql.DB
 	}
@@ -59,7 +59,7 @@ type (
 
 func NewNotifier(opts NotifierOptions) *Notifier {
 	return &Notifier{
-		Logger:        opts.Logger.WithValues("component", "notifier"),
+		logger:        opts.Logger.With("component", "notifier"),
 		workspaces:    opts.WorkspaceClient,
 		system:        opts.HostnameService,
 		runs:          opts.RunClient,
@@ -91,14 +91,14 @@ func (s *Notifier) Start(ctx context.Context) error {
 				return pubsub.ErrSubscriptionTerminated
 			}
 			if err := s.handleRun(ctx, event.Payload); err != nil {
-				s.Error(err, "handling event", "event", event.Type)
+				s.logger.Error("handling event", "event", event.Type, "err", err)
 			}
 		case event, ok := <-subConfigs:
 			if !ok {
 				return pubsub.ErrSubscriptionTerminated
 			}
 			if err := s.handleConfig(ctx, event); err != nil {
-				s.Error(err, "handling event", "event", event.Type)
+				s.logger.Error("handling event", "event", event.Type, "err", err)
 			}
 		}
 	}
@@ -173,7 +173,7 @@ func (s *Notifier) handleRun(ctx context.Context, r *run.Run) error {
 			config:    cfg,
 			hostname:  s.system.Hostname(),
 		}
-		s.V(3).Info("publishing notification", "notification", msg)
+		s.logger.Debug("publishing notification", "notification", msg)
 		if err := client.Publish(ctx, msg); err != nil {
 			return err
 		}

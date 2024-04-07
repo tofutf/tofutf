@@ -2,8 +2,8 @@ package logs
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/pubsub"
@@ -13,7 +13,7 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
+		logger *slog.Logger
 
 		run internal.Authorizer
 
@@ -31,7 +31,7 @@ type (
 	}
 
 	Options struct {
-		logr.Logger
+		Logger *slog.Logger
 		internal.Cache
 		*sql.DB
 		*sql.Listener
@@ -44,7 +44,7 @@ type (
 func NewService(opts Options) *Service {
 	db := &pgdb{opts.DB}
 	svc := Service{
-		Logger: opts.Logger,
+		logger: opts.Logger,
 		run:    opts.RunAuthorizer,
 	}
 	svc.api = &api{
@@ -52,7 +52,7 @@ func NewService(opts Options) *Service {
 		svc:      &svc,
 	}
 	svc.web = &webHandlers{
-		Logger: opts.Logger,
+		logger: opts.Logger,
 		svc:    &svc,
 	}
 	svc.broker = pubsub.NewBroker(
@@ -67,7 +67,7 @@ func NewService(opts Options) *Service {
 		},
 	)
 	svc.chunkproxy = &proxy{
-		Logger: opts.Logger,
+		logger: opts.Logger,
 		cache:  opts.Cache,
 		db:     db,
 		broker: svc.broker,
@@ -90,10 +90,10 @@ func (s *Service) WatchLogs(ctx context.Context) (<-chan pubsub.Event[internal.C
 func (s *Service) GetChunk(ctx context.Context, opts internal.GetChunkOptions) (internal.Chunk, error) {
 	logs, err := s.chunkproxy.get(ctx, opts)
 	if err != nil {
-		s.Error(err, "reading logs", "id", opts.RunID, "offset", opts.Offset)
+		s.logger.Error("reading logs", "id", opts.RunID, "offset", opts.Offset, "err", err)
 		return internal.Chunk{}, err
 	}
-	s.V(9).Info("read logs", "id", opts.RunID, "offset", opts.Offset)
+	s.logger.Debug("read logs", "id", opts.RunID, "offset", opts.Offset)
 	return logs, nil
 }
 
@@ -105,10 +105,10 @@ func (s *Service) PutChunk(ctx context.Context, opts internal.PutChunkOptions) e
 	}
 
 	if err := s.chunkproxy.put(ctx, opts); err != nil {
-		s.Error(err, "writing logs", "id", opts.RunID, "phase", opts.Phase, "offset", opts.Offset)
+		s.logger.Error("writing logs", "id", opts.RunID, "phase", opts.Phase, "offset", opts.Offset, "err", err)
 		return err
 	}
-	s.V(3).Info("written logs", "id", opts.RunID, "phase", opts.Phase, "offset", opts.Offset)
+	s.logger.Debug("written logs", "id", opts.RunID, "phase", opts.Phase, "offset", opts.Offset)
 
 	return nil
 }
@@ -127,7 +127,7 @@ func (s *Service) Tail(ctx context.Context, opts internal.GetChunkOptions) (<-ch
 
 	chunk, err := s.chunkproxy.get(ctx, opts)
 	if err != nil {
-		s.Error(err, "tailing logs", "id", opts.RunID, "offset", opts.Offset, "subject", subject)
+		s.logger.Error("tailing logs", "id", opts.RunID, "offset", opts.Offset, "subject", subject, "err", err)
 		return nil, err
 	}
 	opts.Offset += len(chunk.Data)
@@ -167,6 +167,6 @@ func (s *Service) Tail(ctx context.Context, opts internal.GetChunkOptions) (<-ch
 		}
 		close(relay)
 	}()
-	s.V(9).Info("tailing logs", "id", opts.RunID, "phase", opts.Phase, "subject", subject)
+	s.logger.Debug("tailing logs", "id", opts.RunID, "phase", opts.Phase, "subject", subject)
 	return relay, nil
 }

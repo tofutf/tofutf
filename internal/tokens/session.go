@@ -56,7 +56,7 @@ func (a *Service) StartSession(w http.ResponseWriter, r *http.Request, opts Star
 	html.SetCookie(w, SessionCookie, string(token), internal.Time(expiry))
 	html.ReturnUserOriginalPage(w, r)
 
-	a.V(2).Info("started session", "username", *opts.Username)
+	a.logger.Debug("started session", "username", *opts.Username)
 
 	return nil
 }

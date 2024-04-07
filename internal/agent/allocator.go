@@ -3,9 +3,9 @@ package agent
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"slices"
 
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/pubsub"
 )
 
@@ -16,7 +16,7 @@ const AllocatorLockID int64 = 5577006791947779412
 // allocator allocates jobs to agents. Only one allocator must be active on
 // an OTF cluster at any one time.
 type allocator struct {
-	logr.Logger
+	logger *slog.Logger
 	// service for seeding and streaming pools, agents, and jobs, and for
 	// allocating jobs to agents.
 	client allocatorClient
@@ -181,7 +181,7 @@ func (a *allocator) allocate(ctx context.Context) error {
 			available = append(available, agent)
 		}
 		if len(available) == 0 {
-			a.Error(nil, "no available agents found for job", "job", job)
+			a.logger.Error("no available agents found for job", "job", job)
 			continue
 		}
 		// select agent that has most recently sent a ping

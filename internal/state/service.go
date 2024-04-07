@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/leg100/surl"
 	"github.com/tofutf/tofutf/internal"
@@ -26,8 +26,7 @@ func cacheKey(svID string) string { return fmt.Sprintf("%s.json", svID) }
 type (
 	// Service provides access to state and state versions
 	Service struct {
-		logr.Logger
-
+		logger    *slog.Logger
 		db        *pgdb
 		cache     internal.Cache // cache state file
 		workspace internal.Authorizer
@@ -39,7 +38,7 @@ type (
 	}
 
 	Options struct {
-		logr.Logger
+		Logger *slog.Logger
 		html.Renderer
 		internal.Cache
 		*sql.DB
@@ -60,27 +59,31 @@ type (
 func NewService(opts Options) *Service {
 	db := &pgdb{opts.DB}
 	svc := Service{
-		Logger:    opts.Logger,
+		logger:    opts.Logger,
 		cache:     opts.Cache,
 		db:        db,
 		workspace: opts.WorkspaceService,
 		factory:   &factory{db},
 	}
+
 	svc.web = &webHandlers{
 		Renderer: opts.Renderer,
 		Service:  &svc,
 	}
+
 	svc.tfeapi = &tfe{
 		Responder:  opts.Responder,
 		Signer:     opts.Signer,
 		state:      &svc,
 		workspaces: opts.WorkspaceService,
 	}
+
 	svc.api = &api{
 		Service:   &svc,
 		Responder: opts.Responder,
 		tfeapi:    svc.tfeapi,
 	}
+
 	// include state version outputs in api responses when requested.
 	opts.Responder.Register(tfeapi.IncludeOutputs, svc.tfeapi.includeOutputs)
 	opts.Responder.Register(tfeapi.IncludeOutputs, svc.tfeapi.includeWorkspaceCurrentOutputs)
@@ -104,15 +107,15 @@ func (a *Service) Create(ctx context.Context, opts CreateStateVersionOptions) (*
 
 	sv, err := a.new(ctx, opts)
 	if err != nil {
-		a.Error(err, "creating state version", "subject", subject)
+		a.logger.Error("creating state version", "subject", subject, "err", err)
 		return nil, err
 	}
 
 	if err := a.cache.Set(cacheKey(sv.ID), sv.State); err != nil {
-		a.Error(err, "caching state file")
+		a.logger.Error("caching state file", "err", err)
 	}
 
-	a.V(0).Info("created state version", "state_version", sv, "subject", subject)
+	a.logger.Info("created state version", "state_version", sv, "subject", subject)
 	return sv, nil
 }
 
@@ -121,6 +124,7 @@ func (a *Service) DownloadCurrent(ctx context.Context, workspaceID string) ([]by
 	if err != nil {
 		return nil, err
 	}
+
 	return a.Download(ctx, v.ID)
 }
 
@@ -132,10 +136,10 @@ func (a *Service) List(ctx context.Context, workspaceID string, opts resource.Pa
 
 	svl, err := a.db.listVersions(ctx, workspaceID, opts)
 	if err != nil {
-		a.Error(err, "listing state versions", "workspace", workspaceID, "subject", subject)
+		a.logger.Error("listing state versions", "workspace", workspaceID, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(9).Info("listed state versions", "workspace", workspaceID, "subject", subject)
+	a.logger.Debug("listed state versions", "workspace", workspaceID, "subject", subject)
 	return svl, nil
 }
 
@@ -149,13 +153,14 @@ func (a *Service) GetCurrent(ctx context.Context, workspaceID string) (*Version,
 	if errors.Is(err, internal.ErrResourceNotFound) {
 		// not found error occurs legitimately with a new workspace without any
 		// state, so we log these errors at low level instead
-		a.V(3).Info("retrieving current state version: workspace has no state yet", "workspace_id", workspaceID, "subject", subject)
+		a.logger.Debug("retrieving current state version: workspace has no state yet", "workspace_id", workspaceID, "subject", subject)
 		return nil, err
 	} else if err != nil {
-		a.Error(err, "retrieving current state version", "workspace_id", workspaceID, "subject", subject)
+		a.logger.Error("retrieving current state version", "workspace_id", workspaceID, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(9).Info("retrieved current state version", "state_version", sv, "subject", subject)
+
+	a.logger.Debug("retrieved current state version", "state_version", sv, "subject", subject)
 	return sv, nil
 }
 
@@ -167,10 +172,11 @@ func (a *Service) Get(ctx context.Context, versionID string) (*Version, error) {
 
 	sv, err := a.db.getVersion(ctx, versionID)
 	if err != nil {
-		a.Error(err, "retrieving state version", "id", versionID, "subject", subject)
+		a.logger.Error("retrieving state version", "id", versionID, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(9).Info("retrieved state version", "state_version", sv, "subject", subject)
+
+	a.logger.Debug("retrieved state version", "state_version", sv, "subject", subject)
 	return sv, nil
 }
 
@@ -181,10 +187,11 @@ func (a *Service) Delete(ctx context.Context, versionID string) error {
 	}
 
 	if err := a.db.deleteVersion(ctx, versionID); err != nil {
-		a.Error(err, "deleting state version", "id", versionID, "subject", subject)
+		a.logger.Error("deleting state version", "id", versionID, "subject", subject, "err", err)
 		return err
 	}
-	a.V(0).Info("deleted state version", "id", versionID, "subject", subject)
+
+	a.logger.Info("deleted state version", "id", versionID, "subject", subject)
 	return nil
 }
 
@@ -196,10 +203,11 @@ func (a *Service) Rollback(ctx context.Context, versionID string) (*Version, err
 
 	sv, err := a.rollback(ctx, versionID)
 	if err != nil {
-		a.Error(err, "rolling back state version", "id", versionID, "subject", subject)
+		a.logger.Error("rolling back state version", "id", versionID, "subject", subject, "err", err)
 		return nil, err
 	}
-	a.V(0).Info("rolled back state version", "state_version", sv, "subject", subject)
+
+	a.logger.Info("rolled back state version", "state_version", sv, "subject", subject)
 	return sv, nil
 }
 
@@ -216,15 +224,16 @@ func (a *Service) Upload(ctx context.Context, svID string, state []byte) error {
 			return err
 		}
 		if err := a.cache.Set(cacheKey(svID), state); err != nil {
-			a.Error(err, "caching state file")
+			a.logger.Error("caching state file", "err", err)
 		}
 		return nil
 	})
 	if err != nil {
-		a.Error(err, "uploading state", "id", svID)
+		a.logger.Error("uploading state", "id", svID, "err", err)
 		return err
 	}
-	a.V(9).Info("uploading state", "state_version", sv)
+
+	a.logger.Debug("uploading state", "state_version", sv)
 	return nil
 }
 
@@ -233,26 +242,29 @@ func (a *Service) Download(ctx context.Context, svID string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if state, err := a.cache.Get(cacheKey(svID)); err == nil {
-		a.V(9).Info("downloaded state", "id", svID, "subject", subject)
+		a.logger.Debug("downloaded state", "id", svID, "subject", subject)
 		return state, nil
 	}
+
 	state, err := a.db.getState(ctx, svID)
 	if err != nil {
-		a.Error(err, "downloading state", "id", svID, "subject", subject)
+		a.logger.Error("downloading state", "id", svID, "subject", subject, "err", err)
 		return nil, err
 	}
+
 	if err := a.cache.Set(cacheKey(svID), state); err != nil {
-		a.Error(err, "caching state file")
+		a.logger.Error("caching state file", "err", err)
 	}
-	a.V(9).Info("downloaded state", "id", svID, "subject", subject)
+	a.logger.Debug("downloaded state", "id", svID, "subject", subject)
 	return state, nil
 }
 
 func (a *Service) GetOutput(ctx context.Context, outputID string) (*Output, error) {
 	out, err := a.db.getOutput(ctx, outputID)
 	if err != nil {
-		a.Error(err, "retrieving state version output", "id", outputID)
+		a.logger.Error("retrieving state version output", "id", outputID, "err", err)
 		return nil, err
 	}
 
@@ -261,7 +273,7 @@ func (a *Service) GetOutput(ctx context.Context, outputID string) (*Output, erro
 		return nil, err
 	}
 
-	a.V(9).Info("retrieved state version output", "id", outputID, "subject", subject)
+	a.logger.Debug("retrieved state version output", "id", outputID, "subject", subject)
 	return out, nil
 }
 
@@ -270,5 +282,6 @@ func (a *Service) CanAccess(ctx context.Context, action rbac.Action, svID string
 	if err != nil {
 		return nil, err
 	}
+
 	return a.workspace.CanAccess(ctx, action, sv.WorkspaceID)
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/agent"
 	otfapi "github.com/tofutf/tofutf/internal/api"
-	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 
 func run(ctx context.Context, args []string) error {
 	var (
-		loggerConfig *logr.Config
+		loggerConfig *xslog.Config
 		clientConfig otfapi.Config
 		agentConfig  *agent.Config
 	)
@@ -44,14 +44,16 @@ func run(ctx context.Context, args []string) error {
 		SilenceErrors: true,
 		Version:       internal.Version,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger, err := logr.New(loggerConfig)
+			logger, err := xslog.New(loggerConfig)
 			if err != nil {
 				return err
 			}
+
 			agent, err := agent.NewPoolDaemon(logger, *agentConfig, clientConfig)
 			if err != nil {
 				return fmt.Errorf("initializing agent: %w", err)
 			}
+
 			// blocks
 			return agent.Start(cmd.Context())
 		},
@@ -62,7 +64,7 @@ func run(ctx context.Context, args []string) error {
 	cmd.MarkFlagRequired("token") //nolint:errcheck
 	cmd.SetArgs(args)
 
-	loggerConfig = logr.NewConfigFromFlags(cmd.Flags())
+	loggerConfig = xslog.NewConfigFromFlags(cmd.Flags())
 	agentConfig = agent.NewConfigFromFlags(cmd.Flags())
 
 	if err := cmdutil.SetFlagsFromEnvVariables(cmd.Flags()); err != nil {

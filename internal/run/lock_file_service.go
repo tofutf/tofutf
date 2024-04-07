@@ -24,13 +24,13 @@ func (s *Service) GetLockFile(ctx context.Context, runID string) ([]byte, error)
 	// cache miss; retrieve from db
 	file, err := s.db.GetLockFile(ctx, runID)
 	if err != nil {
-		s.Error(err, "retrieving lock file", "id", runID, "subject", subject)
+		s.logger.Error("retrieving lock file", "id", runID, "subject", subject, "err", err)
 		return nil, err
 	}
 
 	// cache lock file before returning
 	if err := s.cache.Set(lockFileCacheKey(runID), file); err != nil {
-		s.Error(err, "caching lock file")
+		s.logger.Error("caching lock file", "err", err)
 	}
 	return file, nil
 }
@@ -43,14 +43,14 @@ func (s *Service) UploadLockFile(ctx context.Context, runID string, file []byte)
 	}
 
 	if err := s.db.SetLockFile(ctx, runID, file); err != nil {
-		s.Error(err, "uploading lock file", "id", runID, "subject", subject)
+		s.logger.Error("uploading lock file", "id", runID, "subject", subject, "err", err)
 		return err
 	}
-	s.V(1).Info("uploaded lock file", "id", runID)
+	s.logger.Info("uploaded lock file", "id", runID)
 
 	// cache lock file before returning
 	if err := s.cache.Set(lockFileCacheKey(runID), file); err != nil {
-		s.Error(err, "caching lock file")
+		s.logger.Error("caching lock file", "err", err)
 	}
 	return nil
 }

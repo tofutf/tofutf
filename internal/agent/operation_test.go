@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
@@ -11,7 +12,7 @@ import (
 	"github.com/mitchellh/iochan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestExecutor_execute(t *testing.T) {
@@ -71,7 +72,7 @@ func TestExecutor_execute(t *testing.T) {
 	t.Run("cancel", func(t *testing.T) {
 		r, w := io.Pipe()
 		wkr := &operation{
-			Logger:  logr.Discard(),
+			logger:  slog.New(&xslog.NoopHandler{}),
 			out:     w,
 			workdir: &workdir{root: ""},
 		}
@@ -89,7 +90,7 @@ func TestExecutor_execute(t *testing.T) {
 		r, w := io.Pipe()
 		reader := iochan.DelimReader(r, '\n')
 		wkr := &operation{
-			Logger:  logr.Discard(),
+			logger:  slog.New(&xslog.NoopHandler{}),
 			out:     w,
 			workdir: &workdir{root: ""},
 		}
