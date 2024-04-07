@@ -126,6 +126,11 @@ migrate-status: install-goose
 doc-screenshots: # update documentation screenshots
 	OTF_DOC_SCREENSHOTS=true go test ./internal/integration/... -count 1
 
+# serve the docs
+.PHONY: serve-docs
+serve-docs:
+	cd ./docs && pnpm dev
+
 # Generate path helpers
 .PHONY: paths
 paths:
