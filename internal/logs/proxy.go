@@ -3,8 +3,8 @@ package logs
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/pubsub"
 )
@@ -15,8 +15,7 @@ type (
 		cache  internal.Cache
 		db     proxydb
 		broker pubsub.SubscriptionService[internal.Chunk]
-
-		logr.Logger
+		logger *slog.Logger
 	}
 
 	proxydb interface {
@@ -56,7 +55,7 @@ func (p *proxy) Start(ctx context.Context) error {
 			}
 		}
 		if err := p.cache.Set(key, logs); err != nil {
-			p.Error(err, "caching log chunk")
+			p.logger.Error("caching log chunk", "err", err)
 		}
 	}
 	return pubsub.ErrSubscriptionTerminated
@@ -76,7 +75,7 @@ func (p *proxy) get(ctx context.Context, opts internal.GetChunkOptions) (interna
 		}
 		// ...and cache it
 		if err := p.cache.Set(key, data); err != nil {
-			p.Error(err, "caching log chunk")
+			p.logger.Error("caching log chunk", "err", err)
 		}
 	}
 	chunk := internal.Chunk{RunID: opts.RunID, Phase: opts.Phase, Data: data}

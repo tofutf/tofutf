@@ -3,9 +3,9 @@ package pubsub
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal/sql"
 )
 
@@ -20,7 +20,7 @@ var ErrSubscriptionTerminated = errors.New("broker terminated the subscription")
 
 // Broker allows clients to subscribe to OTF events.
 type Broker[T any] struct {
-	logr.Logger
+	logger *slog.Logger
 
 	subs   map[chan Event[T]]struct{} // subscriptions
 	mu     sync.Mutex                 // sync access to map
@@ -36,9 +36,9 @@ type databaseListener interface {
 	RegisterFunc(table string, ff sql.ForwardFunc)
 }
 
-func NewBroker[T any](logger logr.Logger, listener databaseListener, table string, getter GetterFunc[T]) *Broker[T] {
+func NewBroker[T any](logger *slog.Logger, listener databaseListener, table string, getter GetterFunc[T]) *Broker[T] {
 	b := &Broker[T]{
-		Logger: logger.WithValues("component", "broker"),
+		logger: logger.With("component", "broker"),
 		subs:   make(map[chan Event[T]]struct{}),
 		getter: getter,
 		table:  table,
@@ -84,7 +84,7 @@ func (b *Broker[T]) forward(ctx context.Context, id string, action sql.Action) {
 	var event Event[T]
 	payload, err := b.getter(ctx, id, action)
 	if err != nil {
-		b.Error(err, "retrieving type for database event", "table", b.table, "id", id, "action", action)
+		b.logger.Error("retrieving type for database event", "table", b.table, "id", id, "action", action, "err", err)
 		return
 	}
 	event.Payload = payload
@@ -96,7 +96,7 @@ func (b *Broker[T]) forward(ctx context.Context, id string, action sql.Action) {
 	case sql.DeleteAction:
 		event.Type = DeletedEvent
 	default:
-		b.Error(nil, "unknown action", "action", action)
+		b.logger.Error("unknown action", "action", action)
 		return
 	}
 
@@ -117,7 +117,7 @@ func (b *Broker[T]) forward(ctx context.Context, id string, action sql.Action) {
 
 	// forceably unsubscribe full subscribers and leave it them to re-subscribe
 	for _, name := range fullSubscribers {
-		b.Error(nil, "unsubscribing full subscriber", "sub", name, "queue_length", subBufferSize)
+		b.logger.Error("unsubscribing full subscriber", "sub", name, "queue_length", subBufferSize)
 		b.unsubscribe(name)
 	}
 }

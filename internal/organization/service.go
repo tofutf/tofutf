@@ -3,8 +3,8 @@ package organization
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -22,8 +22,8 @@ type (
 		RestrictOrganizationCreation bool
 
 		internal.Authorizer // authorize access to org
-		logr.Logger
 
+		logger       *slog.Logger
 		db           *pgdb
 		site         internal.Authorizer // authorize access to site
 		web          *web
@@ -44,7 +44,7 @@ type (
 		*tfeapi.Responder
 		*sql.Listener
 		html.Renderer
-		logr.Logger
+		Logger *slog.Logger
 	}
 
 	// ListOptions represents the options for listing organizations.
@@ -56,7 +56,7 @@ type (
 func NewService(opts Options) *Service {
 	svc := Service{
 		Authorizer:                   &Authorizer{opts.Logger},
-		Logger:                       opts.Logger,
+		logger:                       opts.Logger,
 		RestrictOrganizationCreation: opts.RestrictOrganizationCreation,
 		db:                           &pgdb{opts.DB},
 		site:                         &internal.SiteAuthorizer{Logger: opts.Logger},
@@ -135,10 +135,10 @@ func (s *Service) Create(ctx context.Context, opts CreateOptions) (*Organization
 		return nil
 	})
 	if err != nil {
-		s.Error(err, "creating organization", "id", org.ID, "subject", creator)
+		s.logger.Error("creating organization", "id", org.ID, "subject", creator, "err", err)
 		return nil, sql.Error(err)
 	}
-	s.V(0).Info("created organization", "id", org.ID, "name", org.Name, "subject", creator)
+	s.logger.Info("created organization", "id", org.ID, "name", org.Name, "subject", creator)
 
 	return org, nil
 }
@@ -157,11 +157,11 @@ func (s *Service) Update(ctx context.Context, name string, opts UpdateOptions) (
 		return org.Update(opts)
 	})
 	if err != nil {
-		s.Error(err, "updating organization", "name", name, "subject", subject)
+		s.logger.Error("updating organization", "name", name, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	s.V(2).Info("updated organization", "name", name, "id", org.ID, "subject", subject)
+	s.logger.Info("updated organization", "name", name, "id", org.ID, "subject", subject)
 
 	return org, nil
 }
@@ -192,11 +192,11 @@ func (s *Service) Get(ctx context.Context, name string) (*Organization, error) {
 
 	org, err := s.db.get(ctx, name)
 	if err != nil {
-		s.Error(err, "retrieving organization", "name", name, "subject", subject)
+		s.logger.Error("retrieving organization", "name", name, "subject", subject, "err", err)
 		return nil, err
 	}
 
-	s.V(9).Info("retrieved organization", "name", name, "subject", subject)
+	s.logger.Debug("retrieved organization", "name", name, "subject", subject)
 
 	return org, nil
 }
@@ -220,10 +220,10 @@ func (s *Service) Delete(ctx context.Context, name string) error {
 		return s.db.delete(ctx, name)
 	})
 	if err != nil {
-		s.Error(err, "deleting organization", "name", name, "subject", subject)
+		s.logger.Error("deleting organization", "name", name, "subject", subject, "err", err)
 		return err
 	}
-	s.V(0).Info("deleted organization", "name", name, "subject", subject)
+	s.logger.Info("deleted organization", "name", name, "subject", subject)
 
 	return nil
 }
@@ -251,7 +251,7 @@ func (s *Service) restrictOrganizationCreation(ctx context.Context) (internal.Su
 		return nil, err
 	}
 	if s.RestrictOrganizationCreation && !subject.IsSiteAdmin() {
-		s.Error(nil, "unauthorized action", "action", rbac.CreateOrganizationAction, "subject", subject)
+		s.logger.Error("unauthorized action", "action", rbac.CreateOrganizationAction, "subject", subject)
 		return subject, internal.ErrAccessNotPermitted
 	}
 	return subject, nil
@@ -267,16 +267,16 @@ func (s *Service) CreateToken(ctx context.Context, opts CreateOrganizationTokenO
 
 	ot, token, err := s.tokenFactory.NewOrganizationToken(opts)
 	if err != nil {
-		s.Error(err, "constructing organization token", "organization", opts.Organization)
+		s.logger.Error("constructing organization token", "organization", opts.Organization, "err", err)
 		return nil, nil, err
 	}
 
 	if err := s.db.upsertOrganizationToken(ctx, ot); err != nil {
-		s.Error(err, "creating organization token", "organization", opts.Organization)
+		s.logger.Error("creating organization token", "organization", opts.Organization, "err", err)
 		return nil, nil, err
 	}
 
-	s.V(0).Info("created organization token", "organization", opts.Organization)
+	s.logger.Info("created organization token", "organization", opts.Organization)
 
 	return ot, token, nil
 }
@@ -284,30 +284,30 @@ func (s *Service) CreateToken(ctx context.Context, opts CreateOrganizationTokenO
 func (s *Service) GetOrganizationToken(ctx context.Context, organization string) (*OrganizationToken, error) {
 	ot, err := s.db.getOrganizationTokenByName(ctx, organization)
 	if err != nil {
-		s.Error(err, "retrieving organization token", "organization", organization)
+		s.logger.Error("retrieving organization token", "organization", organization, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("retrieved organization token", "organization", organization)
+	s.logger.Info("retrieved organization token", "organization", organization)
 	return ot, nil
 }
 
 func (s *Service) getOrganizationTokenByID(ctx context.Context, tokenID string) (*OrganizationToken, error) {
 	ot, err := s.db.getOrganizationTokenByID(ctx, tokenID)
 	if err != nil {
-		s.Error(err, "retrieving organization token", "token_id", tokenID)
+		s.logger.Error("retrieving organization token", "token_id", tokenID, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("retrieved organization token", "token_id", tokenID, "organization", ot.Organization)
+	s.logger.Info("retrieved organization token", "token_id", tokenID, "organization", ot.Organization)
 	return ot, nil
 }
 
 func (s *Service) ListTokens(ctx context.Context, organization string) ([]*OrganizationToken, error) {
 	tokens, err := s.db.listOrganizationTokens(ctx, organization)
 	if err != nil {
-		s.Error(err, "listing organization tokens", "organization", organization)
+		s.logger.Error("listing organization tokens", "organization", organization, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("listed organization tokens", "organization", organization, "count", len(tokens))
+	s.logger.Info("listed organization tokens", "organization", organization, "count", len(tokens))
 	return tokens, nil
 }
 
@@ -318,11 +318,11 @@ func (s *Service) DeleteToken(ctx context.Context, organization string) error {
 	}
 
 	if err := s.db.deleteOrganizationToken(ctx, organization); err != nil {
-		s.Error(err, "deleting organization token", "organization", organization)
+		s.logger.Error("deleting organization token", "organization", organization, "err", err)
 		return err
 	}
 
-	s.V(0).Info("deleted organization token", "organization", organization)
+	s.logger.Info("deleted organization token", "organization", organization)
 
 	return nil
 }

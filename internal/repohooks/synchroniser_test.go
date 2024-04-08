@@ -2,13 +2,14 @@ package repohooks
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/vcs"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 // TestSynchroniser tests synchronising a hook with a cloud provider's hook,
@@ -67,7 +68,7 @@ func TestSynchroniser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client := &fakeCloudClient{hook: tt.cloud}
 			db := &fakeDB{hook: tt.got}
-			synchr := &synchroniser{Logger: logr.Discard(), syncdb: db}
+			synchr := &synchroniser{logger: slog.New(&xslog.NoopHandler{}), syncdb: db}
 			require.NoError(t, synchr.sync(context.Background(), client, tt.got))
 			assert.Equal(t, tt.want, tt.got)
 		})

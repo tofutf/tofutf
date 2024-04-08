@@ -3,8 +3,8 @@ package run
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/http/html/paths"
@@ -20,9 +20,9 @@ type (
 	// Reporter reports back to VCS providers the current status of VCS-triggered
 	// runs.
 	Reporter struct {
-		logr.Logger
 		*internal.HostnameService
 
+		Logger     *slog.Logger
 		Configs    reporterConfigClient
 		Workspaces reporterWorkspaceClient
 		VCS        reporterVCSClient

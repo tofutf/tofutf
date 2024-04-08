@@ -2,13 +2,14 @@ package run
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/pubsub"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestService_Watch(t *testing.T) {
@@ -17,7 +18,7 @@ func TestService_Watch(t *testing.T) {
 
 	svc := &Service{
 		site:   internal.NewAllowAllAuthorizer(),
-		Logger: logr.Discard(),
+		logger: slog.New(&xslog.NoopHandler{}),
 		broker: &fakeSubService{ch: in},
 	}
 

@@ -1,22 +1,19 @@
-package logr
+package xslog
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
-	"log/slog"
-
-	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 )
 
 type (
+	Format string
 	Config struct {
 		Verbosity int
 		Format    string
 	}
-
-	Format string
 )
 
 const (
@@ -35,22 +32,23 @@ func NewConfigFromFlags(flags *pflag.FlagSet) *Config {
 	return &cfg
 }
 
-// New constructs a new logger that satisfies the logr interface
-func New(cfg *Config) (logr.Logger, error) {
+func New(cfg *Config) (*slog.Logger, error) {
 	var h slog.Handler
+
 	level := toSlogLevel(cfg.Verbosity)
 
 	switch Format(cfg.Format) {
 	case DefaultFormat:
-		h = NewLevelHandler(level, slog.Default().Handler())
+		h = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level, AddSource: true})
 	case TextFormat:
-		h = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level})
+		h = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level, AddSource: true})
 	case JSONFormat:
-		h = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level})
+		h = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level, AddSource: true})
 	default:
-		return logr.Logger{}, fmt.Errorf("unrecognised logging format: %s", cfg.Format)
+		return &slog.Logger{}, fmt.Errorf("unrecognised logging format: %s", cfg.Format)
 	}
-	return logr.New(newLogSink(h)), nil
+
+	return slog.New(h), nil
 }
 
 // toSlogLevel converts a logr v-level to a slog level.

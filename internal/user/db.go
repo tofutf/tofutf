@@ -3,9 +3,9 @@ package user
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgtype"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/sql"
 	"github.com/tofutf/tofutf/internal/sql/pggen"
 	"github.com/tofutf/tofutf/internal/team"
@@ -38,7 +38,7 @@ func (result dbresult) toUser() *User {
 // pgdb stores user resources in a postgres database
 type pgdb struct {
 	*sql.DB // provides access to generated SQL queries
-	logr.Logger
+	Logger  *slog.Logger
 }
 
 // CreateUser persists a User to the DB.

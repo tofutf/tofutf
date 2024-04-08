@@ -3,10 +3,10 @@ package daemon
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal"
 	"golang.org/x/sync/errgroup"
 )
@@ -26,7 +26,8 @@ type (
 		DB subsystemDB
 		// Cluster-unique lock ID. Must be non-nil if Exclusive is true.
 		LockID *int64
-		logr.Logger
+		// Logger is the included logger
+		Logger *slog.Logger
 	}
 	// Startable is a blocking process that is started at least once, and upon error,
 	// may need re-starting.
@@ -65,7 +66,7 @@ func (s *Subsystem) Start(ctx context.Context, g *errgroup.Group) error {
 		if ctx.Err() != nil {
 			// don't return an error if subsystem was terminated via a
 			// canceled context.
-			s.V(1).Info("gracefully shutdown subsystem", "name", s.Name)
+			s.Logger.Info("gracefully shutdown subsystem", "name", s.Name)
 			return nil
 		}
 		return err
@@ -75,9 +76,9 @@ func (s *Subsystem) Start(ctx context.Context, g *errgroup.Group) error {
 	policy := backoff.WithContext(backoff.NewExponentialBackOff(), ctx)
 	g.Go(func() error {
 		return backoff.RetryNotify(op, policy, func(err error, next time.Duration) {
-			s.Error(err, "restarting subsystem", "name", s.Name, "backoff", next)
+			s.Logger.Error("restarting subsystem", "name", s.Name, "backoff", next, "err", err)
 		})
 	})
-	s.V(1).Info("started subsystem", "name", s.Name)
+	s.Logger.Info("started subsystem", "name", s.Name)
 	return nil
 }

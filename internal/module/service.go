@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/leg100/surl"
 	"github.com/tofutf/tofutf/internal"
@@ -24,11 +23,8 @@ import (
 
 type (
 	Service struct {
-		logr.Logger
-		*publisher
-
-		db *pgdb
-
+		db           *pgdb
+		logger       *slog.Logger
 		organization internal.Authorizer
 
 		api          *api
@@ -38,7 +34,7 @@ type (
 	}
 
 	Options struct {
-		logr.Logger
+		Logger *slog.Logger
 
 		*sql.DB
 		*internal.HostnameService
@@ -54,7 +50,7 @@ type (
 
 func NewService(opts Options) *Service {
 	svc := Service{
-		Logger:       opts.Logger,
+		logger:       opts.Logger,
 		connections:  opts.ConnectionsService,
 		organization: &organization.Authorizer{Logger: opts.Logger},
 		db:           &pgdb{opts.DB},
@@ -71,7 +67,7 @@ func NewService(opts Options) *Service {
 		system:       opts.HostnameService,
 	}
 	publisher := &publisher{
-		Logger:       opts.Logger.WithValues("component", "publisher"),
+		logger:       opts.Logger.With("component", "publisher"),
 		vcsproviders: opts.VCSProviderService,
 		modules:      &svc,
 	}
@@ -101,10 +97,10 @@ func (s *Service) PublishModule(ctx context.Context, opts PublishOptions) (*Modu
 
 	module, err := s.publishModule(ctx, vcsprov.Organization, opts)
 	if err != nil {
-		s.Error(err, "publishing module", "subject", subject, "repo", opts.Repo)
+		s.logger.Error("publishing module", "subject", subject, "repo", opts.Repo, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("published module", "subject", subject, "module", module)
+	s.logger.Info("published module", "subject", subject, "module", module)
 
 	return module, nil
 }
@@ -225,10 +221,11 @@ func (s *Service) CreateModule(ctx context.Context, opts CreateOptions) (*Module
 	module := newModule(opts)
 
 	if err := s.db.createModule(ctx, module); err != nil {
-		s.Error(err, "creating module", "subject", subject, "module", module)
+		s.logger.Error("creating module", "subject", subject, "module", module, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("created module", "subject", subject, "module", module)
+
+	s.logger.Info("created module", "subject", subject, "module", module)
 	return module, nil
 }
 
@@ -240,10 +237,10 @@ func (s *Service) ListModules(ctx context.Context, opts ListModulesOptions) ([]*
 
 	modules, err := s.db.listModules(ctx, opts)
 	if err != nil {
-		s.Error(err, "listing modules", "organization", opts.Organization, "subject", subject)
+		s.logger.Error("listing modules", "organization", opts.Organization, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("listed modules", "organization", opts.Organization, "subject", subject)
+	s.logger.Debug("listed modules", "organization", opts.Organization, "subject", subject)
 	return modules, nil
 }
 
@@ -255,18 +252,18 @@ func (s *Service) GetModule(ctx context.Context, opts GetModuleOptions) (*Module
 
 	module, err := s.db.getModule(ctx, opts)
 	if err != nil {
-		s.Error(err, "retrieving module", "module", opts)
+		s.logger.Error("retrieving module", "module", opts, "err", err)
 		return nil, err
 	}
 
-	s.V(9).Info("retrieved module", "subject", subject, "module", module)
+	s.logger.Debug("retrieved module", "subject", subject, "module", module)
 	return module, nil
 }
 
 func (s *Service) GetModuleByID(ctx context.Context, id string) (*Module, error) {
 	module, err := s.db.getModuleByID(ctx, id)
 	if err != nil {
-		s.Error(err, "retrieving module", "id", id)
+		s.logger.Error("retrieving module", "id", id, "err", err)
 		return nil, err
 	}
 
@@ -275,7 +272,7 @@ func (s *Service) GetModuleByID(ctx context.Context, id string) (*Module, error)
 		return nil, err
 	}
 
-	s.V(9).Info("retrieved module", "subject", subject, "module", module)
+	s.logger.Debug("retrieved module", "subject", subject, "module", module)
 	return module, nil
 }
 
@@ -286,7 +283,7 @@ func (s *Service) GetModuleByConnection(ctx context.Context, vcsProviderID, repo
 func (s *Service) DeleteModule(ctx context.Context, id string) (*Module, error) {
 	module, err := s.db.getModuleByID(ctx, id)
 	if err != nil {
-		s.Error(err, "retrieving module", "id", id)
+		s.logger.Error("retrieving module", "id", id, "err", err)
 		return nil, err
 	}
 
@@ -309,15 +306,15 @@ func (s *Service) DeleteModule(ctx context.Context, id string) (*Module, error) 
 		return s.db.delete(ctx, id)
 	})
 	if err != nil {
-		s.Error(err, "deleting module", "subject", subject, "module", module)
+		s.logger.Error("deleting module", "subject", subject, "module", module, "err", err)
 		return nil, err
 	}
-	s.V(2).Info("deleted module", "subject", subject, "module", module)
+	s.logger.Debug("deleted module", "subject", subject, "module", module)
 	return module, nil
 }
 
 func (s *Service) RefreshModule(ctx context.Context, id string) (*Module, error) {
-	logger := slog.Default().With("service", "module", "op", "RefreshModule")
+	logger := s.logger.With("service", "module", "op", "RefreshModule")
 
 	module, err := s.db.getModuleByID(ctx, id)
 	if err != nil {
@@ -406,10 +403,10 @@ func (s *Service) CreateVersion(ctx context.Context, opts CreateModuleVersionOpt
 	modver := newModuleVersion(opts)
 
 	if err := s.db.createModuleVersion(ctx, modver); err != nil {
-		s.Error(err, "creating module version", "organization", module.Organization, "subject", subject, "module_version", modver)
+		s.logger.Error("creating module version", "organization", module.Organization, "subject", subject, "module_version", modver, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("created module version", "organization", module.Organization, "subject", subject, "module_version", modver)
+	s.logger.Info("created module version", "organization", module.Organization, "subject", subject, "module_version", modver)
 	return modver, nil
 }
 
@@ -425,10 +422,10 @@ func (s *Service) updateModuleStatus(ctx context.Context, mod *Module, status Mo
 	mod.Status = status
 
 	if err := s.db.updateModuleStatus(ctx, mod.ID, status); err != nil {
-		s.Error(err, "updating module status", "module", mod.ID, "status", status)
+		s.logger.Error("updating module status", "module", mod.ID, "status", status, "err", err)
 		return nil, err
 	}
-	s.V(0).Info("updated module status", "module", mod.ID, "status", status)
+	s.logger.Info("updated module status", "module", mod.ID, "status", status)
 	return mod, nil
 }
 
@@ -440,7 +437,7 @@ func (s *Service) uploadVersion(ctx context.Context, versionID string, tarball [
 
 	// validate tarball
 	if _, err := unmarshalTerraformModule(tarball); err != nil {
-		s.Error(err, "uploading module version", "module_version", versionID)
+		s.logger.Error("uploading module version", "module_version", versionID, "err", err)
 		return s.db.updateModuleVersionStatus(ctx, UpdateModuleVersionStatusOptions{
 			ID:     versionID,
 			Status: ModuleVersionStatusRegIngressFailed,
@@ -469,11 +466,11 @@ func (s *Service) uploadVersion(ctx context.Context, versionID string, tarball [
 		return nil
 	})
 	if err != nil {
-		s.Error(err, "uploading module version", "module_version_id", versionID)
+		s.logger.Error("uploading module version", "module_version_id", versionID, "err", err)
 		return err
 	}
 
-	s.V(0).Info("uploaded module version", "module_version", versionID)
+	s.logger.Info("uploaded module version", "module_version", versionID)
 	return nil
 }
 
@@ -481,10 +478,10 @@ func (s *Service) uploadVersion(ctx context.Context, versionID string, tarball [
 func (s *Service) downloadVersion(ctx context.Context, versionID string) ([]byte, error) {
 	tarball, err := s.db.getTarball(ctx, versionID)
 	if err != nil {
-		s.Error(err, "downloading module", "module_version_id", versionID)
+		s.logger.Error("downloading module", "module_version_id", versionID, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("downloaded module", "module_version_id", versionID)
+	s.logger.Debug("downloaded module", "module_version_id", versionID)
 	return tarball, nil
 }
 
@@ -492,7 +489,7 @@ func (s *Service) downloadVersion(ctx context.Context, versionID string) ([]byte
 func (s *Service) deleteVersion(ctx context.Context, versionID string) (*Module, error) {
 	module, err := s.db.getModuleByID(ctx, versionID)
 	if err != nil {
-		s.Error(err, "retrieving module", "id", versionID)
+		s.logger.Error("retrieving module", "id", versionID, "err", err)
 		return nil, err
 	}
 
@@ -502,10 +499,10 @@ func (s *Service) deleteVersion(ctx context.Context, versionID string) (*Module,
 	}
 
 	if err = s.db.deleteModuleVersion(ctx, versionID); err != nil {
-		s.Error(err, "deleting module", "subject", subject, "module", module)
+		s.logger.Error("deleting module", "subject", subject, "module", module, "err", err)
 		return nil, err
 	}
-	s.V(2).Info("deleted module", "subject", subject, "module", module)
+	s.logger.Debug("deleted module", "subject", subject, "module", module)
 
 	// return module w/o deleted version
 	return s.db.getModuleByID(ctx, module.ID)

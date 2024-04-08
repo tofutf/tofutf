@@ -2,19 +2,20 @@ package authenticator
 
 import (
 	"context"
+	"log/slog"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestNewAuthenticatorService(t *testing.T) {
 	opts := Options{
-		Logger:          logr.Discard(),
+		Logger:          slog.New(&xslog.NoopHandler{}),
 		HostnameService: internal.NewHostnameService("fake-host.org"),
 		OpaqueHandlerConfigs: []OpaqueHandlerConfig{
 			{

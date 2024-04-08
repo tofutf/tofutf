@@ -16,7 +16,7 @@ import (
 	"github.com/tofutf/tofutf/internal/daemon"
 	"github.com/tofutf/tofutf/internal/github"
 	"github.com/tofutf/tofutf/internal/gitlab"
-	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 const (
@@ -43,7 +43,7 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 	cfg := daemon.Config{}
 	daemon.ApplyDefaults(&cfg)
 
-	var loggerConfig *logr.Config
+	var loggerConfig *xslog.Config
 
 	cmd := &cobra.Command{
 		Use:           "tofutfd",
@@ -53,7 +53,7 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 		SilenceErrors: true,
 		Version:       internal.Version,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger, err := logr.New(loggerConfig)
+			logger, err := xslog.New(loggerConfig)
 			if err != nil {
 				return err
 			}
@@ -114,7 +114,7 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 	cmd.Flags().StringVar(&cfg.ProviderProxy.URL, "provider-proxy-url", "", "The URL of the provider registry to proxy provider registry requests to")
 	cmd.Flags().BoolVar(&cfg.ProviderProxy.IsArtifactory, "provider-proxy-is-artifactory", false, "Set to true if using artifactory as the backing provider registry")
 
-	loggerConfig = logr.NewConfigFromFlags(cmd.Flags())
+	loggerConfig = xslog.NewConfigFromFlags(cmd.Flags())
 	cfg.AgentConfig = agent.NewConfigFromFlags(cmd.Flags())
 
 	if err := cmdutil.SetFlagsFromEnvVariables(cmd.Flags()); err != nil {

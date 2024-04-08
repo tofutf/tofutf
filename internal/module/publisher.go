@@ -3,9 +3,9 @@ package module
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/semver"
 	"github.com/tofutf/tofutf/internal/vcs"
@@ -15,7 +15,7 @@ import (
 type (
 	// publisher publishes new versions of terraform modules from VCS tags
 	publisher struct {
-		logr.Logger
+		logger *slog.Logger
 
 		modules      *Service
 		vcsproviders *vcsprovider.Service
@@ -23,7 +23,7 @@ type (
 )
 
 func (p *publisher) handle(event vcs.Event) {
-	logger := p.Logger.WithValues(
+	logger := p.logger.With(
 		"sha", event.CommitSHA,
 		"type", event.Type,
 		"action", event.Action,
@@ -32,12 +32,12 @@ func (p *publisher) handle(event vcs.Event) {
 	)
 
 	if err := p.handleWithError(logger, event); err != nil {
-		p.Error(err, "handling event")
+		p.logger.Error("handling event", "err", err)
 	}
 }
 
 // handlerWithError publishes a module version in response to a vcs event.
-func (p *publisher) handleWithError(logger logr.Logger, event vcs.Event) error {
+func (p *publisher) handleWithError(logger *slog.Logger, event vcs.Event) error {
 	// no parent context; handler is called asynchronously
 	ctx := context.Background()
 	// give spawner unlimited powers

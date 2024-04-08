@@ -3,9 +3,9 @@ package run
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"net/http"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
@@ -21,7 +21,7 @@ type (
 	webHandlers struct {
 		html.Renderer
 
-		logger     logr.Logger
+		logger     *slog.Logger
 		runs       webRunClient
 		workspaces webWorkspaceClient
 	}
@@ -373,7 +373,7 @@ func (h *webHandlers) watch(w http.ResponseWriter, r *http.Request) {
 			//
 			itemHTML := new(bytes.Buffer)
 			if err := h.RenderTemplate("run_item.tmpl", itemHTML, event.Payload); err != nil {
-				h.logger.Error(err, "rendering template for run item")
+				h.logger.Error("rendering template for run item", "err", err)
 				continue
 			}
 			if event.Type == pubsub.CreatedEvent {

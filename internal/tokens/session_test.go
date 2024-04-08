@@ -1,10 +1,10 @@
 package tokens
 
 import (
+	"log/slog"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -12,13 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html/paths"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestService_StartSession(t *testing.T) {
 	key, err := jwk.FromRaw([]byte("abcdef123"))
 	require.NoError(t, err)
 	svc := Service{
-		Logger: logr.Discard(),
+		logger: slog.New(&xslog.NoopHandler{}),
 		sessionFactory: &sessionFactory{
 			factory: &factory{key: key},
 		},

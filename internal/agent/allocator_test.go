@@ -2,13 +2,14 @@ package agent
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestAllocator_seed(t *testing.T) {
@@ -178,7 +179,7 @@ func TestAllocator_allocate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &allocator{
-				Logger: logr.Discard(),
+				logger: slog.New(&xslog.NoopHandler{}),
 				client: &fakeService{
 					job: tt.job,
 				},

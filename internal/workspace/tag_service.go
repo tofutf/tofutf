@@ -33,9 +33,9 @@ func (s *Service) ListTags(ctx context.Context, organization string, opts ListTa
 
 	list, err := s.db.listTags(ctx, organization, opts)
 	if err != nil {
-		s.Error(err, "listing tags", "organization", organization, "subject", subject)
+		s.logger.Error("listing tags", "organization", organization, "subject", subject, "err", err)
 	}
-	s.V(9).Info("listed tags", "organization", organization, "subject", subject)
+	s.logger.Debug("listed tags", "organization", organization, "subject", subject)
 	return list, nil
 }
 
@@ -46,10 +46,11 @@ func (s *Service) DeleteTags(ctx context.Context, organization string, tagIDs []
 	}
 
 	if err := s.db.deleteTags(ctx, organization, tagIDs); err != nil {
-		s.Error(err, "deleting tags", "organization", organization, "tags_ids", tagIDs, "subject", subject)
+		s.logger.Error("deleting tags", "organization", organization, "tags_ids", tagIDs, "subject", subject, "err", err)
 		return err
 	}
-	s.Info("deleted tags", "organization", organization, "tag_ids", tagIDs, "subject", subject)
+
+	s.logger.Info("deleted tags", "organization", organization, "tag_ids", tagIDs, "subject", subject)
 	return nil
 }
 
@@ -72,10 +73,11 @@ func (s *Service) TagWorkspaces(ctx context.Context, tagID string, workspaceIDs 
 		return nil
 	})
 	if err != nil {
-		s.Error(err, "tagging tags", "tag_id", tagID, "workspace_ids", workspaceIDs, "subject", subject)
+		s.logger.Error("tagging tags", "tag_id", tagID, "workspace_ids", workspaceIDs, "subject", subject, "err", err)
 		return err
 	}
-	s.Info("tagged workspaces", "tag_id", tagID, "workspaces_ids", workspaceIDs, "subject", subject)
+
+	s.logger.Info("tagged workspaces", "tag_id", tagID, "workspaces_ids", workspaceIDs, "subject", subject)
 	return nil
 }
 
@@ -92,10 +94,10 @@ func (s *Service) AddTags(ctx context.Context, workspaceID string, tags []TagSpe
 
 	added, err := s.addTags(ctx, ws, tags)
 	if err != nil {
-		s.Error(err, "adding tags", "workspace", workspaceID, "tags", TagSpecs(tags), "subject", subject)
+		s.logger.Error("adding tags", "workspace", workspaceID, "tags", TagSpecs(tags), "subject", subject, "err", err)
 		return err
 	}
-	s.Info("added tags", "workspace", workspaceID, "tags", added, "subject", subject)
+	s.logger.Info("added tags", "workspace", workspaceID, "tags", added, "subject", subject)
 	return nil
 }
 
@@ -141,10 +143,11 @@ func (s *Service) RemoveTags(ctx context.Context, workspaceID string, tags []Tag
 		return nil
 	})
 	if err != nil {
-		s.Error(err, "removing tags", "workspace", workspaceID, "tags", TagSpecs(tags), "subject", subject)
+		s.logger.Error("removing tags", "workspace", workspaceID, "tags", TagSpecs(tags), "subject", subject, "err", err)
 		return err
 	}
-	s.Info("removed tags", "workspace", workspaceID, "tags", TagSpecs(tags), "subject", subject)
+
+	s.logger.Info("removed tags", "workspace", workspaceID, "tags", TagSpecs(tags), "subject", subject)
 	return nil
 }
 
@@ -156,10 +159,10 @@ func (s *Service) ListWorkspaceTags(ctx context.Context, workspaceID string, opt
 
 	list, err := s.db.listWorkspaceTags(ctx, workspaceID, opts)
 	if err != nil {
-		s.Error(err, "listing workspace tags", "workspace", workspaceID, "subject", subject)
+		s.logger.Error("listing workspace tags", "workspace", workspaceID, "subject", subject, "err", err)
 		return nil, err
 	}
-	s.V(9).Info("listed workspace tags", "workspace", workspaceID, "subject", subject)
+	s.logger.Debug("listed workspace tags", "workspace", workspaceID, "subject", subject)
 	return list, nil
 }
 

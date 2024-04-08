@@ -2,18 +2,19 @@ package logs
 
 import (
 	"context"
+	"log/slog"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/tofutf/tofutf/internal"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestTailLogs(t *testing.T) {
 	chunks := make(chan internal.Chunk, 1)
 	handlers := &webHandlers{
-		Logger: logr.Discard(),
+		logger: slog.New(&xslog.NoopHandler{}),
 		svc:    &fakeTailService{chunks: chunks},
 	}
 

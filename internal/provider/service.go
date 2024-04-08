@@ -4,6 +4,7 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/url"
 
@@ -12,14 +13,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/sql"
 )
 
 type (
 	Options struct {
-		logr.Logger
+		Logger *slog.Logger
 
 		*sql.DB
 		*internal.HostnameService
@@ -31,7 +31,7 @@ type (
 	}
 
 	Service struct {
-		logger       logr.Logger
+		logger       *slog.Logger
 		organization internal.Authorizer
 
 		api *apiHandlers
@@ -113,7 +113,7 @@ func (s *Service) GetProviderVersions(ctx context.Context, options GetProviderVe
 	if response.StatusCode != http.StatusOK {
 		err := errors.Errorf("unexpected error from upstream provider registery: %d", response.StatusCode)
 
-		s.logger.Error(err, "failed to proxy provider versions request", "namespace", options.Namespace, "type", options.Type, "url", versionsURL)
+		s.logger.Error("failed to proxy provider versions request", "namespace", options.Namespace, "type", options.Type, "url", versionsURL, "err", err)
 		return nil, errors.WithStack(err)
 	}
 
@@ -187,7 +187,7 @@ func (s Service) FindProviderPackage(ctx context.Context, options FindProviderPa
 	if response.StatusCode != http.StatusOK {
 		err := errors.Errorf("unexpected error from upstream provider registery: %d", response.StatusCode)
 
-		s.logger.Error(err, "failed to proxy provider download request", "namespace", options.Namespace, "type", options.Type, "version", options.Version, "os", options.OS, "arch", options.Arch, "url", manifestURL)
+		s.logger.Error("failed to proxy provider download request", "namespace", options.Namespace, "type", options.Type, "version", options.Version, "os", options.OS, "arch", options.Arch, "url", manifestURL, "err", err)
 		return nil, errors.WithStack(err)
 	}
 

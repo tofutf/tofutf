@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/logs"
 	"github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/state"
@@ -37,7 +37,7 @@ var ascii = regexp.MustCompile("[[:^ascii:]]")
 type operation struct {
 	*daemonClient
 	*run.Run
-	logr.Logger
+	logger *slog.Logger
 
 	config        Config
 	job           *Job
@@ -58,7 +58,7 @@ type operation struct {
 }
 
 type newOperationOptions struct {
-	logger      logr.Logger
+	logger      *slog.Logger
 	client      *daemonClient
 	config      Config
 	job         *Job
@@ -74,7 +74,7 @@ func newOperation(opts newOperationOptions) *operation {
 	// canceled via its cancel() method.
 	ctx, cancelfn := context.WithCancel(context.Background())
 	return &operation{
-		Logger:       opts.logger.WithValues("job", opts.job),
+		logger:       opts.logger.With("job", opts.job),
 		daemonClient: opts.client,
 		config:       opts.config,
 		job:          opts.job,
@@ -103,21 +103,21 @@ func (o *operation) doAndFinish() {
 			// already canceled the job and the server has sent the operation a
 			// force-cancel signal. In which case there is nothing more to be
 			// done other than tell the user what happened.
-			o.Error(err, "job forceably canceled")
+			o.logger.Error("job forceably canceled", "err", err)
 			return
 		}
 		opts.Status = JobCanceled
-		o.Error(err, "job canceled")
+		o.logger.Error("job canceled", "err", err)
 	case err != nil:
 		opts.Status = JobErrored
 		opts.Error = err.Error()
-		o.Error(err, "finished job with error")
+		o.logger.Error("finished job with error", "err", err)
 	default:
 		opts.Status = JobFinished
-		o.V(0).Info("finished job successfully")
+		o.logger.Info("finished job successfully")
 	}
 	if err := o.agents.finishJob(o.ctx, o.job.Spec, opts); err != nil {
-		o.Error(err, "sending job status", "status", opts.Status)
+		o.logger.Error("sending job status", "status", opts.Status, "err", err)
 	}
 }
 
@@ -127,7 +127,7 @@ func (o *operation) do() error {
 	// then use a new client for this job, configured to authenticate using the
 	// job token and to retry requests upon encountering transient errors.
 	if o.isPoolAgent {
-		jc, err := o.newJobClient(o.agentID, o.token, o.Logger)
+		jc, err := o.newJobClient(o.agentID, o.token, o.logger)
 		if err != nil {
 			return fmt.Errorf("initializing job client: %w", err)
 		}
@@ -258,10 +258,10 @@ func (o *operation) cancel(force, sendSignal bool) {
 	// signal current process if there is one.
 	if sendSignal && o.proc != nil {
 		if force {
-			o.V(2).Info("sending SIGKILL to terraform process", "pid", o.proc.Pid)
+			o.logger.Debug("sending SIGKILL to terraform process", "pid", o.proc.Pid)
 			o.proc.Signal(os.Kill) //nolint:errcheck
 		} else {
-			o.V(2).Info("sending SIGINT to terraform process", "pid", o.proc.Pid)
+			o.logger.Debug("sending SIGINT to terraform process", "pid", o.proc.Pid)
 			o.proc.Signal(os.Interrupt) //nolint:errcheck
 		}
 	}

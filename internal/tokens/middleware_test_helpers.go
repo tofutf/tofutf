@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/testutils"
+	"github.com/tofutf/tofutf/internal/xslog"
 	"google.golang.org/api/idtoken"
 )
 
@@ -50,7 +51,7 @@ func fakeTokenMiddleware(t *testing.T, secret []byte) mux.MiddlewareFunc {
 
 	key := newTestJWK(t, secret)
 	return newMiddleware(middlewareOptions{
-		Logger: logr.Discard(),
+		logger: slog.New(&xslog.NoopHandler{}),
 		key:    key,
 		registry: &registry{
 			kinds: map[Kind]SubjectGetter{
@@ -70,7 +71,7 @@ func fakeSiteTokenMiddleware(t *testing.T, token string) mux.MiddlewareFunc {
 
 	key := newTestJWK(t, testutils.NewSecret(t)) // not used but constructor requires it
 	return newMiddleware(middlewareOptions{
-		Logger:   logr.Discard(),
+		logger:   slog.New(&xslog.NoopHandler{}),
 		registry: &registry{SiteToken: token, SiteAdmin: &internal.Superuser{}},
 		key:      key,
 	})
@@ -81,7 +82,7 @@ func fakeIAPMiddleware(t *testing.T, aud string) mux.MiddlewareFunc {
 
 	key := newTestJWK(t, testutils.NewSecret(t)) // not used but constructor requires it
 	return newMiddleware(middlewareOptions{
-		Logger: logr.Discard(),
+		logger: slog.New(&xslog.NoopHandler{}),
 		registry: &registry{
 			uiSubjectGetterOrCreator: func(context.Context, string) (internal.Subject, error) {
 				return &internal.Superuser{}, nil

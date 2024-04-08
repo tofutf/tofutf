@@ -2,14 +2,15 @@ package notifications
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/run"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 func TestNotifier_handleRun(t *testing.T) {
@@ -69,7 +70,7 @@ func TestNotifier_handleRun(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			published := make(chan *run.Run, 100)
 			notifier := &Notifier{
-				Logger:     logr.Discard(),
+				logger:     slog.New(&xslog.NoopHandler{}),
 				workspaces: &fakeWorkspaceService{},
 				system:     &fakeHostnameService{},
 				cache:      newTestCache(t, &fakeFactory{published}, tt.cfg),
@@ -99,7 +100,7 @@ func TestNotifier_handleRun_multiple(t *testing.T) {
 
 	published := make(chan *run.Run, 2)
 	notifier := &Notifier{
-		Logger:     logr.Discard(),
+		logger:     slog.New(&xslog.NoopHandler{}),
 		workspaces: &fakeWorkspaceService{},
 		system:     &fakeHostnameService{},
 		cache:      newTestCache(t, &fakeFactory{published}, config1, config2),
@@ -114,7 +115,7 @@ func TestNotifier_handleRun_multiple(t *testing.T) {
 func TestNotifier_handleConfig(t *testing.T) {
 	ctx := context.Background()
 	notifier := &Notifier{
-		Logger:     logr.Discard(),
+		logger:     slog.New(&xslog.NoopHandler{}),
 		workspaces: &fakeWorkspaceService{},
 		system:     &fakeHostnameService{},
 		cache:      newTestCache(t, &fakeFactory{}),

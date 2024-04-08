@@ -20,13 +20,15 @@ func (s *Service) UploadConfig(ctx context.Context, cvID string, config []byte) 
 		return cv.Upload(ctx, config, uploader)
 	})
 	if err != nil {
-		s.Error(err, "uploading configuration")
+		s.logger.Error("uploading configuration", "err", err)
 		return err
 	}
+
 	if err := s.cache.Set(cacheKey(cvID), config); err != nil {
-		s.Error(err, "caching configuration version tarball")
+		s.logger.Error("caching configuration version tarball", "err", err)
 	}
-	s.V(2).Info("uploaded configuration", "id", cvID, "bytes", len(config))
+
+	s.logger.Info("uploaded configuration", "id", cvID, "bytes", len(config))
 	return nil
 }
 
@@ -42,12 +44,15 @@ func (s *Service) DownloadConfig(ctx context.Context, cvID string) ([]byte, erro
 	}
 	config, err := s.db.GetConfig(ctx, cvID)
 	if err != nil {
-		s.Error(err, "downloading configuration", "id", cvID, "subject", subject)
+		s.logger.Error("downloading configuration", "id", cvID, "subject", subject, "err", err)
 		return nil, err
 	}
+
 	if err := s.cache.Set(cacheKey(cvID), config); err != nil {
-		s.Error(err, "caching configuration version tarball")
+		s.logger.Error("caching configuration version tarball", "err", err)
 	}
-	s.V(9).Info("downloaded configuration", "id", cvID, "bytes", len(config), "subject", subject)
+
+	s.logger.Debug("downloaded configuration", "id", cvID, "bytes", len(config), "subject", subject)
+
 	return config, nil
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
-	"github.com/go-logr/logr"
 	otfrun "github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/workspace"
 )
@@ -13,7 +13,7 @@ import (
 type (
 	// queue enqueues and schedules runs for a workspace
 	queue struct {
-		logr.Logger
+		logger *slog.Logger
 
 		workspaceClient
 		runClient
@@ -24,7 +24,7 @@ type (
 	}
 
 	queueOptions struct {
-		logr.Logger
+		logger *slog.Logger
 
 		workspaceClient
 		runClient
@@ -37,7 +37,7 @@ type (
 
 func (queueMaker) newQueue(opts queueOptions) eventHandler {
 	return &queue{
-		Logger:          opts.WithValues("workspace", opts.Workspace.ID),
+		logger:          opts.logger.With("workspace", opts.Workspace.ID),
 		runClient:       opts.runClient,
 		workspaceClient: opts.workspaceClient,
 		ws:              opts.Workspace,
@@ -137,7 +137,7 @@ func (q *queue) scheduleRun(ctx context.Context, run *otfrun.Run) error {
 	// if workspace is userLocked by a user then do not schedule;
 	// instead wait for an unlock event to arrive.
 	if q.ws.Lock != nil && q.ws.Lock.LockKind == workspace.UserLock {
-		q.V(0).Info("workspace locked by user; cannot schedule run", "run", run.ID)
+		q.logger.Info("workspace locked by user; cannot schedule run", "run", run.ID)
 		return nil
 	}
 
@@ -146,7 +146,7 @@ func (q *queue) scheduleRun(ctx context.Context, run *otfrun.Run) error {
 		if errors.Is(err, workspace.ErrWorkspaceAlreadyLocked) {
 			// User has locked workspace in the small window of time between
 			// getting the lock above and attempting to enqueue plan.
-			q.V(0).Info("workspace locked by user; cannot schedule run", "run", run.ID)
+			q.logger.Info("workspace locked by user; cannot schedule run", "run", run.ID)
 			return nil
 		}
 		return err

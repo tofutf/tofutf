@@ -3,9 +3,9 @@ package run
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 
-	"github.com/go-logr/logr"
 	"github.com/gobwas/glob"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/configversion"
@@ -16,8 +16,7 @@ import (
 type (
 	// Spawner spawns new runs in response to vcs events
 	Spawner struct {
-		logr.Logger
-
+		logger     *slog.Logger
 		configs    spawnerConfigClient
 		workspaces spawnerWorkspaceClient
 		vcs        spawnerVCSClient
@@ -46,7 +45,7 @@ type (
 
 func (s *Spawner) handle(event vcs.Event) {
 	// TODO: vcs.Event should implement slog.LogValue
-	logger := s.Logger.WithValues(
+	logger := s.logger.With(
 		"sha", event.CommitSHA,
 		"type", event.Type,
 		"action", event.Action,
@@ -55,11 +54,11 @@ func (s *Spawner) handle(event vcs.Event) {
 	)
 
 	if err := s.handleWithError(logger, event); err != nil {
-		s.Error(err, "handling event")
+		s.logger.Error("handling event", "err", err)
 	}
 }
 
-func (s *Spawner) handleWithError(logger logr.Logger, event vcs.Event) error {
+func (s *Spawner) handleWithError(logger *slog.Logger, event vcs.Event) error {
 	// no parent context; handler is called asynchronously
 	ctx := context.Background()
 	// give spawner unlimited powers
@@ -69,7 +68,7 @@ func (s *Spawner) handleWithError(logger logr.Logger, event vcs.Event) error {
 	switch event.Action {
 	case vcs.ActionCreated, vcs.ActionUpdated:
 	default:
-		logger.V(4).Info("ignoring vcs event: non-applicable action")
+		logger.Info("ignoring vcs event: non-applicable action")
 		return nil
 	}
 
@@ -78,7 +77,7 @@ func (s *Spawner) handleWithError(logger logr.Logger, event vcs.Event) error {
 		return err
 	}
 	if len(workspaces) == 0 {
-		logger.V(4).Info("ignoring vcs event: no connected workspaces found")
+		logger.Info("ignoring vcs event: no connected workspaces found")
 		return nil
 	}
 
@@ -131,7 +130,7 @@ func (s *Spawner) handleWithError(logger logr.Logger, event vcs.Event) error {
 	}
 	if n == 0 {
 		// no workspaces survived the filter
-		logger.V(4).Info("ignoring vcs event: no matching triggers found")
+		logger.Debug("ignoring vcs event: no matching triggers found")
 		return nil
 	}
 	workspaces = workspaces[:n]

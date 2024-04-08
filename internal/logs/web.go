@@ -3,9 +3,9 @@ package logs
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
-	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
@@ -15,7 +15,7 @@ import (
 
 type (
 	webHandlers struct {
-		logr.Logger
+		logger *slog.Logger
 
 		svc tailService
 	}
@@ -83,7 +83,7 @@ func (h *webHandlers) tailRun(w http.ResponseWriter, r *http.Request) {
 				NextOffset: chunk.NextOffset(),
 			})
 			if err != nil {
-				h.Error(err, "marshalling data")
+				h.logger.Error("marshalling data", "err", err)
 				continue
 			}
 			pubsub.WriteSSEEvent(w, js, pubsub.EventLogChunk, false)

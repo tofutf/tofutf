@@ -9,7 +9,6 @@ import (
 
 	"log/slog"
 
-	"github.com/go-logr/logr"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -32,7 +31,7 @@ type (
 
 	// Listener listens for postgres events
 	Listener struct {
-		logr.Logger
+		logger *slog.Logger
 
 		channel     string        // postgres notification channel name
 		pool        pool          // pool from which to acquire a dedicated connection to postgres
@@ -52,9 +51,9 @@ type (
 	}
 )
 
-func NewListener(logger logr.Logger, db pool) *Listener {
+func NewListener(logger *slog.Logger, db pool) *Listener {
 	return &Listener{
-		Logger:      logger.WithValues("component", "listener"),
+		logger:      logger.With("component", "listener"),
 		pool:        db,
 		islistening: make(chan struct{}),
 		channel:     defaultChannel,
@@ -85,7 +84,7 @@ func (b *Listener) Start(ctx context.Context) error {
 	if _, err := conn.Exec(ctx, "listen "+b.channel); err != nil {
 		return err
 	}
-	b.V(2).Info("listening for events")
+	b.logger.Debug("listening for events")
 	close(b.islistening) // close semaphore to indicate broker is now listening
 
 	for {
@@ -96,18 +95,18 @@ func (b *Listener) Start(ctx context.Context) error {
 				// parent has decided to shutdown so exit without error
 				return nil
 			default:
-				b.Error(err, "waiting for postgres notification")
+				b.logger.Error("waiting for postgres notification", "err", err)
 				return err
 			}
 		}
 		var pge event
 		if err := json.Unmarshal([]byte(notification.Payload), &pge); err != nil {
-			b.Error(err, "unmarshaling postgres notification")
+			b.logger.Error("unmarshaling postgres notification", "err", err)
 			continue
 		}
 		forwarder, ok := b.forwarders[string(pge.Table)]
 		if !ok {
-			b.Error(nil, "no getter found for table: %s", pge.Table)
+			b.logger.Error("no getter found for table", "table", pge.Table)
 			continue
 		}
 		forwarder(ctx, pge.ID, pge.Action)

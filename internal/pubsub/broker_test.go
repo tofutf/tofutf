@@ -2,11 +2,12 @@ package pubsub
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tofutf/tofutf/internal/logr"
 	"github.com/tofutf/tofutf/internal/sql"
+	"github.com/tofutf/tofutf/internal/xslog"
 )
 
 type foo struct {
@@ -19,7 +20,7 @@ func fooGetter(ctx context.Context, id string, action sql.Action) (*foo, error) 
 
 func TestBroker_Subscribe(t *testing.T) {
 	ctx := context.Background()
-	broker := NewBroker[*foo](logr.Discard(), &fakeListener{}, "foos", nil)
+	broker := NewBroker[*foo](slog.New(&xslog.NoopHandler{}), &fakeListener{}, "foos", nil)
 
 	sub, unsub := broker.Subscribe(ctx)
 	assert.Equal(t, 1, len(broker.subs))
@@ -31,7 +32,7 @@ func TestBroker_Subscribe(t *testing.T) {
 
 func TestBroker_UnsubscribeViaContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	broker := NewBroker[*foo](logr.Discard(), &fakeListener{}, "foos", nil)
+	broker := NewBroker[*foo](slog.New(&xslog.NoopHandler{}), &fakeListener{}, "foos", nil)
 
 	sub, _ := broker.Subscribe(ctx)
 	assert.Equal(t, 1, len(broker.subs))
@@ -43,7 +44,7 @@ func TestBroker_UnsubscribeViaContext(t *testing.T) {
 
 func TestBroker_forward(t *testing.T) {
 	ctx := context.Background()
-	broker := NewBroker[*foo](logr.Discard(), &fakeListener{}, "foos", fooGetter)
+	broker := NewBroker[*foo](slog.New(&xslog.NoopHandler{}), &fakeListener{}, "foos", fooGetter)
 
 	sub, unsub := broker.Subscribe(ctx)
 	defer unsub()
@@ -58,7 +59,7 @@ func TestBroker_forward(t *testing.T) {
 
 func TestBroker_UnsubscribeFullSubscriber(t *testing.T) {
 	ctx := context.Background()
-	broker := NewBroker[*foo](logr.Discard(), &fakeListener{}, "foos", fooGetter)
+	broker := NewBroker[*foo](slog.New(&xslog.NoopHandler{}), &fakeListener{}, "foos", fooGetter)
 
 	broker.Subscribe(ctx)
 	assert.Equal(t, 1, len(broker.subs))
