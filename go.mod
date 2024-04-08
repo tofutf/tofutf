@@ -48,7 +48,7 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
-	github.com/xanzy/go-gitlab v0.101.0
+	github.com/xanzy/go-gitlab v0.102.0
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	golang.org/x/mod v0.17.0
 	golang.org/x/net v0.22.0
