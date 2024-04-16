@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertOrganizationSQL = `INSERT INTO organizations (
     organization_id,
@@ -36,16 +38,16 @@ const insertOrganizationSQL = `INSERT INTO organizations (
 );`
 
 type InsertOrganizationParams struct {
-	ID                         pgtype.Text
-	CreatedAt                  pgtype.Timestamptz
-	UpdatedAt                  pgtype.Timestamptz
-	Name                       pgtype.Text
-	Email                      pgtype.Text
-	CollaboratorAuthPolicy     pgtype.Text
-	CostEstimationEnabled      pgtype.Bool
-	SessionRemember            pgtype.Int4
-	SessionTimeout             pgtype.Int4
-	AllowForceDeleteWorkspaces pgtype.Bool
+	ID                         pgtype.Text        `json:"id"`
+	CreatedAt                  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                  pgtype.Timestamptz `json:"updated_at"`
+	Name                       pgtype.Text        `json:"name"`
+	Email                      pgtype.Text        `json:"email"`
+	CollaboratorAuthPolicy     pgtype.Text        `json:"collaborator_auth_policy"`
+	CostEstimationEnabled      pgtype.Bool        `json:"cost_estimation_enabled"`
+	SessionRemember            pgtype.Int4        `json:"session_remember"`
+	SessionTimeout             pgtype.Int4        `json:"session_timeout"`
+	AllowForceDeleteWorkspaces pgtype.Bool        `json:"allow_force_delete_workspaces"`
 }
 
 // InsertOrganization implements Querier.InsertOrganization.
@@ -53,21 +55,7 @@ func (q *DBQuerier) InsertOrganization(ctx context.Context, params InsertOrganiz
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertOrganization")
 	cmdTag, err := q.conn.Exec(ctx, insertOrganizationSQL, params.ID, params.CreatedAt, params.UpdatedAt, params.Name, params.Email, params.CollaboratorAuthPolicy, params.CostEstimationEnabled, params.SessionRemember, params.SessionTimeout, params.AllowForceDeleteWorkspaces)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertOrganization: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertOrganizationBatch implements Querier.InsertOrganizationBatch.
-func (q *DBQuerier) InsertOrganizationBatch(batch genericBatch, params InsertOrganizationParams) {
-	batch.Queue(insertOrganizationSQL, params.ID, params.CreatedAt, params.UpdatedAt, params.Name, params.Email, params.CollaboratorAuthPolicy, params.CostEstimationEnabled, params.SessionRemember, params.SessionTimeout, params.AllowForceDeleteWorkspaces)
-}
-
-// InsertOrganizationScan implements Querier.InsertOrganizationScan.
-func (q *DBQuerier) InsertOrganizationScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertOrganizationBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertOrganization: %w", err)
 	}
 	return cmdTag, err
 }
@@ -80,27 +68,18 @@ WHERE workspace_id = $1
 // FindOrganizationNameByWorkspaceID implements Querier.FindOrganizationNameByWorkspaceID.
 func (q *DBQuerier) FindOrganizationNameByWorkspaceID(ctx context.Context, workspaceID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindOrganizationNameByWorkspaceID")
-	row := q.conn.QueryRow(ctx, findOrganizationNameByWorkspaceIDSQL, workspaceID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query FindOrganizationNameByWorkspaceID: %w", err)
+	rows, err := q.conn.Query(ctx, findOrganizationNameByWorkspaceIDSQL, workspaceID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query FindOrganizationNameByWorkspaceID: %w", err)
 	}
-	return item, nil
-}
 
-// FindOrganizationNameByWorkspaceIDBatch implements Querier.FindOrganizationNameByWorkspaceIDBatch.
-func (q *DBQuerier) FindOrganizationNameByWorkspaceIDBatch(batch genericBatch, workspaceID pgtype.Text) {
-	batch.Queue(findOrganizationNameByWorkspaceIDSQL, workspaceID)
-}
-
-// FindOrganizationNameByWorkspaceIDScan implements Querier.FindOrganizationNameByWorkspaceIDScan.
-func (q *DBQuerier) FindOrganizationNameByWorkspaceIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan FindOrganizationNameByWorkspaceIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findOrganizationByNameSQL = `SELECT * FROM organizations WHERE name = $1;`
@@ -121,27 +100,28 @@ type FindOrganizationByNameRow struct {
 // FindOrganizationByName implements Querier.FindOrganizationByName.
 func (q *DBQuerier) FindOrganizationByName(ctx context.Context, name pgtype.Text) (FindOrganizationByNameRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindOrganizationByName")
-	row := q.conn.QueryRow(ctx, findOrganizationByNameSQL, name)
-	var item FindOrganizationByNameRow
-	if err := row.Scan(&item.OrganizationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.SessionRemember, &item.SessionTimeout, &item.Email, &item.CollaboratorAuthPolicy, &item.AllowForceDeleteWorkspaces, &item.CostEstimationEnabled); err != nil {
-		return item, fmt.Errorf("query FindOrganizationByName: %w", err)
+	rows, err := q.conn.Query(ctx, findOrganizationByNameSQL, name)
+	if err != nil {
+		return FindOrganizationByNameRow{}, fmt.Errorf("query FindOrganizationByName: %w", err)
 	}
-	return item, nil
-}
 
-// FindOrganizationByNameBatch implements Querier.FindOrganizationByNameBatch.
-func (q *DBQuerier) FindOrganizationByNameBatch(batch genericBatch, name pgtype.Text) {
-	batch.Queue(findOrganizationByNameSQL, name)
-}
-
-// FindOrganizationByNameScan implements Querier.FindOrganizationByNameScan.
-func (q *DBQuerier) FindOrganizationByNameScan(results pgx.BatchResults) (FindOrganizationByNameRow, error) {
-	row := results.QueryRow()
-	var item FindOrganizationByNameRow
-	if err := row.Scan(&item.OrganizationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.SessionRemember, &item.SessionTimeout, &item.Email, &item.CollaboratorAuthPolicy, &item.AllowForceDeleteWorkspaces, &item.CostEstimationEnabled); err != nil {
-		return item, fmt.Errorf("scan FindOrganizationByNameBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByNameRow, error) {
+		var item FindOrganizationByNameRow
+		if err := row.Scan(&item.OrganizationID, // 'organization_id', 'OrganizationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SessionRemember,            // 'session_remember', 'SessionRemember', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.SessionTimeout,             // 'session_timeout', 'SessionTimeout', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.Email,                      // 'email', 'Email', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CollaboratorAuthPolicy,     // 'collaborator_auth_policy', 'CollaboratorAuthPolicy', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowForceDeleteWorkspaces, // 'allow_force_delete_workspaces', 'AllowForceDeleteWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CostEstimationEnabled,      // 'cost_estimation_enabled', 'CostEstimationEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findOrganizationByIDSQL = `SELECT * FROM organizations WHERE organization_id = $1;`
@@ -162,27 +142,28 @@ type FindOrganizationByIDRow struct {
 // FindOrganizationByID implements Querier.FindOrganizationByID.
 func (q *DBQuerier) FindOrganizationByID(ctx context.Context, organizationID pgtype.Text) (FindOrganizationByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindOrganizationByID")
-	row := q.conn.QueryRow(ctx, findOrganizationByIDSQL, organizationID)
-	var item FindOrganizationByIDRow
-	if err := row.Scan(&item.OrganizationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.SessionRemember, &item.SessionTimeout, &item.Email, &item.CollaboratorAuthPolicy, &item.AllowForceDeleteWorkspaces, &item.CostEstimationEnabled); err != nil {
-		return item, fmt.Errorf("query FindOrganizationByID: %w", err)
+	rows, err := q.conn.Query(ctx, findOrganizationByIDSQL, organizationID)
+	if err != nil {
+		return FindOrganizationByIDRow{}, fmt.Errorf("query FindOrganizationByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindOrganizationByIDBatch implements Querier.FindOrganizationByIDBatch.
-func (q *DBQuerier) FindOrganizationByIDBatch(batch genericBatch, organizationID pgtype.Text) {
-	batch.Queue(findOrganizationByIDSQL, organizationID)
-}
-
-// FindOrganizationByIDScan implements Querier.FindOrganizationByIDScan.
-func (q *DBQuerier) FindOrganizationByIDScan(results pgx.BatchResults) (FindOrganizationByIDRow, error) {
-	row := results.QueryRow()
-	var item FindOrganizationByIDRow
-	if err := row.Scan(&item.OrganizationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.SessionRemember, &item.SessionTimeout, &item.Email, &item.CollaboratorAuthPolicy, &item.AllowForceDeleteWorkspaces, &item.CostEstimationEnabled); err != nil {
-		return item, fmt.Errorf("scan FindOrganizationByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByIDRow, error) {
+		var item FindOrganizationByIDRow
+		if err := row.Scan(&item.OrganizationID, // 'organization_id', 'OrganizationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SessionRemember,            // 'session_remember', 'SessionRemember', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.SessionTimeout,             // 'session_timeout', 'SessionTimeout', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.Email,                      // 'email', 'Email', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CollaboratorAuthPolicy,     // 'collaborator_auth_policy', 'CollaboratorAuthPolicy', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowForceDeleteWorkspaces, // 'allow_force_delete_workspaces', 'AllowForceDeleteWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CostEstimationEnabled,      // 'cost_estimation_enabled', 'CostEstimationEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findOrganizationByNameForUpdateSQL = `SELECT *
@@ -207,27 +188,28 @@ type FindOrganizationByNameForUpdateRow struct {
 // FindOrganizationByNameForUpdate implements Querier.FindOrganizationByNameForUpdate.
 func (q *DBQuerier) FindOrganizationByNameForUpdate(ctx context.Context, name pgtype.Text) (FindOrganizationByNameForUpdateRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindOrganizationByNameForUpdate")
-	row := q.conn.QueryRow(ctx, findOrganizationByNameForUpdateSQL, name)
-	var item FindOrganizationByNameForUpdateRow
-	if err := row.Scan(&item.OrganizationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.SessionRemember, &item.SessionTimeout, &item.Email, &item.CollaboratorAuthPolicy, &item.AllowForceDeleteWorkspaces, &item.CostEstimationEnabled); err != nil {
-		return item, fmt.Errorf("query FindOrganizationByNameForUpdate: %w", err)
+	rows, err := q.conn.Query(ctx, findOrganizationByNameForUpdateSQL, name)
+	if err != nil {
+		return FindOrganizationByNameForUpdateRow{}, fmt.Errorf("query FindOrganizationByNameForUpdate: %w", err)
 	}
-	return item, nil
-}
 
-// FindOrganizationByNameForUpdateBatch implements Querier.FindOrganizationByNameForUpdateBatch.
-func (q *DBQuerier) FindOrganizationByNameForUpdateBatch(batch genericBatch, name pgtype.Text) {
-	batch.Queue(findOrganizationByNameForUpdateSQL, name)
-}
-
-// FindOrganizationByNameForUpdateScan implements Querier.FindOrganizationByNameForUpdateScan.
-func (q *DBQuerier) FindOrganizationByNameForUpdateScan(results pgx.BatchResults) (FindOrganizationByNameForUpdateRow, error) {
-	row := results.QueryRow()
-	var item FindOrganizationByNameForUpdateRow
-	if err := row.Scan(&item.OrganizationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.SessionRemember, &item.SessionTimeout, &item.Email, &item.CollaboratorAuthPolicy, &item.AllowForceDeleteWorkspaces, &item.CostEstimationEnabled); err != nil {
-		return item, fmt.Errorf("scan FindOrganizationByNameForUpdateBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByNameForUpdateRow, error) {
+		var item FindOrganizationByNameForUpdateRow
+		if err := row.Scan(&item.OrganizationID, // 'organization_id', 'OrganizationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SessionRemember,            // 'session_remember', 'SessionRemember', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.SessionTimeout,             // 'session_timeout', 'SessionTimeout', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.Email,                      // 'email', 'Email', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CollaboratorAuthPolicy,     // 'collaborator_auth_policy', 'CollaboratorAuthPolicy', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowForceDeleteWorkspaces, // 'allow_force_delete_workspaces', 'AllowForceDeleteWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CostEstimationEnabled,      // 'cost_estimation_enabled', 'CostEstimationEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findOrganizationsSQL = `SELECT *
@@ -238,9 +220,9 @@ LIMIT $2 OFFSET $3
 ;`
 
 type FindOrganizationsParams struct {
-	Names  []string
-	Limit  pgtype.Int8
-	Offset pgtype.Int8
+	Names  []string    `json:"names"`
+	Limit  pgtype.Int8 `json:"limit"`
+	Offset pgtype.Int8 `json:"offset"`
 }
 
 type FindOrganizationsRow struct {
@@ -263,45 +245,24 @@ func (q *DBQuerier) FindOrganizations(ctx context.Context, params FindOrganizati
 	if err != nil {
 		return nil, fmt.Errorf("query FindOrganizations: %w", err)
 	}
-	defer rows.Close()
-	items := []FindOrganizationsRow{}
-	for rows.Next() {
-		var item FindOrganizationsRow
-		if err := rows.Scan(&item.OrganizationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.SessionRemember, &item.SessionTimeout, &item.Email, &item.CollaboratorAuthPolicy, &item.AllowForceDeleteWorkspaces, &item.CostEstimationEnabled); err != nil {
-			return nil, fmt.Errorf("scan FindOrganizations row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindOrganizations rows: %w", err)
-	}
-	return items, err
-}
 
-// FindOrganizationsBatch implements Querier.FindOrganizationsBatch.
-func (q *DBQuerier) FindOrganizationsBatch(batch genericBatch, params FindOrganizationsParams) {
-	batch.Queue(findOrganizationsSQL, params.Names, params.Limit, params.Offset)
-}
-
-// FindOrganizationsScan implements Querier.FindOrganizationsScan.
-func (q *DBQuerier) FindOrganizationsScan(results pgx.BatchResults) ([]FindOrganizationsRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindOrganizationsBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindOrganizationsRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindOrganizationsRow, error) {
 		var item FindOrganizationsRow
-		if err := rows.Scan(&item.OrganizationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.SessionRemember, &item.SessionTimeout, &item.Email, &item.CollaboratorAuthPolicy, &item.AllowForceDeleteWorkspaces, &item.CostEstimationEnabled); err != nil {
-			return nil, fmt.Errorf("scan FindOrganizationsBatch row: %w", err)
+		if err := row.Scan(&item.OrganizationID, // 'organization_id', 'OrganizationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SessionRemember,            // 'session_remember', 'SessionRemember', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.SessionTimeout,             // 'session_timeout', 'SessionTimeout', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.Email,                      // 'email', 'Email', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CollaboratorAuthPolicy,     // 'collaborator_auth_policy', 'CollaboratorAuthPolicy', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowForceDeleteWorkspaces, // 'allow_force_delete_workspaces', 'AllowForceDeleteWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CostEstimationEnabled,      // 'cost_estimation_enabled', 'CostEstimationEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindOrganizationsBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const countOrganizationsSQL = `SELECT count(*)
@@ -312,27 +273,18 @@ WHERE name LIKE ANY($1)
 // CountOrganizations implements Querier.CountOrganizations.
 func (q *DBQuerier) CountOrganizations(ctx context.Context, names []string) (pgtype.Int8, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "CountOrganizations")
-	row := q.conn.QueryRow(ctx, countOrganizationsSQL, names)
-	var item pgtype.Int8
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query CountOrganizations: %w", err)
+	rows, err := q.conn.Query(ctx, countOrganizationsSQL, names)
+	if err != nil {
+		return pgtype.Int8{}, fmt.Errorf("query CountOrganizations: %w", err)
 	}
-	return item, nil
-}
 
-// CountOrganizationsBatch implements Querier.CountOrganizationsBatch.
-func (q *DBQuerier) CountOrganizationsBatch(batch genericBatch, names []string) {
-	batch.Queue(countOrganizationsSQL, names)
-}
-
-// CountOrganizationsScan implements Querier.CountOrganizationsScan.
-func (q *DBQuerier) CountOrganizationsScan(results pgx.BatchResults) (pgtype.Int8, error) {
-	row := results.QueryRow()
-	var item pgtype.Int8
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan CountOrganizationsBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+		var item pgtype.Int8
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateOrganizationByNameSQL = `UPDATE organizations
@@ -349,41 +301,32 @@ WHERE name = $9
 RETURNING organization_id;`
 
 type UpdateOrganizationByNameParams struct {
-	NewName                    pgtype.Text
-	Email                      pgtype.Text
-	CollaboratorAuthPolicy     pgtype.Text
-	CostEstimationEnabled      pgtype.Bool
-	SessionRemember            pgtype.Int4
-	SessionTimeout             pgtype.Int4
-	AllowForceDeleteWorkspaces pgtype.Bool
-	UpdatedAt                  pgtype.Timestamptz
-	Name                       pgtype.Text
+	NewName                    pgtype.Text        `json:"new_name"`
+	Email                      pgtype.Text        `json:"email"`
+	CollaboratorAuthPolicy     pgtype.Text        `json:"collaborator_auth_policy"`
+	CostEstimationEnabled      pgtype.Bool        `json:"cost_estimation_enabled"`
+	SessionRemember            pgtype.Int4        `json:"session_remember"`
+	SessionTimeout             pgtype.Int4        `json:"session_timeout"`
+	AllowForceDeleteWorkspaces pgtype.Bool        `json:"allow_force_delete_workspaces"`
+	UpdatedAt                  pgtype.Timestamptz `json:"updated_at"`
+	Name                       pgtype.Text        `json:"name"`
 }
 
 // UpdateOrganizationByName implements Querier.UpdateOrganizationByName.
 func (q *DBQuerier) UpdateOrganizationByName(ctx context.Context, params UpdateOrganizationByNameParams) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateOrganizationByName")
-	row := q.conn.QueryRow(ctx, updateOrganizationByNameSQL, params.NewName, params.Email, params.CollaboratorAuthPolicy, params.CostEstimationEnabled, params.SessionRemember, params.SessionTimeout, params.AllowForceDeleteWorkspaces, params.UpdatedAt, params.Name)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query UpdateOrganizationByName: %w", err)
+	rows, err := q.conn.Query(ctx, updateOrganizationByNameSQL, params.NewName, params.Email, params.CollaboratorAuthPolicy, params.CostEstimationEnabled, params.SessionRemember, params.SessionTimeout, params.AllowForceDeleteWorkspaces, params.UpdatedAt, params.Name)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query UpdateOrganizationByName: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateOrganizationByNameBatch implements Querier.UpdateOrganizationByNameBatch.
-func (q *DBQuerier) UpdateOrganizationByNameBatch(batch genericBatch, params UpdateOrganizationByNameParams) {
-	batch.Queue(updateOrganizationByNameSQL, params.NewName, params.Email, params.CollaboratorAuthPolicy, params.CostEstimationEnabled, params.SessionRemember, params.SessionTimeout, params.AllowForceDeleteWorkspaces, params.UpdatedAt, params.Name)
-}
-
-// UpdateOrganizationByNameScan implements Querier.UpdateOrganizationByNameScan.
-func (q *DBQuerier) UpdateOrganizationByNameScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan UpdateOrganizationByNameBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteOrganizationByNameSQL = `DELETE
@@ -394,25 +337,16 @@ RETURNING organization_id;`
 // DeleteOrganizationByName implements Querier.DeleteOrganizationByName.
 func (q *DBQuerier) DeleteOrganizationByName(ctx context.Context, name pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteOrganizationByName")
-	row := q.conn.QueryRow(ctx, deleteOrganizationByNameSQL, name)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteOrganizationByName: %w", err)
+	rows, err := q.conn.Query(ctx, deleteOrganizationByNameSQL, name)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteOrganizationByName: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteOrganizationByNameBatch implements Querier.DeleteOrganizationByNameBatch.
-func (q *DBQuerier) DeleteOrganizationByNameBatch(batch genericBatch, name pgtype.Text) {
-	batch.Queue(deleteOrganizationByNameSQL, name)
-}
-
-// DeleteOrganizationByNameScan implements Querier.DeleteOrganizationByNameScan.
-func (q *DBQuerier) DeleteOrganizationByNameScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteOrganizationByNameBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

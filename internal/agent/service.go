@@ -43,7 +43,7 @@ type (
 
 	ServiceOptions struct {
 		Logger *slog.Logger
-		*sql.DB
+		*sql.Pool
 		*sql.Listener
 		html.Renderer
 		*tfeapi.Responder
@@ -63,7 +63,7 @@ type (
 func NewService(opts ServiceOptions) *Service {
 	svc := &Service{
 		logger:       opts.Logger,
-		db:           &db{DB: opts.DB},
+		db:           &db{Pool: opts.Pool},
 		organization: &organization.Authorizer{Logger: opts.Logger},
 		tokenFactory: &tokenFactory{
 			tokens: opts.TokensService,

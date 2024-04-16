@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertGithubAppSQL = `INSERT INTO github_apps (
     github_app_id,
@@ -26,11 +28,11 @@ const insertGithubAppSQL = `INSERT INTO github_apps (
 );`
 
 type InsertGithubAppParams struct {
-	GithubAppID   pgtype.Int8
-	WebhookSecret pgtype.Text
-	PrivateKey    pgtype.Text
-	Slug          pgtype.Text
-	Organization  pgtype.Text
+	GithubAppID   pgtype.Int8 `json:"github_app_id"`
+	WebhookSecret pgtype.Text `json:"webhook_secret"`
+	PrivateKey    pgtype.Text `json:"private_key"`
+	Slug          pgtype.Text `json:"slug"`
+	Organization  pgtype.Text `json:"organization"`
 }
 
 // InsertGithubApp implements Querier.InsertGithubApp.
@@ -38,21 +40,7 @@ func (q *DBQuerier) InsertGithubApp(ctx context.Context, params InsertGithubAppP
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertGithubApp")
 	cmdTag, err := q.conn.Exec(ctx, insertGithubAppSQL, params.GithubAppID, params.WebhookSecret, params.PrivateKey, params.Slug, params.Organization)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertGithubApp: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertGithubAppBatch implements Querier.InsertGithubAppBatch.
-func (q *DBQuerier) InsertGithubAppBatch(batch genericBatch, params InsertGithubAppParams) {
-	batch.Queue(insertGithubAppSQL, params.GithubAppID, params.WebhookSecret, params.PrivateKey, params.Slug, params.Organization)
-}
-
-// InsertGithubAppScan implements Querier.InsertGithubAppScan.
-func (q *DBQuerier) InsertGithubAppScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertGithubAppBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertGithubApp: %w", err)
 	}
 	return cmdTag, err
 }
@@ -71,27 +59,23 @@ type FindGithubAppRow struct {
 // FindGithubApp implements Querier.FindGithubApp.
 func (q *DBQuerier) FindGithubApp(ctx context.Context) (FindGithubAppRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindGithubApp")
-	row := q.conn.QueryRow(ctx, findGithubAppSQL)
-	var item FindGithubAppRow
-	if err := row.Scan(&item.GithubAppID, &item.WebhookSecret, &item.PrivateKey, &item.Slug, &item.Organization); err != nil {
-		return item, fmt.Errorf("query FindGithubApp: %w", err)
+	rows, err := q.conn.Query(ctx, findGithubAppSQL)
+	if err != nil {
+		return FindGithubAppRow{}, fmt.Errorf("query FindGithubApp: %w", err)
 	}
-	return item, nil
-}
 
-// FindGithubAppBatch implements Querier.FindGithubAppBatch.
-func (q *DBQuerier) FindGithubAppBatch(batch genericBatch) {
-	batch.Queue(findGithubAppSQL)
-}
-
-// FindGithubAppScan implements Querier.FindGithubAppScan.
-func (q *DBQuerier) FindGithubAppScan(results pgx.BatchResults) (FindGithubAppRow, error) {
-	row := results.QueryRow()
-	var item FindGithubAppRow
-	if err := row.Scan(&item.GithubAppID, &item.WebhookSecret, &item.PrivateKey, &item.Slug, &item.Organization); err != nil {
-		return item, fmt.Errorf("scan FindGithubAppBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindGithubAppRow, error) {
+		var item FindGithubAppRow
+		if err := row.Scan(&item.GithubAppID, // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
+			&item.WebhookSecret, // 'webhook_secret', 'WebhookSecret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.PrivateKey,    // 'private_key', 'PrivateKey', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Slug,          // 'slug', 'Slug', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Organization,  // 'organization', 'Organization', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteGithubAppSQL = `DELETE
@@ -110,27 +94,23 @@ type DeleteGithubAppRow struct {
 // DeleteGithubApp implements Querier.DeleteGithubApp.
 func (q *DBQuerier) DeleteGithubApp(ctx context.Context, githubAppID pgtype.Int8) (DeleteGithubAppRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteGithubApp")
-	row := q.conn.QueryRow(ctx, deleteGithubAppSQL, githubAppID)
-	var item DeleteGithubAppRow
-	if err := row.Scan(&item.GithubAppID, &item.WebhookSecret, &item.PrivateKey, &item.Slug, &item.Organization); err != nil {
-		return item, fmt.Errorf("query DeleteGithubApp: %w", err)
+	rows, err := q.conn.Query(ctx, deleteGithubAppSQL, githubAppID)
+	if err != nil {
+		return DeleteGithubAppRow{}, fmt.Errorf("query DeleteGithubApp: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteGithubAppBatch implements Querier.DeleteGithubAppBatch.
-func (q *DBQuerier) DeleteGithubAppBatch(batch genericBatch, githubAppID pgtype.Int8) {
-	batch.Queue(deleteGithubAppSQL, githubAppID)
-}
-
-// DeleteGithubAppScan implements Querier.DeleteGithubAppScan.
-func (q *DBQuerier) DeleteGithubAppScan(results pgx.BatchResults) (DeleteGithubAppRow, error) {
-	row := results.QueryRow()
-	var item DeleteGithubAppRow
-	if err := row.Scan(&item.GithubAppID, &item.WebhookSecret, &item.PrivateKey, &item.Slug, &item.Organization); err != nil {
-		return item, fmt.Errorf("scan DeleteGithubAppBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteGithubAppRow, error) {
+		var item DeleteGithubAppRow
+		if err := row.Scan(&item.GithubAppID, // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
+			&item.WebhookSecret, // 'webhook_secret', 'WebhookSecret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.PrivateKey,    // 'private_key', 'PrivateKey', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Slug,          // 'slug', 'Slug', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Organization,  // 'organization', 'Organization', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const insertGithubAppInstallSQL = `INSERT INTO github_app_installs (
@@ -148,11 +128,11 @@ const insertGithubAppInstallSQL = `INSERT INTO github_app_installs (
 );`
 
 type InsertGithubAppInstallParams struct {
-	GithubAppID   pgtype.Int8
-	InstallID     pgtype.Int8
-	Username      pgtype.Text
-	Organization  pgtype.Text
-	VCSProviderID pgtype.Text
+	GithubAppID   pgtype.Int8 `json:"github_app_id"`
+	InstallID     pgtype.Int8 `json:"install_id"`
+	Username      pgtype.Text `json:"username"`
+	Organization  pgtype.Text `json:"organization"`
+	VCSProviderID pgtype.Text `json:"vcs_provider_id"`
 }
 
 // InsertGithubAppInstall implements Querier.InsertGithubAppInstall.
@@ -160,21 +140,7 @@ func (q *DBQuerier) InsertGithubAppInstall(ctx context.Context, params InsertGit
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertGithubAppInstall")
 	cmdTag, err := q.conn.Exec(ctx, insertGithubAppInstallSQL, params.GithubAppID, params.InstallID, params.Username, params.Organization, params.VCSProviderID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertGithubAppInstall: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertGithubAppInstallBatch implements Querier.InsertGithubAppInstallBatch.
-func (q *DBQuerier) InsertGithubAppInstallBatch(batch genericBatch, params InsertGithubAppInstallParams) {
-	batch.Queue(insertGithubAppInstallSQL, params.GithubAppID, params.InstallID, params.Username, params.Organization, params.VCSProviderID)
-}
-
-// InsertGithubAppInstallScan implements Querier.InsertGithubAppInstallScan.
-func (q *DBQuerier) InsertGithubAppInstallScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertGithubAppInstallBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertGithubAppInstall: %w", err)
 	}
 	return cmdTag, err
 }

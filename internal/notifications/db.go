@@ -3,7 +3,7 @@ package notifications
 import (
 	"context"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/sql"
 	"github.com/tofutf/tofutf/internal/sql/pggen"
@@ -12,7 +12,7 @@ import (
 type (
 	// pgdb is a notification configuration database on postgres
 	pgdb struct {
-		*sql.DB // provides access to generated SQL queries
+		*sql.Pool // provides access to generated SQL queries
 	}
 
 	pgresult struct {
@@ -41,43 +41,45 @@ func (r pgresult) toNotificationConfiguration() *Config {
 	for _, t := range r.Triggers {
 		nc.Triggers = append(nc.Triggers, Trigger(t))
 	}
-	if r.URL.Status == pgtype.Present {
+	if r.URL.Valid {
 		nc.URL = &r.URL.String
 	}
 	return nc
 }
 
 func (db *pgdb) create(ctx context.Context, nc *Config) error {
-	params := pggen.InsertNotificationConfigurationParams{
-		NotificationConfigurationID: sql.String(nc.ID),
-		CreatedAt:                   sql.Timestamptz(nc.CreatedAt),
-		UpdatedAt:                   sql.Timestamptz(nc.UpdatedAt),
-		Name:                        sql.String(nc.Name),
-		Enabled:                     sql.Bool(nc.Enabled),
-		DestinationType:             sql.String(string(nc.DestinationType)),
-		URL:                         sql.NullString(),
-		WorkspaceID:                 sql.String(nc.WorkspaceID),
-	}
-	for _, t := range nc.Triggers {
-		params.Triggers = append(params.Triggers, string(t))
-	}
-	if nc.URL != nil {
-		params.URL = sql.String(*nc.URL)
-	}
-	_, err := db.Conn(ctx).InsertNotificationConfiguration(ctx, params)
-	return sql.Error(err)
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		params := pggen.InsertNotificationConfigurationParams{
+			NotificationConfigurationID: sql.String(nc.ID),
+			CreatedAt:                   sql.Timestamptz(nc.CreatedAt),
+			UpdatedAt:                   sql.Timestamptz(nc.UpdatedAt),
+			Name:                        sql.String(nc.Name),
+			Enabled:                     sql.Bool(nc.Enabled),
+			DestinationType:             sql.String(string(nc.DestinationType)),
+			URL:                         sql.NullString(),
+			WorkspaceID:                 sql.String(nc.WorkspaceID),
+		}
+		for _, t := range nc.Triggers {
+			params.Triggers = append(params.Triggers, string(t))
+		}
+		if nc.URL != nil {
+			params.URL = sql.String(*nc.URL)
+		}
+
+		_, err := q.InsertNotificationConfiguration(ctx, params)
+		return sql.Error(err)
+	})
 }
 
 func (db *pgdb) update(ctx context.Context, id string, updateFunc func(*Config) error) (*Config, error) {
-	var nc *Config
-	err := db.Tx(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return sql.Tx(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Config, error) {
 		result, err := q.FindNotificationConfigurationForUpdate(ctx, sql.String(id))
 		if err != nil {
-			return sql.Error(err)
+			return nil, sql.Error(err)
 		}
-		nc = pgresult(result).toNotificationConfiguration()
+		nc := pgresult(result).toNotificationConfiguration()
 		if err := updateFunc(nc); err != nil {
-			return sql.Error(err)
+			return nil, sql.Error(err)
 		}
 		params := pggen.UpdateNotificationConfigurationByIDParams{
 			UpdatedAt:                   sql.Timestamptz(internal.CurrentTimestamp(nil)),
@@ -92,50 +94,65 @@ func (db *pgdb) update(ctx context.Context, id string, updateFunc func(*Config) 
 		if nc.URL != nil {
 			params.URL = sql.String(*nc.URL)
 		}
+
 		_, err = q.UpdateNotificationConfigurationByID(ctx, params)
-		return err
+		if err != nil {
+			return nil, err
+		}
+
+		return nc, nil
 	})
-	return nc, err
 }
 
 func (db *pgdb) list(ctx context.Context, workspaceID string) ([]*Config, error) {
-	results, err := db.Conn(ctx).FindNotificationConfigurationsByWorkspaceID(ctx, sql.String(workspaceID))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Config, error) {
+		results, err := q.FindNotificationConfigurationsByWorkspaceID(ctx, sql.String(workspaceID))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
 
-	configs := make([]*Config, len(results))
-	for i, row := range results {
-		configs[i] = pgresult(row).toNotificationConfiguration()
-	}
-	return configs, nil
+		configs := make([]*Config, len(results))
+		for i, row := range results {
+			configs[i] = pgresult(row).toNotificationConfiguration()
+		}
+
+		return configs, nil
+	})
 }
 
 func (db *pgdb) listAll(ctx context.Context) ([]*Config, error) {
-	results, err := db.Conn(ctx).FindAllNotificationConfigurations(ctx)
-	if err != nil {
-		return nil, sql.Error(err)
-	}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Config, error) {
+		results, err := q.FindAllNotificationConfigurations(ctx)
+		if err != nil {
+			return nil, sql.Error(err)
+		}
 
-	configs := make([]*Config, len(results))
-	for i, row := range results {
-		configs[i] = pgresult(row).toNotificationConfiguration()
-	}
-	return configs, nil
+		configs := make([]*Config, len(results))
+		for i, row := range results {
+			configs[i] = pgresult(row).toNotificationConfiguration()
+		}
+		return configs, nil
+	})
 }
 
 func (db *pgdb) get(ctx context.Context, id string) (*Config, error) {
-	row, err := db.Conn(ctx).FindNotificationConfiguration(ctx, sql.String(id))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return pgresult(row).toNotificationConfiguration(), nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Config, error) {
+		row, err := q.FindNotificationConfiguration(ctx, sql.String(id))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		return pgresult(row).toNotificationConfiguration(), nil
+	})
 }
 
 func (db *pgdb) delete(ctx context.Context, id string) error {
-	_, err := db.Conn(ctx).DeleteNotificationConfigurationByID(ctx, sql.String(id))
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.DeleteNotificationConfigurationByID(ctx, sql.String(id))
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return nil
+	})
 }

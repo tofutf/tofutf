@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal/sql"
 	"github.com/tofutf/tofutf/internal/sql/pggen"
 	"github.com/tofutf/tofutf/internal/team"
@@ -37,8 +37,8 @@ func (result dbresult) toUser() *User {
 
 // pgdb stores user resources in a postgres database
 type pgdb struct {
-	*sql.DB // provides access to generated SQL queries
-	Logger  *slog.Logger
+	*sql.Pool // provides access to generated SQL queries
+	Logger    *slog.Logger
 }
 
 // CreateUser persists a User to the DB.
@@ -64,99 +64,121 @@ func (db *pgdb) CreateUser(ctx context.Context, user *User) error {
 }
 
 func (db *pgdb) listUsers(ctx context.Context) ([]*User, error) {
-	result, err := db.Conn(ctx).FindUsers(ctx)
-	if err != nil {
-		return nil, err
-	}
-	users := make([]*User, len(result))
-	for i, r := range result {
-		users[i] = dbresult(r).toUser()
-	}
-	return users, nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
+		result, err := q.FindUsers(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		users := make([]*User, len(result))
+		for i, r := range result {
+			users[i] = dbresult(r).toUser()
+		}
+
+		return users, nil
+	})
 }
 
 func (db *pgdb) listOrganizationUsers(ctx context.Context, organization string) ([]*User, error) {
-	result, err := db.Conn(ctx).FindUsersByOrganization(ctx, sql.String(organization))
-	if err != nil {
-		return nil, err
-	}
-	users := make([]*User, len(result))
-	for i, r := range result {
-		users[i] = dbresult(r).toUser()
-	}
-	return users, nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
+		result, err := q.FindUsersByOrganization(ctx, sql.String(organization))
+		if err != nil {
+			return nil, err
+		}
+
+		users := make([]*User, len(result))
+		for i, r := range result {
+			users[i] = dbresult(r).toUser()
+		}
+
+		return users, nil
+	})
 }
 
 func (db *pgdb) listTeamUsers(ctx context.Context, teamID string) ([]*User, error) {
-	result, err := db.Conn(ctx).FindUsersByTeamID(ctx, sql.String(teamID))
-	if err != nil {
-		return nil, err
-	}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
+		result, err := q.FindUsersByTeamID(ctx, sql.String(teamID))
+		if err != nil {
+			return nil, err
+		}
 
-	items := make([]*User, len(result))
-	for i, r := range result {
-		items[i] = dbresult(r).toUser()
-	}
-	return items, nil
+		items := make([]*User, len(result))
+		for i, r := range result {
+			items[i] = dbresult(r).toUser()
+		}
+
+		return items, nil
+	})
 }
 
 // getUser retrieves a user from the DB, along with its sessions.
 func (db *pgdb) getUser(ctx context.Context, spec UserSpec) (*User, error) {
-	if spec.UserID != nil {
-		result, err := db.Conn(ctx).FindUserByID(ctx, sql.String(*spec.UserID))
-		if err != nil {
-			return nil, err
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*User, error) {
+		if spec.UserID != nil {
+			result, err := q.FindUserByID(ctx, sql.String(*spec.UserID))
+			if err != nil {
+				return nil, err
+			}
+			return dbresult(result).toUser(), nil
+		} else if spec.Username != nil {
+			result, err := q.FindUserByUsername(ctx, sql.String(*spec.Username))
+			if err != nil {
+				return nil, sql.Error(err)
+			}
+			return dbresult(result).toUser(), nil
+		} else if spec.AuthenticationTokenID != nil {
+			result, err := q.FindUserByAuthenticationTokenID(ctx, sql.String(*spec.AuthenticationTokenID))
+			if err != nil {
+				return nil, sql.Error(err)
+			}
+			return dbresult(result).toUser(), nil
+		} else {
+			return nil, fmt.Errorf("unsupported user spec for retrieving user")
 		}
-		return dbresult(result).toUser(), nil
-	} else if spec.Username != nil {
-		result, err := db.Conn(ctx).FindUserByUsername(ctx, sql.String(*spec.Username))
-		if err != nil {
-			return nil, sql.Error(err)
-		}
-		return dbresult(result).toUser(), nil
-	} else if spec.AuthenticationTokenID != nil {
-		result, err := db.Conn(ctx).FindUserByAuthenticationTokenID(ctx, sql.String(*spec.AuthenticationTokenID))
-		if err != nil {
-			return nil, sql.Error(err)
-		}
-		return dbresult(result).toUser(), nil
-	} else {
-		return nil, fmt.Errorf("unsupported user spec for retrieving user")
-	}
+	})
 }
 
 func (db *pgdb) addTeamMembership(ctx context.Context, teamID string, usernames ...string) error {
-	_, err := db.Conn(ctx).InsertTeamMembership(ctx, usernames, sql.String(teamID))
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.InsertTeamMembership(ctx, usernames, sql.String(teamID))
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return nil
+	})
 }
 
 func (db *pgdb) removeTeamMembership(ctx context.Context, teamID string, usernames ...string) error {
-	_, err := db.Conn(ctx).DeleteTeamMembership(ctx, usernames, sql.String(teamID))
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.DeleteTeamMembership(ctx, usernames, sql.String(teamID))
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return nil
+	})
 }
 
 // DeleteUser deletes a user from the DB.
 func (db *pgdb) DeleteUser(ctx context.Context, spec UserSpec) error {
-	if spec.UserID != nil {
-		_, err := db.Conn(ctx).DeleteUserByID(ctx, sql.String(*spec.UserID))
-		if err != nil {
-			return sql.Error(err)
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		if spec.UserID != nil {
+			_, err := q.DeleteUserByID(ctx, sql.String(*spec.UserID))
+			if err != nil {
+				return sql.Error(err)
+			}
+		} else if spec.Username != nil {
+			_, err := q.DeleteUserByUsername(ctx, sql.String(*spec.Username))
+			if err != nil {
+				return sql.Error(err)
+			}
+		} else {
+			return fmt.Errorf("unsupported user spec for deletion")
 		}
-	} else if spec.Username != nil {
-		_, err := db.Conn(ctx).DeleteUserByUsername(ctx, sql.String(*spec.Username))
-		if err != nil {
-			return sql.Error(err)
-		}
-	} else {
-		return fmt.Errorf("unsupported user spec for deletion")
-	}
-	return nil
+
+		return nil
+	})
 }
 
 // setSiteAdmins authoritatively promotes the given users to site admins,
@@ -205,49 +227,58 @@ func pgtextSliceDiff(a, b []pgtype.Text) []string {
 //
 
 func (db *pgdb) createUserToken(ctx context.Context, token *UserToken) error {
-	_, err := db.Conn(ctx).InsertToken(ctx, pggen.InsertTokenParams{
-		TokenID:     sql.String(token.ID),
-		Description: sql.String(token.Description),
-		Username:    sql.String(token.Username),
-		CreatedAt:   sql.Timestamptz(token.CreatedAt),
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.InsertToken(ctx, pggen.InsertTokenParams{
+			TokenID:     sql.String(token.ID),
+			Description: sql.String(token.Description),
+			Username:    sql.String(token.Username),
+			CreatedAt:   sql.Timestamptz(token.CreatedAt),
+		})
+		return err
 	})
-	return err
 }
 
 func (db *pgdb) listUserTokens(ctx context.Context, username string) ([]*UserToken, error) {
-	result, err := db.Conn(ctx).FindTokensByUsername(ctx, sql.String(username))
-	if err != nil {
-		return nil, err
-	}
-	tokens := make([]*UserToken, len(result))
-	for i, row := range result {
-		tokens[i] = &UserToken{
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*UserToken, error) {
+		result, err := q.FindTokensByUsername(ctx, sql.String(username))
+		if err != nil {
+			return nil, err
+		}
+
+		tokens := make([]*UserToken, len(result))
+		for i, row := range result {
+			tokens[i] = &UserToken{
+				ID:          row.TokenID.String,
+				CreatedAt:   row.CreatedAt.Time.UTC(),
+				Description: row.Description.String,
+				Username:    row.Username.String,
+			}
+		}
+		return tokens, nil
+	})
+}
+
+func (db *pgdb) getUserToken(ctx context.Context, id string) (*UserToken, error) {
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*UserToken, error) {
+		row, err := q.FindTokenByID(ctx, sql.String(id))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+		return &UserToken{
 			ID:          row.TokenID.String,
 			CreatedAt:   row.CreatedAt.Time.UTC(),
 			Description: row.Description.String,
 			Username:    row.Username.String,
-		}
-	}
-	return tokens, nil
-}
-
-func (db *pgdb) getUserToken(ctx context.Context, id string) (*UserToken, error) {
-	row, err := db.Conn(ctx).FindTokenByID(ctx, sql.String(id))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return &UserToken{
-		ID:          row.TokenID.String,
-		CreatedAt:   row.CreatedAt.Time.UTC(),
-		Description: row.Description.String,
-		Username:    row.Username.String,
-	}, nil
+		}, nil
+	})
 }
 
 func (db *pgdb) deleteUserToken(ctx context.Context, id string) error {
-	_, err := db.Conn(ctx).DeleteTokenByID(ctx, sql.String(id))
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.DeleteTokenByID(ctx, sql.String(id))
+		if err != nil {
+			return sql.Error(err)
+		}
+		return nil
+	})
 }

@@ -6,9 +6,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertRepohookSQL = `WITH inserted AS (
     INSERT INTO repohooks (
@@ -37,11 +39,11 @@ FROM inserted w
 JOIN vcs_providers v USING (vcs_provider_id);`
 
 type InsertRepohookParams struct {
-	RepohookID    pgtype.UUID
-	VCSID         pgtype.Text
-	VCSProviderID pgtype.Text
-	Secret        pgtype.Text
-	RepoPath      pgtype.Text
+	RepohookID    pgtype.UUID `json:"repohook_id"`
+	VCSID         pgtype.Text `json:"vcs_id"`
+	VCSProviderID pgtype.Text `json:"vcs_provider_id"`
+	Secret        pgtype.Text `json:"secret"`
+	RepoPath      pgtype.Text `json:"repo_path"`
 }
 
 type InsertRepohookRow struct {
@@ -56,27 +58,24 @@ type InsertRepohookRow struct {
 // InsertRepohook implements Querier.InsertRepohook.
 func (q *DBQuerier) InsertRepohook(ctx context.Context, params InsertRepohookParams) (InsertRepohookRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertRepohook")
-	row := q.conn.QueryRow(ctx, insertRepohookSQL, params.RepohookID, params.VCSID, params.VCSProviderID, params.Secret, params.RepoPath)
-	var item InsertRepohookRow
-	if err := row.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-		return item, fmt.Errorf("query InsertRepohook: %w", err)
+	rows, err := q.conn.Query(ctx, insertRepohookSQL, params.RepohookID, params.VCSID, params.VCSProviderID, params.Secret, params.RepoPath)
+	if err != nil {
+		return InsertRepohookRow{}, fmt.Errorf("query InsertRepohook: %w", err)
 	}
-	return item, nil
-}
 
-// InsertRepohookBatch implements Querier.InsertRepohookBatch.
-func (q *DBQuerier) InsertRepohookBatch(batch genericBatch, params InsertRepohookParams) {
-	batch.Queue(insertRepohookSQL, params.RepohookID, params.VCSID, params.VCSProviderID, params.Secret, params.RepoPath)
-}
-
-// InsertRepohookScan implements Querier.InsertRepohookScan.
-func (q *DBQuerier) InsertRepohookScan(results pgx.BatchResults) (InsertRepohookRow, error) {
-	row := results.QueryRow()
-	var item InsertRepohookRow
-	if err := row.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-		return item, fmt.Errorf("scan InsertRepohookBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (InsertRepohookRow, error) {
+		var item InsertRepohookRow
+		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
+			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Secret,        // 'secret', 'Secret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.RepoPath,      // 'repo_path', 'RepoPath', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSKind,       // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateRepohookVCSIDSQL = `UPDATE repohooks
@@ -95,27 +94,23 @@ type UpdateRepohookVCSIDRow struct {
 // UpdateRepohookVCSID implements Querier.UpdateRepohookVCSID.
 func (q *DBQuerier) UpdateRepohookVCSID(ctx context.Context, vcsID pgtype.Text, repohookID pgtype.UUID) (UpdateRepohookVCSIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateRepohookVCSID")
-	row := q.conn.QueryRow(ctx, updateRepohookVCSIDSQL, vcsID, repohookID)
-	var item UpdateRepohookVCSIDRow
-	if err := row.Scan(&item.RepohookID, &item.VCSID, &item.Secret, &item.RepoPath, &item.VCSProviderID); err != nil {
-		return item, fmt.Errorf("query UpdateRepohookVCSID: %w", err)
+	rows, err := q.conn.Query(ctx, updateRepohookVCSIDSQL, vcsID, repohookID)
+	if err != nil {
+		return UpdateRepohookVCSIDRow{}, fmt.Errorf("query UpdateRepohookVCSID: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateRepohookVCSIDBatch implements Querier.UpdateRepohookVCSIDBatch.
-func (q *DBQuerier) UpdateRepohookVCSIDBatch(batch genericBatch, vcsID pgtype.Text, repohookID pgtype.UUID) {
-	batch.Queue(updateRepohookVCSIDSQL, vcsID, repohookID)
-}
-
-// UpdateRepohookVCSIDScan implements Querier.UpdateRepohookVCSIDScan.
-func (q *DBQuerier) UpdateRepohookVCSIDScan(results pgx.BatchResults) (UpdateRepohookVCSIDRow, error) {
-	row := results.QueryRow()
-	var item UpdateRepohookVCSIDRow
-	if err := row.Scan(&item.RepohookID, &item.VCSID, &item.Secret, &item.RepoPath, &item.VCSProviderID); err != nil {
-		return item, fmt.Errorf("scan UpdateRepohookVCSIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (UpdateRepohookVCSIDRow, error) {
+		var item UpdateRepohookVCSIDRow
+		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
+			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Secret,        // 'secret', 'Secret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.RepoPath,      // 'repo_path', 'RepoPath', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findRepohooksSQL = `SELECT
@@ -144,45 +139,20 @@ func (q *DBQuerier) FindRepohooks(ctx context.Context) ([]FindRepohooksRow, erro
 	if err != nil {
 		return nil, fmt.Errorf("query FindRepohooks: %w", err)
 	}
-	defer rows.Close()
-	items := []FindRepohooksRow{}
-	for rows.Next() {
-		var item FindRepohooksRow
-		if err := rows.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-			return nil, fmt.Errorf("scan FindRepohooks row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindRepohooks rows: %w", err)
-	}
-	return items, err
-}
 
-// FindRepohooksBatch implements Querier.FindRepohooksBatch.
-func (q *DBQuerier) FindRepohooksBatch(batch genericBatch) {
-	batch.Queue(findRepohooksSQL)
-}
-
-// FindRepohooksScan implements Querier.FindRepohooksScan.
-func (q *DBQuerier) FindRepohooksScan(results pgx.BatchResults) ([]FindRepohooksRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindRepohooksBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindRepohooksRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindRepohooksRow, error) {
 		var item FindRepohooksRow
-		if err := rows.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-			return nil, fmt.Errorf("scan FindRepohooksBatch row: %w", err)
+		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
+			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Secret,        // 'secret', 'Secret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.RepoPath,      // 'repo_path', 'RepoPath', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSKind,       // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindRepohooksBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findRepohookByIDSQL = `SELECT
@@ -208,27 +178,24 @@ type FindRepohookByIDRow struct {
 // FindRepohookByID implements Querier.FindRepohookByID.
 func (q *DBQuerier) FindRepohookByID(ctx context.Context, repohookID pgtype.UUID) (FindRepohookByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindRepohookByID")
-	row := q.conn.QueryRow(ctx, findRepohookByIDSQL, repohookID)
-	var item FindRepohookByIDRow
-	if err := row.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-		return item, fmt.Errorf("query FindRepohookByID: %w", err)
+	rows, err := q.conn.Query(ctx, findRepohookByIDSQL, repohookID)
+	if err != nil {
+		return FindRepohookByIDRow{}, fmt.Errorf("query FindRepohookByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindRepohookByIDBatch implements Querier.FindRepohookByIDBatch.
-func (q *DBQuerier) FindRepohookByIDBatch(batch genericBatch, repohookID pgtype.UUID) {
-	batch.Queue(findRepohookByIDSQL, repohookID)
-}
-
-// FindRepohookByIDScan implements Querier.FindRepohookByIDScan.
-func (q *DBQuerier) FindRepohookByIDScan(results pgx.BatchResults) (FindRepohookByIDRow, error) {
-	row := results.QueryRow()
-	var item FindRepohookByIDRow
-	if err := row.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-		return item, fmt.Errorf("scan FindRepohookByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindRepohookByIDRow, error) {
+		var item FindRepohookByIDRow
+		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
+			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Secret,        // 'secret', 'Secret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.RepoPath,      // 'repo_path', 'RepoPath', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSKind,       // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findRepohookByRepoAndProviderSQL = `SELECT
@@ -259,45 +226,20 @@ func (q *DBQuerier) FindRepohookByRepoAndProvider(ctx context.Context, repoPath 
 	if err != nil {
 		return nil, fmt.Errorf("query FindRepohookByRepoAndProvider: %w", err)
 	}
-	defer rows.Close()
-	items := []FindRepohookByRepoAndProviderRow{}
-	for rows.Next() {
-		var item FindRepohookByRepoAndProviderRow
-		if err := rows.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-			return nil, fmt.Errorf("scan FindRepohookByRepoAndProvider row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindRepohookByRepoAndProvider rows: %w", err)
-	}
-	return items, err
-}
 
-// FindRepohookByRepoAndProviderBatch implements Querier.FindRepohookByRepoAndProviderBatch.
-func (q *DBQuerier) FindRepohookByRepoAndProviderBatch(batch genericBatch, repoPath pgtype.Text, vcsProviderID pgtype.Text) {
-	batch.Queue(findRepohookByRepoAndProviderSQL, repoPath, vcsProviderID)
-}
-
-// FindRepohookByRepoAndProviderScan implements Querier.FindRepohookByRepoAndProviderScan.
-func (q *DBQuerier) FindRepohookByRepoAndProviderScan(results pgx.BatchResults) ([]FindRepohookByRepoAndProviderRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindRepohookByRepoAndProviderBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindRepohookByRepoAndProviderRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindRepohookByRepoAndProviderRow, error) {
 		var item FindRepohookByRepoAndProviderRow
-		if err := rows.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-			return nil, fmt.Errorf("scan FindRepohookByRepoAndProviderBatch row: %w", err)
+		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
+			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Secret,        // 'secret', 'Secret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.RepoPath,      // 'repo_path', 'RepoPath', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSKind,       // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindRepohookByRepoAndProviderBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findUnreferencedRepohooksSQL = `SELECT
@@ -331,45 +273,20 @@ func (q *DBQuerier) FindUnreferencedRepohooks(ctx context.Context) ([]FindUnrefe
 	if err != nil {
 		return nil, fmt.Errorf("query FindUnreferencedRepohooks: %w", err)
 	}
-	defer rows.Close()
-	items := []FindUnreferencedRepohooksRow{}
-	for rows.Next() {
-		var item FindUnreferencedRepohooksRow
-		if err := rows.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-			return nil, fmt.Errorf("scan FindUnreferencedRepohooks row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindUnreferencedRepohooks rows: %w", err)
-	}
-	return items, err
-}
 
-// FindUnreferencedRepohooksBatch implements Querier.FindUnreferencedRepohooksBatch.
-func (q *DBQuerier) FindUnreferencedRepohooksBatch(batch genericBatch) {
-	batch.Queue(findUnreferencedRepohooksSQL)
-}
-
-// FindUnreferencedRepohooksScan implements Querier.FindUnreferencedRepohooksScan.
-func (q *DBQuerier) FindUnreferencedRepohooksScan(results pgx.BatchResults) ([]FindUnreferencedRepohooksRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindUnreferencedRepohooksBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindUnreferencedRepohooksRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindUnreferencedRepohooksRow, error) {
 		var item FindUnreferencedRepohooksRow
-		if err := rows.Scan(&item.RepohookID, &item.VCSID, &item.VCSProviderID, &item.Secret, &item.RepoPath, &item.VCSKind); err != nil {
-			return nil, fmt.Errorf("scan FindUnreferencedRepohooksBatch row: %w", err)
+		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
+			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Secret,        // 'secret', 'Secret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.RepoPath,      // 'repo_path', 'RepoPath', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSKind,       // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindUnreferencedRepohooksBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const deleteRepohookByIDSQL = `DELETE
@@ -388,25 +305,21 @@ type DeleteRepohookByIDRow struct {
 // DeleteRepohookByID implements Querier.DeleteRepohookByID.
 func (q *DBQuerier) DeleteRepohookByID(ctx context.Context, repohookID pgtype.UUID) (DeleteRepohookByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteRepohookByID")
-	row := q.conn.QueryRow(ctx, deleteRepohookByIDSQL, repohookID)
-	var item DeleteRepohookByIDRow
-	if err := row.Scan(&item.RepohookID, &item.VCSID, &item.Secret, &item.RepoPath, &item.VCSProviderID); err != nil {
-		return item, fmt.Errorf("query DeleteRepohookByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteRepohookByIDSQL, repohookID)
+	if err != nil {
+		return DeleteRepohookByIDRow{}, fmt.Errorf("query DeleteRepohookByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteRepohookByIDBatch implements Querier.DeleteRepohookByIDBatch.
-func (q *DBQuerier) DeleteRepohookByIDBatch(batch genericBatch, repohookID pgtype.UUID) {
-	batch.Queue(deleteRepohookByIDSQL, repohookID)
-}
-
-// DeleteRepohookByIDScan implements Querier.DeleteRepohookByIDScan.
-func (q *DBQuerier) DeleteRepohookByIDScan(results pgx.BatchResults) (DeleteRepohookByIDRow, error) {
-	row := results.QueryRow()
-	var item DeleteRepohookByIDRow
-	if err := row.Scan(&item.RepohookID, &item.VCSID, &item.Secret, &item.RepoPath, &item.VCSProviderID); err != nil {
-		return item, fmt.Errorf("scan DeleteRepohookByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteRepohookByIDRow, error) {
+		var item DeleteRepohookByIDRow
+		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
+			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Secret,        // 'secret', 'Secret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.RepoPath,      // 'repo_path', 'RepoPath', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

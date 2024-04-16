@@ -32,7 +32,7 @@ type (
 		VCSEventBroker      *vcs.Broker
 		Logger              *slog.Logger
 
-		*sql.DB
+		*sql.Pool
 		*internal.HostnameService
 	}
 
@@ -43,7 +43,7 @@ type (
 )
 
 func NewService(ctx context.Context, opts Options) *Service {
-	db := &db{opts.DB, opts.HostnameService}
+	db := &db{opts.Pool, opts.HostnameService}
 	svc := &Service{
 		logger:       opts.Logger,
 		vcsproviders: opts.VCSProviderService,

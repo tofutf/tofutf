@@ -14,14 +14,15 @@ type Report struct {
 	Destructions int `json:"destructions"`
 }
 
-func reportFromDB(row *pggen.Report) *Report {
-	if row == nil {
+func reportFromDB(row pggen.Report) *Report {
+	if row == (pggen.Report{}) {
 		return nil
 	}
+
 	return &Report{
-		Additions:    int(row.Additions.Int),
-		Changes:      int(row.Changes.Int),
-		Destructions: int(row.Destructions.Int),
+		Additions:    int(row.Additions.Int32),
+		Changes:      int(row.Changes.Int32),
+		Destructions: int(row.Destructions.Int32),
 	}
 }
 

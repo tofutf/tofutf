@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertTokenSQL = `INSERT INTO tokens (
     token_id,
@@ -24,10 +26,10 @@ const insertTokenSQL = `INSERT INTO tokens (
 );`
 
 type InsertTokenParams struct {
-	TokenID     pgtype.Text
-	CreatedAt   pgtype.Timestamptz
-	Description pgtype.Text
-	Username    pgtype.Text
+	TokenID     pgtype.Text        `json:"token_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Description pgtype.Text        `json:"description"`
+	Username    pgtype.Text        `json:"username"`
 }
 
 // InsertToken implements Querier.InsertToken.
@@ -35,21 +37,7 @@ func (q *DBQuerier) InsertToken(ctx context.Context, params InsertTokenParams) (
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertToken")
 	cmdTag, err := q.conn.Exec(ctx, insertTokenSQL, params.TokenID, params.CreatedAt, params.Description, params.Username)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertToken: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertTokenBatch implements Querier.InsertTokenBatch.
-func (q *DBQuerier) InsertTokenBatch(batch genericBatch, params InsertTokenParams) {
-	batch.Queue(insertTokenSQL, params.TokenID, params.CreatedAt, params.Description, params.Username)
-}
-
-// InsertTokenScan implements Querier.InsertTokenScan.
-func (q *DBQuerier) InsertTokenScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertTokenBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertToken: %w", err)
 	}
 	return cmdTag, err
 }
@@ -73,45 +61,18 @@ func (q *DBQuerier) FindTokensByUsername(ctx context.Context, username pgtype.Te
 	if err != nil {
 		return nil, fmt.Errorf("query FindTokensByUsername: %w", err)
 	}
-	defer rows.Close()
-	items := []FindTokensByUsernameRow{}
-	for rows.Next() {
-		var item FindTokensByUsernameRow
-		if err := rows.Scan(&item.TokenID, &item.CreatedAt, &item.Description, &item.Username); err != nil {
-			return nil, fmt.Errorf("scan FindTokensByUsername row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindTokensByUsername rows: %w", err)
-	}
-	return items, err
-}
 
-// FindTokensByUsernameBatch implements Querier.FindTokensByUsernameBatch.
-func (q *DBQuerier) FindTokensByUsernameBatch(batch genericBatch, username pgtype.Text) {
-	batch.Queue(findTokensByUsernameSQL, username)
-}
-
-// FindTokensByUsernameScan implements Querier.FindTokensByUsernameScan.
-func (q *DBQuerier) FindTokensByUsernameScan(results pgx.BatchResults) ([]FindTokensByUsernameRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindTokensByUsernameBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindTokensByUsernameRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindTokensByUsernameRow, error) {
 		var item FindTokensByUsernameRow
-		if err := rows.Scan(&item.TokenID, &item.CreatedAt, &item.Description, &item.Username); err != nil {
-			return nil, fmt.Errorf("scan FindTokensByUsernameBatch row: %w", err)
+		if err := row.Scan(&item.TokenID, // 'token_id', 'TokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,   // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Description, // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Username,    // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindTokensByUsernameBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findTokenByIDSQL = `SELECT *
@@ -129,27 +90,22 @@ type FindTokenByIDRow struct {
 // FindTokenByID implements Querier.FindTokenByID.
 func (q *DBQuerier) FindTokenByID(ctx context.Context, tokenID pgtype.Text) (FindTokenByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindTokenByID")
-	row := q.conn.QueryRow(ctx, findTokenByIDSQL, tokenID)
-	var item FindTokenByIDRow
-	if err := row.Scan(&item.TokenID, &item.CreatedAt, &item.Description, &item.Username); err != nil {
-		return item, fmt.Errorf("query FindTokenByID: %w", err)
+	rows, err := q.conn.Query(ctx, findTokenByIDSQL, tokenID)
+	if err != nil {
+		return FindTokenByIDRow{}, fmt.Errorf("query FindTokenByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindTokenByIDBatch implements Querier.FindTokenByIDBatch.
-func (q *DBQuerier) FindTokenByIDBatch(batch genericBatch, tokenID pgtype.Text) {
-	batch.Queue(findTokenByIDSQL, tokenID)
-}
-
-// FindTokenByIDScan implements Querier.FindTokenByIDScan.
-func (q *DBQuerier) FindTokenByIDScan(results pgx.BatchResults) (FindTokenByIDRow, error) {
-	row := results.QueryRow()
-	var item FindTokenByIDRow
-	if err := row.Scan(&item.TokenID, &item.CreatedAt, &item.Description, &item.Username); err != nil {
-		return item, fmt.Errorf("scan FindTokenByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTokenByIDRow, error) {
+		var item FindTokenByIDRow
+		if err := row.Scan(&item.TokenID, // 'token_id', 'TokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,   // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Description, // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Username,    // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteTokenByIDSQL = `DELETE
@@ -161,25 +117,16 @@ RETURNING token_id
 // DeleteTokenByID implements Querier.DeleteTokenByID.
 func (q *DBQuerier) DeleteTokenByID(ctx context.Context, tokenID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteTokenByID")
-	row := q.conn.QueryRow(ctx, deleteTokenByIDSQL, tokenID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteTokenByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteTokenByIDSQL, tokenID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteTokenByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteTokenByIDBatch implements Querier.DeleteTokenByIDBatch.
-func (q *DBQuerier) DeleteTokenByIDBatch(batch genericBatch, tokenID pgtype.Text) {
-	batch.Queue(deleteTokenByIDSQL, tokenID)
-}
-
-// DeleteTokenByIDScan implements Querier.DeleteTokenByIDScan.
-func (q *DBQuerier) DeleteTokenByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteTokenByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

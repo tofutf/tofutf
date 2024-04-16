@@ -33,7 +33,7 @@ type (
 
 	Options struct {
 		*internal.HostnameService
-		*sql.DB
+		*sql.Pool
 		*tfeapi.Responder
 		html.Renderer
 		Logger *slog.Logger
@@ -63,7 +63,7 @@ func NewService(opts Options) *Service {
 		organization:    &organization.Authorizer{Logger: opts.Logger},
 		factory:         &factory,
 		db: &pgdb{
-			DB:      opts.DB,
+			Pool:    opts.Pool,
 			factory: &factory,
 		},
 	}

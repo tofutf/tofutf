@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertTeamSQL = `INSERT INTO teams (
     team_id,
@@ -40,18 +42,18 @@ const insertTeamSQL = `INSERT INTO teams (
 );`
 
 type InsertTeamParams struct {
-	ID                              pgtype.Text
-	Name                            pgtype.Text
-	CreatedAt                       pgtype.Timestamptz
-	OrganizationName                pgtype.Text
-	Visibility                      pgtype.Text
-	SSOTeamID                       pgtype.Text
-	PermissionManageWorkspaces      pgtype.Bool
-	PermissionManageVCS             pgtype.Bool
-	PermissionManageModules         pgtype.Bool
-	PermissionManageProviders       pgtype.Bool
-	PermissionManagePolicies        pgtype.Bool
-	PermissionManagePolicyOverrides pgtype.Bool
+	ID                              pgtype.Text        `json:"id"`
+	Name                            pgtype.Text        `json:"name"`
+	CreatedAt                       pgtype.Timestamptz `json:"created_at"`
+	OrganizationName                pgtype.Text        `json:"organization_name"`
+	Visibility                      pgtype.Text        `json:"visibility"`
+	SSOTeamID                       pgtype.Text        `json:"sso_team_id"`
+	PermissionManageWorkspaces      pgtype.Bool        `json:"permission_manage_workspaces"`
+	PermissionManageVCS             pgtype.Bool        `json:"permission_manage_vcs"`
+	PermissionManageModules         pgtype.Bool        `json:"permission_manage_modules"`
+	PermissionManageProviders       pgtype.Bool        `json:"permission_manage_providers"`
+	PermissionManagePolicies        pgtype.Bool        `json:"permission_manage_policies"`
+	PermissionManagePolicyOverrides pgtype.Bool        `json:"permission_manage_policy_overrides"`
 }
 
 // InsertTeam implements Querier.InsertTeam.
@@ -59,21 +61,7 @@ func (q *DBQuerier) InsertTeam(ctx context.Context, params InsertTeamParams) (pg
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertTeam")
 	cmdTag, err := q.conn.Exec(ctx, insertTeamSQL, params.ID, params.Name, params.CreatedAt, params.OrganizationName, params.Visibility, params.SSOTeamID, params.PermissionManageWorkspaces, params.PermissionManageVCS, params.PermissionManageModules, params.PermissionManageProviders, params.PermissionManagePolicies, params.PermissionManagePolicyOverrides)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertTeam: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertTeamBatch implements Querier.InsertTeamBatch.
-func (q *DBQuerier) InsertTeamBatch(batch genericBatch, params InsertTeamParams) {
-	batch.Queue(insertTeamSQL, params.ID, params.Name, params.CreatedAt, params.OrganizationName, params.Visibility, params.SSOTeamID, params.PermissionManageWorkspaces, params.PermissionManageVCS, params.PermissionManageModules, params.PermissionManageProviders, params.PermissionManagePolicies, params.PermissionManagePolicyOverrides)
-}
-
-// InsertTeamScan implements Querier.InsertTeamScan.
-func (q *DBQuerier) InsertTeamScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertTeamBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertTeam: %w", err)
 	}
 	return cmdTag, err
 }
@@ -105,45 +93,26 @@ func (q *DBQuerier) FindTeamsByOrg(ctx context.Context, organizationName pgtype.
 	if err != nil {
 		return nil, fmt.Errorf("query FindTeamsByOrg: %w", err)
 	}
-	defer rows.Close()
-	items := []FindTeamsByOrgRow{}
-	for rows.Next() {
-		var item FindTeamsByOrgRow
-		if err := rows.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-			return nil, fmt.Errorf("scan FindTeamsByOrg row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindTeamsByOrg rows: %w", err)
-	}
-	return items, err
-}
 
-// FindTeamsByOrgBatch implements Querier.FindTeamsByOrgBatch.
-func (q *DBQuerier) FindTeamsByOrgBatch(batch genericBatch, organizationName pgtype.Text) {
-	batch.Queue(findTeamsByOrgSQL, organizationName)
-}
-
-// FindTeamsByOrgScan implements Querier.FindTeamsByOrgScan.
-func (q *DBQuerier) FindTeamsByOrgScan(results pgx.BatchResults) ([]FindTeamsByOrgRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindTeamsByOrgBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindTeamsByOrgRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindTeamsByOrgRow, error) {
 		var item FindTeamsByOrgRow
-		if err := rows.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-			return nil, fmt.Errorf("scan FindTeamsByOrgBatch row: %w", err)
+		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.PermissionManageWorkspaces,      // 'permission_manage_workspaces', 'PermissionManageWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageVCS,             // 'permission_manage_vcs', 'PermissionManageVCS', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageModules,         // 'permission_manage_modules', 'PermissionManageModules', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.OrganizationName,                // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SSOTeamID,                       // 'sso_team_id', 'SSOTeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Visibility,                      // 'visibility', 'Visibility', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.PermissionManagePolicies,        // 'permission_manage_policies', 'PermissionManagePolicies', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManagePolicyOverrides, // 'permission_manage_policy_overrides', 'PermissionManagePolicyOverrides', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageProviders,       // 'permission_manage_providers', 'PermissionManageProviders', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindTeamsByOrgBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findTeamByNameSQL = `SELECT *
@@ -170,27 +139,30 @@ type FindTeamByNameRow struct {
 // FindTeamByName implements Querier.FindTeamByName.
 func (q *DBQuerier) FindTeamByName(ctx context.Context, name pgtype.Text, organizationName pgtype.Text) (FindTeamByNameRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindTeamByName")
-	row := q.conn.QueryRow(ctx, findTeamByNameSQL, name, organizationName)
-	var item FindTeamByNameRow
-	if err := row.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-		return item, fmt.Errorf("query FindTeamByName: %w", err)
+	rows, err := q.conn.Query(ctx, findTeamByNameSQL, name, organizationName)
+	if err != nil {
+		return FindTeamByNameRow{}, fmt.Errorf("query FindTeamByName: %w", err)
 	}
-	return item, nil
-}
 
-// FindTeamByNameBatch implements Querier.FindTeamByNameBatch.
-func (q *DBQuerier) FindTeamByNameBatch(batch genericBatch, name pgtype.Text, organizationName pgtype.Text) {
-	batch.Queue(findTeamByNameSQL, name, organizationName)
-}
-
-// FindTeamByNameScan implements Querier.FindTeamByNameScan.
-func (q *DBQuerier) FindTeamByNameScan(results pgx.BatchResults) (FindTeamByNameRow, error) {
-	row := results.QueryRow()
-	var item FindTeamByNameRow
-	if err := row.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-		return item, fmt.Errorf("scan FindTeamByNameBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTeamByNameRow, error) {
+		var item FindTeamByNameRow
+		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.PermissionManageWorkspaces,      // 'permission_manage_workspaces', 'PermissionManageWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageVCS,             // 'permission_manage_vcs', 'PermissionManageVCS', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageModules,         // 'permission_manage_modules', 'PermissionManageModules', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.OrganizationName,                // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SSOTeamID,                       // 'sso_team_id', 'SSOTeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Visibility,                      // 'visibility', 'Visibility', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.PermissionManagePolicies,        // 'permission_manage_policies', 'PermissionManagePolicies', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManagePolicyOverrides, // 'permission_manage_policy_overrides', 'PermissionManagePolicyOverrides', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageProviders,       // 'permission_manage_providers', 'PermissionManageProviders', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findTeamByIDSQL = `SELECT *
@@ -216,27 +188,30 @@ type FindTeamByIDRow struct {
 // FindTeamByID implements Querier.FindTeamByID.
 func (q *DBQuerier) FindTeamByID(ctx context.Context, teamID pgtype.Text) (FindTeamByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindTeamByID")
-	row := q.conn.QueryRow(ctx, findTeamByIDSQL, teamID)
-	var item FindTeamByIDRow
-	if err := row.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-		return item, fmt.Errorf("query FindTeamByID: %w", err)
+	rows, err := q.conn.Query(ctx, findTeamByIDSQL, teamID)
+	if err != nil {
+		return FindTeamByIDRow{}, fmt.Errorf("query FindTeamByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindTeamByIDBatch implements Querier.FindTeamByIDBatch.
-func (q *DBQuerier) FindTeamByIDBatch(batch genericBatch, teamID pgtype.Text) {
-	batch.Queue(findTeamByIDSQL, teamID)
-}
-
-// FindTeamByIDScan implements Querier.FindTeamByIDScan.
-func (q *DBQuerier) FindTeamByIDScan(results pgx.BatchResults) (FindTeamByIDRow, error) {
-	row := results.QueryRow()
-	var item FindTeamByIDRow
-	if err := row.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-		return item, fmt.Errorf("scan FindTeamByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTeamByIDRow, error) {
+		var item FindTeamByIDRow
+		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.PermissionManageWorkspaces,      // 'permission_manage_workspaces', 'PermissionManageWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageVCS,             // 'permission_manage_vcs', 'PermissionManageVCS', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageModules,         // 'permission_manage_modules', 'PermissionManageModules', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.OrganizationName,                // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SSOTeamID,                       // 'sso_team_id', 'SSOTeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Visibility,                      // 'visibility', 'Visibility', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.PermissionManagePolicies,        // 'permission_manage_policies', 'PermissionManagePolicies', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManagePolicyOverrides, // 'permission_manage_policy_overrides', 'PermissionManagePolicyOverrides', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageProviders,       // 'permission_manage_providers', 'PermissionManageProviders', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findTeamByTokenIDSQL = `SELECT t.*
@@ -263,27 +238,30 @@ type FindTeamByTokenIDRow struct {
 // FindTeamByTokenID implements Querier.FindTeamByTokenID.
 func (q *DBQuerier) FindTeamByTokenID(ctx context.Context, tokenID pgtype.Text) (FindTeamByTokenIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindTeamByTokenID")
-	row := q.conn.QueryRow(ctx, findTeamByTokenIDSQL, tokenID)
-	var item FindTeamByTokenIDRow
-	if err := row.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-		return item, fmt.Errorf("query FindTeamByTokenID: %w", err)
+	rows, err := q.conn.Query(ctx, findTeamByTokenIDSQL, tokenID)
+	if err != nil {
+		return FindTeamByTokenIDRow{}, fmt.Errorf("query FindTeamByTokenID: %w", err)
 	}
-	return item, nil
-}
 
-// FindTeamByTokenIDBatch implements Querier.FindTeamByTokenIDBatch.
-func (q *DBQuerier) FindTeamByTokenIDBatch(batch genericBatch, tokenID pgtype.Text) {
-	batch.Queue(findTeamByTokenIDSQL, tokenID)
-}
-
-// FindTeamByTokenIDScan implements Querier.FindTeamByTokenIDScan.
-func (q *DBQuerier) FindTeamByTokenIDScan(results pgx.BatchResults) (FindTeamByTokenIDRow, error) {
-	row := results.QueryRow()
-	var item FindTeamByTokenIDRow
-	if err := row.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-		return item, fmt.Errorf("scan FindTeamByTokenIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTeamByTokenIDRow, error) {
+		var item FindTeamByTokenIDRow
+		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.PermissionManageWorkspaces,      // 'permission_manage_workspaces', 'PermissionManageWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageVCS,             // 'permission_manage_vcs', 'PermissionManageVCS', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageModules,         // 'permission_manage_modules', 'PermissionManageModules', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.OrganizationName,                // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SSOTeamID,                       // 'sso_team_id', 'SSOTeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Visibility,                      // 'visibility', 'Visibility', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.PermissionManagePolicies,        // 'permission_manage_policies', 'PermissionManagePolicies', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManagePolicyOverrides, // 'permission_manage_policy_overrides', 'PermissionManagePolicyOverrides', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageProviders,       // 'permission_manage_providers', 'PermissionManageProviders', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findTeamByIDForUpdateSQL = `SELECT *
@@ -310,27 +288,30 @@ type FindTeamByIDForUpdateRow struct {
 // FindTeamByIDForUpdate implements Querier.FindTeamByIDForUpdate.
 func (q *DBQuerier) FindTeamByIDForUpdate(ctx context.Context, teamID pgtype.Text) (FindTeamByIDForUpdateRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindTeamByIDForUpdate")
-	row := q.conn.QueryRow(ctx, findTeamByIDForUpdateSQL, teamID)
-	var item FindTeamByIDForUpdateRow
-	if err := row.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-		return item, fmt.Errorf("query FindTeamByIDForUpdate: %w", err)
+	rows, err := q.conn.Query(ctx, findTeamByIDForUpdateSQL, teamID)
+	if err != nil {
+		return FindTeamByIDForUpdateRow{}, fmt.Errorf("query FindTeamByIDForUpdate: %w", err)
 	}
-	return item, nil
-}
 
-// FindTeamByIDForUpdateBatch implements Querier.FindTeamByIDForUpdateBatch.
-func (q *DBQuerier) FindTeamByIDForUpdateBatch(batch genericBatch, teamID pgtype.Text) {
-	batch.Queue(findTeamByIDForUpdateSQL, teamID)
-}
-
-// FindTeamByIDForUpdateScan implements Querier.FindTeamByIDForUpdateScan.
-func (q *DBQuerier) FindTeamByIDForUpdateScan(results pgx.BatchResults) (FindTeamByIDForUpdateRow, error) {
-	row := results.QueryRow()
-	var item FindTeamByIDForUpdateRow
-	if err := row.Scan(&item.TeamID, &item.Name, &item.CreatedAt, &item.PermissionManageWorkspaces, &item.PermissionManageVCS, &item.PermissionManageModules, &item.OrganizationName, &item.SSOTeamID, &item.Visibility, &item.PermissionManagePolicies, &item.PermissionManagePolicyOverrides, &item.PermissionManageProviders); err != nil {
-		return item, fmt.Errorf("scan FindTeamByIDForUpdateBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTeamByIDForUpdateRow, error) {
+		var item FindTeamByIDForUpdateRow
+		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.PermissionManageWorkspaces,      // 'permission_manage_workspaces', 'PermissionManageWorkspaces', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageVCS,             // 'permission_manage_vcs', 'PermissionManageVCS', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageModules,         // 'permission_manage_modules', 'PermissionManageModules', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.OrganizationName,                // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SSOTeamID,                       // 'sso_team_id', 'SSOTeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Visibility,                      // 'visibility', 'Visibility', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.PermissionManagePolicies,        // 'permission_manage_policies', 'PermissionManagePolicies', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManagePolicyOverrides, // 'permission_manage_policy_overrides', 'PermissionManagePolicyOverrides', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.PermissionManageProviders,       // 'permission_manage_providers', 'PermissionManageProviders', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateTeamByIDSQL = `UPDATE teams
@@ -348,42 +329,33 @@ WHERE team_id = $10
 RETURNING team_id;`
 
 type UpdateTeamByIDParams struct {
-	Name                            pgtype.Text
-	Visibility                      pgtype.Text
-	SSOTeamID                       pgtype.Text
-	PermissionManageWorkspaces      pgtype.Bool
-	PermissionManageVCS             pgtype.Bool
-	PermissionManageModules         pgtype.Bool
-	PermissionManageProviders       pgtype.Bool
-	PermissionManagePolicies        pgtype.Bool
-	PermissionManagePolicyOverrides pgtype.Bool
-	TeamID                          pgtype.Text
+	Name                            pgtype.Text `json:"name"`
+	Visibility                      pgtype.Text `json:"visibility"`
+	SSOTeamID                       pgtype.Text `json:"sso_team_id"`
+	PermissionManageWorkspaces      pgtype.Bool `json:"permission_manage_workspaces"`
+	PermissionManageVCS             pgtype.Bool `json:"permission_manage_vcs"`
+	PermissionManageModules         pgtype.Bool `json:"permission_manage_modules"`
+	PermissionManageProviders       pgtype.Bool `json:"permission_manage_providers"`
+	PermissionManagePolicies        pgtype.Bool `json:"permission_manage_policies"`
+	PermissionManagePolicyOverrides pgtype.Bool `json:"permission_manage_policy_overrides"`
+	TeamID                          pgtype.Text `json:"team_id"`
 }
 
 // UpdateTeamByID implements Querier.UpdateTeamByID.
 func (q *DBQuerier) UpdateTeamByID(ctx context.Context, params UpdateTeamByIDParams) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateTeamByID")
-	row := q.conn.QueryRow(ctx, updateTeamByIDSQL, params.Name, params.Visibility, params.SSOTeamID, params.PermissionManageWorkspaces, params.PermissionManageVCS, params.PermissionManageModules, params.PermissionManageProviders, params.PermissionManagePolicies, params.PermissionManagePolicyOverrides, params.TeamID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query UpdateTeamByID: %w", err)
+	rows, err := q.conn.Query(ctx, updateTeamByIDSQL, params.Name, params.Visibility, params.SSOTeamID, params.PermissionManageWorkspaces, params.PermissionManageVCS, params.PermissionManageModules, params.PermissionManageProviders, params.PermissionManagePolicies, params.PermissionManagePolicyOverrides, params.TeamID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query UpdateTeamByID: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateTeamByIDBatch implements Querier.UpdateTeamByIDBatch.
-func (q *DBQuerier) UpdateTeamByIDBatch(batch genericBatch, params UpdateTeamByIDParams) {
-	batch.Queue(updateTeamByIDSQL, params.Name, params.Visibility, params.SSOTeamID, params.PermissionManageWorkspaces, params.PermissionManageVCS, params.PermissionManageModules, params.PermissionManageProviders, params.PermissionManagePolicies, params.PermissionManagePolicyOverrides, params.TeamID)
-}
-
-// UpdateTeamByIDScan implements Querier.UpdateTeamByIDScan.
-func (q *DBQuerier) UpdateTeamByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan UpdateTeamByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteTeamByIDSQL = `DELETE
@@ -395,25 +367,16 @@ RETURNING team_id
 // DeleteTeamByID implements Querier.DeleteTeamByID.
 func (q *DBQuerier) DeleteTeamByID(ctx context.Context, teamID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteTeamByID")
-	row := q.conn.QueryRow(ctx, deleteTeamByIDSQL, teamID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteTeamByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteTeamByIDSQL, teamID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteTeamByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteTeamByIDBatch implements Querier.DeleteTeamByIDBatch.
-func (q *DBQuerier) DeleteTeamByIDBatch(batch genericBatch, teamID pgtype.Text) {
-	batch.Queue(deleteTeamByIDSQL, teamID)
-}
-
-// DeleteTeamByIDScan implements Querier.DeleteTeamByIDScan.
-func (q *DBQuerier) DeleteTeamByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteTeamByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

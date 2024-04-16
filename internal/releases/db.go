@@ -10,7 +10,7 @@ import (
 )
 
 type db struct {
-	*sql.DB
+	*sql.Pool
 }
 
 func (db *db) updateLatestVersion(ctx context.Context, v string) error {
@@ -35,12 +35,26 @@ func (db *db) updateLatestVersion(ctx context.Context, v string) error {
 }
 
 func (db *db) getLatest(ctx context.Context) (string, time.Time, error) {
-	rows, err := db.Conn(ctx).FindLatestTerraformVersion(ctx)
+	type latestRelease struct {
+		Version    string
+		Checkpoint time.Time
+	}
+
+	latest, err := sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (latestRelease, error) {
+		rows, err := q.FindLatestTerraformVersion(ctx)
+		if err != nil {
+			return latestRelease{}, err
+		}
+
+		if len(rows) == 0 {
+			return latestRelease{}, internal.ErrResourceNotFound
+		}
+
+		return latestRelease{rows[0].Version.String, rows[0].Checkpoint.Time}, nil
+	})
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	if len(rows) == 0 {
-		return "", time.Time{}, internal.ErrResourceNotFound
-	}
-	return rows[0].Version.String, rows[0].Checkpoint.Time, nil
+
+	return latest.Version, latest.Checkpoint, nil
 }

@@ -41,7 +41,7 @@ type (
 		TeamService   *team.Service
 		Logger        *slog.Logger
 
-		*sql.DB
+		*sql.Pool
 		*tfeapi.Responder
 		html.Renderer
 	}
@@ -52,7 +52,7 @@ func NewService(opts Options) *Service {
 		logger:       opts.Logger,
 		organization: &organization.Authorizer{Logger: opts.Logger},
 		site:         &internal.SiteAuthorizer{Logger: opts.Logger},
-		db:           &pgdb{opts.DB, opts.Logger},
+		db:           &pgdb{opts.Pool, opts.Logger},
 		userTokenFactory: &userTokenFactory{
 			tokens: opts.TokensService,
 		},

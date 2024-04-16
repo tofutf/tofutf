@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 const TestDatabaseURL = "OTF_TEST_DATABASE_URL"

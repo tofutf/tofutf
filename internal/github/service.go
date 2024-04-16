@@ -29,7 +29,7 @@ type (
 	}
 
 	Options struct {
-		*sql.DB
+		*sql.Pool
 		html.Renderer
 		vcs.Publisher
 		*internal.HostnameService
@@ -46,7 +46,7 @@ func NewService(opts Options) *Service {
 		GithubHostname: opts.GithubHostname,
 		site:           &internal.SiteAuthorizer{Logger: opts.Logger},
 		organization:   &organization.Authorizer{Logger: opts.Logger},
-		db:             &pgdb{opts.DB},
+		db:             &pgdb{opts.Pool},
 	}
 	svc.web = &webHandlers{
 		Renderer:        opts.Renderer,

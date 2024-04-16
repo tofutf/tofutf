@@ -21,7 +21,7 @@ type (
 	Options struct {
 		Logger *slog.Logger
 
-		*sql.DB
+		*sql.Pool
 		*internal.HostnameService
 		*surl.Signer
 		html.Renderer

@@ -31,7 +31,7 @@ type (
 		MaxConfigSize       int64
 
 		internal.Cache
-		*sql.DB
+		*sql.Pool
 		*surl.Signer
 		*tfeapi.Responder
 	}
@@ -44,7 +44,7 @@ func NewService(opts Options) *Service {
 
 	svc.workspace = opts.WorkspaceAuthorizer
 
-	svc.db = &pgdb{opts.DB}
+	svc.db = &pgdb{opts.Pool}
 	svc.cache = opts.Cache
 	svc.tfeapi = &tfe{
 		logger:        opts.Logger,

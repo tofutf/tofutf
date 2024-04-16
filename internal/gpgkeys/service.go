@@ -24,7 +24,7 @@ import (
 type (
 	Options struct {
 		Logger *slog.Logger
-		*sql.DB
+		*sql.Pool
 		*internal.HostnameService
 		*surl.Signer
 		html.Renderer
@@ -53,7 +53,7 @@ func NewService(opts Options) (*Service, error) {
 		logger:        opts.Logger,
 		organization:  &organization.Authorizer{Logger: opts.Logger},
 		client:        &http.Client{},
-		db:            &pgdb{opts.DB},
+		db:            &pgdb{opts.Pool},
 		orgAuthorizer: opts.OrganizationAuthorizer,
 	}
 	svc.api = &apiHandlers{

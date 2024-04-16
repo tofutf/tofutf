@@ -40,7 +40,7 @@ type (
 		RestrictOrganizationCreation bool
 		TokensService                *tokens.Service
 
-		*sql.DB
+		*sql.Pool
 		*tfeapi.Responder
 		*sql.Listener
 		html.Renderer
@@ -58,7 +58,7 @@ func NewService(opts Options) *Service {
 		Authorizer:                   &Authorizer{opts.Logger},
 		logger:                       opts.Logger,
 		RestrictOrganizationCreation: opts.RestrictOrganizationCreation,
-		db:                           &pgdb{opts.DB},
+		db:                           &pgdb{opts.Pool},
 		site:                         &internal.SiteAuthorizer{Logger: opts.Logger},
 		tokenFactory:                 &tokenFactory{tokens: opts.TokensService},
 	}

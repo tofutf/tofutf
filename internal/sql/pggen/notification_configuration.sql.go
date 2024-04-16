@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertNotificationConfigurationSQL = `INSERT INTO notification_configurations (
     notification_configuration_id,
@@ -35,15 +37,15 @@ const insertNotificationConfigurationSQL = `INSERT INTO notification_configurati
 ;`
 
 type InsertNotificationConfigurationParams struct {
-	NotificationConfigurationID pgtype.Text
-	CreatedAt                   pgtype.Timestamptz
-	UpdatedAt                   pgtype.Timestamptz
-	Name                        pgtype.Text
-	URL                         pgtype.Text
-	Triggers                    []string
-	DestinationType             pgtype.Text
-	Enabled                     pgtype.Bool
-	WorkspaceID                 pgtype.Text
+	NotificationConfigurationID pgtype.Text        `json:"notification_configuration_id"`
+	CreatedAt                   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                   pgtype.Timestamptz `json:"updated_at"`
+	Name                        pgtype.Text        `json:"name"`
+	URL                         pgtype.Text        `json:"url"`
+	Triggers                    []string           `json:"triggers"`
+	DestinationType             pgtype.Text        `json:"destination_type"`
+	Enabled                     pgtype.Bool        `json:"enabled"`
+	WorkspaceID                 pgtype.Text        `json:"workspace_id"`
 }
 
 // InsertNotificationConfiguration implements Querier.InsertNotificationConfiguration.
@@ -51,21 +53,7 @@ func (q *DBQuerier) InsertNotificationConfiguration(ctx context.Context, params 
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertNotificationConfiguration")
 	cmdTag, err := q.conn.Exec(ctx, insertNotificationConfigurationSQL, params.NotificationConfigurationID, params.CreatedAt, params.UpdatedAt, params.Name, params.URL, params.Triggers, params.DestinationType, params.Enabled, params.WorkspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertNotificationConfiguration: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertNotificationConfigurationBatch implements Querier.InsertNotificationConfigurationBatch.
-func (q *DBQuerier) InsertNotificationConfigurationBatch(batch genericBatch, params InsertNotificationConfigurationParams) {
-	batch.Queue(insertNotificationConfigurationSQL, params.NotificationConfigurationID, params.CreatedAt, params.UpdatedAt, params.Name, params.URL, params.Triggers, params.DestinationType, params.Enabled, params.WorkspaceID)
-}
-
-// InsertNotificationConfigurationScan implements Querier.InsertNotificationConfigurationScan.
-func (q *DBQuerier) InsertNotificationConfigurationScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertNotificationConfigurationBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertNotificationConfiguration: %w", err)
 	}
 	return cmdTag, err
 }
@@ -94,45 +82,23 @@ func (q *DBQuerier) FindNotificationConfigurationsByWorkspaceID(ctx context.Cont
 	if err != nil {
 		return nil, fmt.Errorf("query FindNotificationConfigurationsByWorkspaceID: %w", err)
 	}
-	defer rows.Close()
-	items := []FindNotificationConfigurationsByWorkspaceIDRow{}
-	for rows.Next() {
-		var item FindNotificationConfigurationsByWorkspaceIDRow
-		if err := rows.Scan(&item.NotificationConfigurationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.URL, &item.Triggers, &item.DestinationType, &item.WorkspaceID, &item.Enabled); err != nil {
-			return nil, fmt.Errorf("scan FindNotificationConfigurationsByWorkspaceID row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindNotificationConfigurationsByWorkspaceID rows: %w", err)
-	}
-	return items, err
-}
 
-// FindNotificationConfigurationsByWorkspaceIDBatch implements Querier.FindNotificationConfigurationsByWorkspaceIDBatch.
-func (q *DBQuerier) FindNotificationConfigurationsByWorkspaceIDBatch(batch genericBatch, workspaceID pgtype.Text) {
-	batch.Queue(findNotificationConfigurationsByWorkspaceIDSQL, workspaceID)
-}
-
-// FindNotificationConfigurationsByWorkspaceIDScan implements Querier.FindNotificationConfigurationsByWorkspaceIDScan.
-func (q *DBQuerier) FindNotificationConfigurationsByWorkspaceIDScan(results pgx.BatchResults) ([]FindNotificationConfigurationsByWorkspaceIDRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindNotificationConfigurationsByWorkspaceIDBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindNotificationConfigurationsByWorkspaceIDRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindNotificationConfigurationsByWorkspaceIDRow, error) {
 		var item FindNotificationConfigurationsByWorkspaceIDRow
-		if err := rows.Scan(&item.NotificationConfigurationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.URL, &item.Triggers, &item.DestinationType, &item.WorkspaceID, &item.Enabled); err != nil {
-			return nil, fmt.Errorf("scan FindNotificationConfigurationsByWorkspaceIDBatch row: %w", err)
+		if err := row.Scan(&item.NotificationConfigurationID, // 'notification_configuration_id', 'NotificationConfigurationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,       // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Name,            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.URL,             // 'url', 'URL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Triggers,        // 'triggers', 'Triggers', '[]string', '', '[]string'
+			&item.DestinationType, // 'destination_type', 'DestinationType', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,     // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Enabled,         // 'enabled', 'Enabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindNotificationConfigurationsByWorkspaceIDBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findAllNotificationConfigurationsSQL = `SELECT *
@@ -158,45 +124,23 @@ func (q *DBQuerier) FindAllNotificationConfigurations(ctx context.Context) ([]Fi
 	if err != nil {
 		return nil, fmt.Errorf("query FindAllNotificationConfigurations: %w", err)
 	}
-	defer rows.Close()
-	items := []FindAllNotificationConfigurationsRow{}
-	for rows.Next() {
-		var item FindAllNotificationConfigurationsRow
-		if err := rows.Scan(&item.NotificationConfigurationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.URL, &item.Triggers, &item.DestinationType, &item.WorkspaceID, &item.Enabled); err != nil {
-			return nil, fmt.Errorf("scan FindAllNotificationConfigurations row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAllNotificationConfigurations rows: %w", err)
-	}
-	return items, err
-}
 
-// FindAllNotificationConfigurationsBatch implements Querier.FindAllNotificationConfigurationsBatch.
-func (q *DBQuerier) FindAllNotificationConfigurationsBatch(batch genericBatch) {
-	batch.Queue(findAllNotificationConfigurationsSQL)
-}
-
-// FindAllNotificationConfigurationsScan implements Querier.FindAllNotificationConfigurationsScan.
-func (q *DBQuerier) FindAllNotificationConfigurationsScan(results pgx.BatchResults) ([]FindAllNotificationConfigurationsRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindAllNotificationConfigurationsBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindAllNotificationConfigurationsRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindAllNotificationConfigurationsRow, error) {
 		var item FindAllNotificationConfigurationsRow
-		if err := rows.Scan(&item.NotificationConfigurationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.URL, &item.Triggers, &item.DestinationType, &item.WorkspaceID, &item.Enabled); err != nil {
-			return nil, fmt.Errorf("scan FindAllNotificationConfigurationsBatch row: %w", err)
+		if err := row.Scan(&item.NotificationConfigurationID, // 'notification_configuration_id', 'NotificationConfigurationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,       // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Name,            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.URL,             // 'url', 'URL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Triggers,        // 'triggers', 'Triggers', '[]string', '', '[]string'
+			&item.DestinationType, // 'destination_type', 'DestinationType', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,     // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Enabled,         // 'enabled', 'Enabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAllNotificationConfigurationsBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findNotificationConfigurationSQL = `SELECT *
@@ -219,27 +163,27 @@ type FindNotificationConfigurationRow struct {
 // FindNotificationConfiguration implements Querier.FindNotificationConfiguration.
 func (q *DBQuerier) FindNotificationConfiguration(ctx context.Context, notificationConfigurationID pgtype.Text) (FindNotificationConfigurationRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindNotificationConfiguration")
-	row := q.conn.QueryRow(ctx, findNotificationConfigurationSQL, notificationConfigurationID)
-	var item FindNotificationConfigurationRow
-	if err := row.Scan(&item.NotificationConfigurationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.URL, &item.Triggers, &item.DestinationType, &item.WorkspaceID, &item.Enabled); err != nil {
-		return item, fmt.Errorf("query FindNotificationConfiguration: %w", err)
+	rows, err := q.conn.Query(ctx, findNotificationConfigurationSQL, notificationConfigurationID)
+	if err != nil {
+		return FindNotificationConfigurationRow{}, fmt.Errorf("query FindNotificationConfiguration: %w", err)
 	}
-	return item, nil
-}
 
-// FindNotificationConfigurationBatch implements Querier.FindNotificationConfigurationBatch.
-func (q *DBQuerier) FindNotificationConfigurationBatch(batch genericBatch, notificationConfigurationID pgtype.Text) {
-	batch.Queue(findNotificationConfigurationSQL, notificationConfigurationID)
-}
-
-// FindNotificationConfigurationScan implements Querier.FindNotificationConfigurationScan.
-func (q *DBQuerier) FindNotificationConfigurationScan(results pgx.BatchResults) (FindNotificationConfigurationRow, error) {
-	row := results.QueryRow()
-	var item FindNotificationConfigurationRow
-	if err := row.Scan(&item.NotificationConfigurationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.URL, &item.Triggers, &item.DestinationType, &item.WorkspaceID, &item.Enabled); err != nil {
-		return item, fmt.Errorf("scan FindNotificationConfigurationBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindNotificationConfigurationRow, error) {
+		var item FindNotificationConfigurationRow
+		if err := row.Scan(&item.NotificationConfigurationID, // 'notification_configuration_id', 'NotificationConfigurationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,       // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Name,            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.URL,             // 'url', 'URL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Triggers,        // 'triggers', 'Triggers', '[]string', '', '[]string'
+			&item.DestinationType, // 'destination_type', 'DestinationType', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,     // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Enabled,         // 'enabled', 'Enabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findNotificationConfigurationForUpdateSQL = `SELECT *
@@ -263,27 +207,27 @@ type FindNotificationConfigurationForUpdateRow struct {
 // FindNotificationConfigurationForUpdate implements Querier.FindNotificationConfigurationForUpdate.
 func (q *DBQuerier) FindNotificationConfigurationForUpdate(ctx context.Context, notificationConfigurationID pgtype.Text) (FindNotificationConfigurationForUpdateRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindNotificationConfigurationForUpdate")
-	row := q.conn.QueryRow(ctx, findNotificationConfigurationForUpdateSQL, notificationConfigurationID)
-	var item FindNotificationConfigurationForUpdateRow
-	if err := row.Scan(&item.NotificationConfigurationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.URL, &item.Triggers, &item.DestinationType, &item.WorkspaceID, &item.Enabled); err != nil {
-		return item, fmt.Errorf("query FindNotificationConfigurationForUpdate: %w", err)
+	rows, err := q.conn.Query(ctx, findNotificationConfigurationForUpdateSQL, notificationConfigurationID)
+	if err != nil {
+		return FindNotificationConfigurationForUpdateRow{}, fmt.Errorf("query FindNotificationConfigurationForUpdate: %w", err)
 	}
-	return item, nil
-}
 
-// FindNotificationConfigurationForUpdateBatch implements Querier.FindNotificationConfigurationForUpdateBatch.
-func (q *DBQuerier) FindNotificationConfigurationForUpdateBatch(batch genericBatch, notificationConfigurationID pgtype.Text) {
-	batch.Queue(findNotificationConfigurationForUpdateSQL, notificationConfigurationID)
-}
-
-// FindNotificationConfigurationForUpdateScan implements Querier.FindNotificationConfigurationForUpdateScan.
-func (q *DBQuerier) FindNotificationConfigurationForUpdateScan(results pgx.BatchResults) (FindNotificationConfigurationForUpdateRow, error) {
-	row := results.QueryRow()
-	var item FindNotificationConfigurationForUpdateRow
-	if err := row.Scan(&item.NotificationConfigurationID, &item.CreatedAt, &item.UpdatedAt, &item.Name, &item.URL, &item.Triggers, &item.DestinationType, &item.WorkspaceID, &item.Enabled); err != nil {
-		return item, fmt.Errorf("scan FindNotificationConfigurationForUpdateBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindNotificationConfigurationForUpdateRow, error) {
+		var item FindNotificationConfigurationForUpdateRow
+		if err := row.Scan(&item.NotificationConfigurationID, // 'notification_configuration_id', 'NotificationConfigurationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,       // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Name,            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.URL,             // 'url', 'URL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Triggers,        // 'triggers', 'Triggers', '[]string', '', '[]string'
+			&item.DestinationType, // 'destination_type', 'DestinationType', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,     // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Enabled,         // 'enabled', 'Enabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateNotificationConfigurationByIDSQL = `UPDATE notification_configurations
@@ -298,38 +242,29 @@ RETURNING notification_configuration_id
 ;`
 
 type UpdateNotificationConfigurationByIDParams struct {
-	UpdatedAt                   pgtype.Timestamptz
-	Enabled                     pgtype.Bool
-	Name                        pgtype.Text
-	Triggers                    []string
-	URL                         pgtype.Text
-	NotificationConfigurationID pgtype.Text
+	UpdatedAt                   pgtype.Timestamptz `json:"updated_at"`
+	Enabled                     pgtype.Bool        `json:"enabled"`
+	Name                        pgtype.Text        `json:"name"`
+	Triggers                    []string           `json:"triggers"`
+	URL                         pgtype.Text        `json:"url"`
+	NotificationConfigurationID pgtype.Text        `json:"notification_configuration_id"`
 }
 
 // UpdateNotificationConfigurationByID implements Querier.UpdateNotificationConfigurationByID.
 func (q *DBQuerier) UpdateNotificationConfigurationByID(ctx context.Context, params UpdateNotificationConfigurationByIDParams) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateNotificationConfigurationByID")
-	row := q.conn.QueryRow(ctx, updateNotificationConfigurationByIDSQL, params.UpdatedAt, params.Enabled, params.Name, params.Triggers, params.URL, params.NotificationConfigurationID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query UpdateNotificationConfigurationByID: %w", err)
+	rows, err := q.conn.Query(ctx, updateNotificationConfigurationByIDSQL, params.UpdatedAt, params.Enabled, params.Name, params.Triggers, params.URL, params.NotificationConfigurationID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query UpdateNotificationConfigurationByID: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateNotificationConfigurationByIDBatch implements Querier.UpdateNotificationConfigurationByIDBatch.
-func (q *DBQuerier) UpdateNotificationConfigurationByIDBatch(batch genericBatch, params UpdateNotificationConfigurationByIDParams) {
-	batch.Queue(updateNotificationConfigurationByIDSQL, params.UpdatedAt, params.Enabled, params.Name, params.Triggers, params.URL, params.NotificationConfigurationID)
-}
-
-// UpdateNotificationConfigurationByIDScan implements Querier.UpdateNotificationConfigurationByIDScan.
-func (q *DBQuerier) UpdateNotificationConfigurationByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan UpdateNotificationConfigurationByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteNotificationConfigurationByIDSQL = `DELETE FROM notification_configurations
@@ -340,25 +275,16 @@ RETURNING notification_configuration_id
 // DeleteNotificationConfigurationByID implements Querier.DeleteNotificationConfigurationByID.
 func (q *DBQuerier) DeleteNotificationConfigurationByID(ctx context.Context, notificationConfigurationID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteNotificationConfigurationByID")
-	row := q.conn.QueryRow(ctx, deleteNotificationConfigurationByIDSQL, notificationConfigurationID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteNotificationConfigurationByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteNotificationConfigurationByIDSQL, notificationConfigurationID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteNotificationConfigurationByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteNotificationConfigurationByIDBatch implements Querier.DeleteNotificationConfigurationByIDBatch.
-func (q *DBQuerier) DeleteNotificationConfigurationByIDBatch(batch genericBatch, notificationConfigurationID pgtype.Text) {
-	batch.Queue(deleteNotificationConfigurationByIDSQL, notificationConfigurationID)
-}
-
-// DeleteNotificationConfigurationByIDScan implements Querier.DeleteNotificationConfigurationByIDScan.
-func (q *DBQuerier) DeleteNotificationConfigurationByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteNotificationConfigurationByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

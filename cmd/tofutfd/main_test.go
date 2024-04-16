@@ -48,7 +48,7 @@ func TestHelp(t *testing.T) {
 			err := parseFlags(ctx, tt.args, got)
 			require.NoError(t, err)
 
-			assert.Regexp(t, `^otfd is the daemon component of the open terraforming framework.`, got.String())
+			assert.Regexp(t, `^tofutfd is the daemon component of the open terraforming framework.`, got.String())
 		})
 	}
 }

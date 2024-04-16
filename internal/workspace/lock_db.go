@@ -3,7 +3,7 @@ package workspace
 import (
 	"context"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal/sql"
 	"github.com/tofutf/tofutf/internal/sql/pggen"
 )
@@ -26,17 +26,17 @@ func (db *pgdb) toggleLock(ctx context.Context, workspaceID string, togglefn fun
 		}
 		// persist to db
 		params := pggen.UpdateWorkspaceLockByIDParams{
-			WorkspaceID: pgtype.Text{String: ws.ID, Status: pgtype.Present},
+			WorkspaceID: pgtype.Text{String: ws.ID, Valid: true},
 		}
 		if ws.Lock == nil {
-			params.RunID = pgtype.Text{Status: pgtype.Null}
-			params.Username = pgtype.Text{Status: pgtype.Null}
+			params.RunID = pgtype.Text{Valid: false}
+			params.Username = pgtype.Text{Valid: false}
 		} else if ws.Lock.LockKind == RunLock {
-			params.RunID = pgtype.Text{String: ws.Lock.id, Status: pgtype.Present}
-			params.Username = pgtype.Text{Status: pgtype.Null}
+			params.RunID = pgtype.Text{String: ws.Lock.id, Valid: true}
+			params.Username = pgtype.Text{Valid: false}
 		} else if ws.Lock.LockKind == UserLock {
-			params.Username = pgtype.Text{String: ws.Lock.id, Status: pgtype.Present}
-			params.RunID = pgtype.Text{Status: pgtype.Null}
+			params.Username = pgtype.Text{String: ws.Lock.id, Valid: true}
+			params.RunID = pgtype.Text{Valid: false}
 		} else {
 			return ErrWorkspaceInvalidLock
 		}

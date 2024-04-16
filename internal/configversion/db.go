@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/sql"
@@ -13,7 +12,7 @@ import (
 )
 
 type pgdb struct {
-	*sql.DB // provides access to generated SQL queries
+	*sql.Pool // provides access to generated SQL queries
 }
 
 func (db *pgdb) CreateConfigurationVersion(ctx context.Context, cv *ConfigurationVersion) error {
@@ -79,79 +78,85 @@ func (db *pgdb) UploadConfigurationVersion(ctx context.Context, id string, fn fu
 }
 
 func (db *pgdb) ListConfigurationVersions(ctx context.Context, workspaceID string, opts ListOptions) (*resource.Page[*ConfigurationVersion], error) {
-	q := db.Conn(ctx)
-	batch := &pgx.Batch{}
-	q.FindConfigurationVersionsByWorkspaceIDBatch(batch, pggen.FindConfigurationVersionsByWorkspaceIDParams{
-		WorkspaceID: sql.String(workspaceID),
-		Limit:       opts.GetLimit(),
-		Offset:      opts.GetOffset(),
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*ConfigurationVersion], error) {
+		rows, err := q.FindConfigurationVersionsByWorkspaceID(ctx, pggen.FindConfigurationVersionsByWorkspaceIDParams{
+			WorkspaceID: sql.String(workspaceID),
+			Limit:       opts.GetLimit(),
+			Offset:      opts.GetOffset(),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		count, err := q.CountConfigurationVersionsByWorkspaceID(ctx, sql.String(workspaceID))
+		if err != nil {
+			return nil, err
+		}
+
+		items := make([]*ConfigurationVersion, len(rows))
+		for i, r := range rows {
+			items[i] = pgRow(r).toConfigVersion()
+		}
+		return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int64)), nil
 	})
-	q.CountConfigurationVersionsByWorkspaceIDBatch(batch, sql.String(workspaceID))
-	results := db.SendBatch(ctx, batch)
-	defer results.Close()
-
-	rows, err := q.FindConfigurationVersionsByWorkspaceIDScan(results)
-	if err != nil {
-		return nil, err
-	}
-	count, err := q.CountConfigurationVersionsByWorkspaceIDScan(results)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*ConfigurationVersion, len(rows))
-	for i, r := range rows {
-		items[i] = pgRow(r).toConfigVersion()
-	}
-	return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int)), nil
 }
 
 func (db *pgdb) GetConfigurationVersion(ctx context.Context, opts ConfigurationVersionGetOptions) (*ConfigurationVersion, error) {
-	q := db.Conn(ctx)
-	if opts.ID != nil {
-		result, err := q.FindConfigurationVersionByID(ctx, sql.String(*opts.ID))
-		if err != nil {
-			return nil, sql.Error(err)
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*ConfigurationVersion, error) {
+		if opts.ID != nil {
+			result, err := q.FindConfigurationVersionByID(ctx, sql.String(*opts.ID))
+			if err != nil {
+				return nil, sql.Error(err)
+			}
+			return pgRow(result).toConfigVersion(), nil
+		} else if opts.WorkspaceID != nil {
+			result, err := q.FindConfigurationVersionLatestByWorkspaceID(ctx, sql.String(*opts.WorkspaceID))
+			if err != nil {
+				return nil, sql.Error(err)
+			}
+			return pgRow(result).toConfigVersion(), nil
+		} else {
+			return nil, fmt.Errorf("no configuration version spec provided")
 		}
-		return pgRow(result).toConfigVersion(), nil
-	} else if opts.WorkspaceID != nil {
-		result, err := q.FindConfigurationVersionLatestByWorkspaceID(ctx, sql.String(*opts.WorkspaceID))
-		if err != nil {
-			return nil, sql.Error(err)
-		}
-		return pgRow(result).toConfigVersion(), nil
-	} else {
-		return nil, fmt.Errorf("no configuration version spec provided")
-	}
+	})
 }
 
 func (db *pgdb) GetConfig(ctx context.Context, id string) ([]byte, error) {
-	cfg, err := db.Conn(ctx).DownloadConfigurationVersion(ctx, sql.String(id))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return cfg, nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+		cfg, err := q.DownloadConfigurationVersion(ctx, sql.String(id))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		return cfg, nil
+	})
 }
 
 func (db *pgdb) DeleteConfigurationVersion(ctx context.Context, id string) error {
-	_, err := db.Conn(ctx).DeleteConfigurationVersionByID(ctx, sql.String(id))
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
+	return db.Pool.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.DeleteConfigurationVersionByID(ctx, sql.String(id))
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return nil
+	})
 }
 
 func (db *pgdb) insertCVStatusTimestamp(ctx context.Context, cv *ConfigurationVersion) error {
-	sts, err := cv.StatusTimestamp(cv.Status)
-	if err != nil {
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		sts, err := cv.StatusTimestamp(cv.Status)
+		if err != nil {
+			return err
+		}
+
+		_, err = q.InsertConfigurationVersionStatusTimestamp(ctx, pggen.InsertConfigurationVersionStatusTimestampParams{
+			ID:        sql.String(cv.ID),
+			Status:    sql.String(string(cv.Status)),
+			Timestamp: sql.Timestamptz(sts),
+		})
 		return err
-	}
-	_, err = db.Conn(ctx).InsertConfigurationVersionStatusTimestamp(ctx, pggen.InsertConfigurationVersionStatusTimestampParams{
-		ID:        sql.String(cv.ID),
-		Status:    sql.String(string(cv.Status)),
-		Timestamp: sql.Timestamptz(sts),
 	})
-	return err
 }
 
 // pgRow represents the result of a database query for a configuration version.
@@ -164,7 +169,7 @@ type pgRow struct {
 	Status                               pgtype.Text                                  `json:"status"`
 	WorkspaceID                          pgtype.Text                                  `json:"workspace_id"`
 	ConfigurationVersionStatusTimestamps []pggen.ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
-	IngressAttributes                    *pggen.IngressAttributes                     `json:"ingress_attributes"`
+	IngressAttributes                    pggen.IngressAttributes                      `json:"ingress_attributes"`
 }
 
 func (result pgRow) toConfigVersion() *ConfigurationVersion {
@@ -178,20 +183,20 @@ func (result pgRow) toConfigVersion() *ConfigurationVersion {
 		StatusTimestamps: unmarshalStatusTimestampRows(result.ConfigurationVersionStatusTimestamps),
 		WorkspaceID:      result.WorkspaceID.String,
 	}
-	if result.IngressAttributes != nil {
+	if result.IngressAttributes != (pggen.IngressAttributes{}) {
 		cv.IngressAttributes = NewIngressFromRow(result.IngressAttributes)
 	}
 	return &cv
 }
 
-func NewIngressFromRow(row *pggen.IngressAttributes) *IngressAttributes {
+func NewIngressFromRow(row pggen.IngressAttributes) *IngressAttributes {
 	return &IngressAttributes{
 		Branch:            row.Branch.String,
 		CommitSHA:         row.CommitSHA.String,
 		CommitURL:         row.CommitURL.String,
 		Repo:              row.Identifier.String,
 		IsPullRequest:     row.IsPullRequest.Bool,
-		PullRequestNumber: int(row.PullRequestNumber.Int),
+		PullRequestNumber: int(row.PullRequestNumber.Int32),
 		PullRequestURL:    row.PullRequestURL.String,
 		PullRequestTitle:  row.PullRequestTitle.String,
 		SenderUsername:    row.SenderUsername.String,

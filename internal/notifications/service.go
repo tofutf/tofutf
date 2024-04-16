@@ -22,7 +22,7 @@ type (
 	}
 
 	Options struct {
-		*sql.DB
+		*sql.Pool
 		*sql.Listener
 		*tfeapi.Responder
 		Logger *slog.Logger
@@ -35,7 +35,7 @@ func NewService(opts Options) *Service {
 	svc := Service{
 		logger:              opts.Logger,
 		workspaceAuthorizer: opts.WorkspaceAuthorizer,
-		db:                  &pgdb{opts.DB},
+		db:                  &pgdb{opts.Pool},
 	}
 	svc.api = &tfe{
 		Service:   &svc,

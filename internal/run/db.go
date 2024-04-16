@@ -6,8 +6,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/resource"
@@ -19,7 +18,7 @@ import (
 type (
 	// pgdb is a database of runs on postgres
 	pgdb struct {
-		*sql.DB // provides access to generated SQL queries
+		*sql.Pool // provides access to generated SQL queries
 	}
 
 	// pgresult is the result of a database query for a run.
@@ -38,9 +37,9 @@ type (
 		ReplaceAddrs           []string                      `json:"replace_addrs"`
 		TargetAddrs            []string                      `json:"target_addrs"`
 		AutoApply              pgtype.Bool                   `json:"auto_apply"`
-		PlanResourceReport     *pggen.Report                 `json:"plan_resource_report"`
-		PlanOutputReport       *pggen.Report                 `json:"plan_output_report"`
-		ApplyResourceReport    *pggen.Report                 `json:"apply_resource_report"`
+		PlanResourceReport     pggen.Report                  `json:"plan_resource_report"`
+		PlanOutputReport       pggen.Report                  `json:"plan_output_report"`
+		ApplyResourceReport    pggen.Report                  `json:"apply_resource_report"`
 		ConfigurationVersionID pgtype.Text                   `json:"configuration_version_id"`
 		WorkspaceID            pgtype.Text                   `json:"workspace_id"`
 		PlanOnly               pgtype.Bool                   `json:"plan_only"`
@@ -51,7 +50,7 @@ type (
 		Latest                 pgtype.Bool                   `json:"latest"`
 		OrganizationName       pgtype.Text                   `json:"organization_name"`
 		CostEstimationEnabled  pgtype.Bool                   `json:"cost_estimation_enabled"`
-		IngressAttributes      *pggen.IngressAttributes      `json:"ingress_attributes"`
+		IngressAttributes      pggen.IngressAttributes       `json:"ingress_attributes"`
 		RunStatusTimestamps    []pggen.RunStatusTimestamps   `json:"run_status_timestamps"`
 		PlanStatusTimestamps   []pggen.PhaseStatusTimestamps `json:"plan_status_timestamps"`
 		ApplyStatusTimestamps  []pggen.PhaseStatusTimestamps `json:"apply_status_timestamps"`
@@ -64,7 +63,7 @@ func (result pgresult) toRun() *Run {
 		ID:                     result.RunID.String,
 		CreatedAt:              result.CreatedAt.Time.UTC(),
 		IsDestroy:              result.IsDestroy.Bool,
-		PositionInQueue:        int(result.PositionInQueue.Int),
+		PositionInQueue:        int(result.PositionInQueue.Int32),
 		Refresh:                result.Refresh.Bool,
 		RefreshOnly:            result.RefreshOnly.Bool,
 		Source:                 Source(result.Source.String),
@@ -137,13 +136,13 @@ func (result pgresult) toRun() *Run {
 			run.Variables[i] = Variable{Key: v.Key.String, Value: v.Value.String}
 		}
 	}
-	if result.CreatedBy.Status == pgtype.Present {
+	if result.CreatedBy.Valid {
 		run.CreatedBy = &result.CreatedBy.String
 	}
-	if result.CancelSignaledAt.Status == pgtype.Present {
+	if result.CancelSignaledAt.Valid {
 		run.CancelSignaledAt = internal.Time(result.CancelSignaledAt.Time.UTC())
 	}
-	if result.IngressAttributes != nil {
+	if result.IngressAttributes != (pggen.IngressAttributes{}) {
 		run.IngressAttributes = configversion.NewIngressFromRow(result.IngressAttributes)
 	}
 	return &run
@@ -272,180 +271,215 @@ func (db *pgdb) UpdateStatus(ctx context.Context, runID string, fn func(*Run) er
 }
 
 func (db *pgdb) CreatePlanReport(ctx context.Context, runID string, resource, output Report) error {
-	_, err := db.Conn(ctx).UpdatePlannedChangesByID(ctx, pggen.UpdatePlannedChangesByIDParams{
-		RunID:                sql.String(runID),
-		ResourceAdditions:    sql.Int4(resource.Additions),
-		ResourceChanges:      sql.Int4(resource.Changes),
-		ResourceDestructions: sql.Int4(resource.Destructions),
-		OutputAdditions:      sql.Int4(output.Additions),
-		OutputChanges:        sql.Int4(output.Changes),
-		OutputDestructions:   sql.Int4(output.Destructions),
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.UpdatePlannedChangesByID(ctx, pggen.UpdatePlannedChangesByIDParams{
+			RunID:                sql.String(runID),
+			ResourceAdditions:    sql.Int4(resource.Additions),
+			ResourceChanges:      sql.Int4(resource.Changes),
+			ResourceDestructions: sql.Int4(resource.Destructions),
+			OutputAdditions:      sql.Int4(output.Additions),
+			OutputChanges:        sql.Int4(output.Changes),
+			OutputDestructions:   sql.Int4(output.Destructions),
+		})
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return err
 	})
-	if err != nil {
-		return sql.Error(err)
-	}
-	return err
 }
 
 func (db *pgdb) CreateApplyReport(ctx context.Context, runID string, report Report) error {
-	_, err := db.Conn(ctx).UpdateAppliedChangesByID(ctx, pggen.UpdateAppliedChangesByIDParams{
-		RunID:        sql.String(runID),
-		Additions:    sql.Int4(report.Additions),
-		Changes:      sql.Int4(report.Changes),
-		Destructions: sql.Int4(report.Destructions),
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.UpdateAppliedChangesByID(ctx, pggen.UpdateAppliedChangesByIDParams{
+			RunID:        sql.String(runID),
+			Additions:    sql.Int4(report.Additions),
+			Changes:      sql.Int4(report.Changes),
+			Destructions: sql.Int4(report.Destructions),
+		})
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return err
 	})
-	if err != nil {
-		return sql.Error(err)
-	}
-	return err
 }
 
 func (db *pgdb) ListRuns(ctx context.Context, opts ListOptions) (*resource.Page[*Run], error) {
-	q := db.Conn(ctx)
-	batch := &pgx.Batch{}
-	organization := "%"
-	if opts.Organization != nil {
-		organization = *opts.Organization
-	}
-	workspaceName := "%"
-	if opts.WorkspaceName != nil {
-		workspaceName = *opts.WorkspaceName
-	}
-	workspaceID := "%"
-	if opts.WorkspaceID != nil {
-		workspaceID = *opts.WorkspaceID
-	}
-	sources := []string{"%"}
-	if len(opts.Sources) > 0 {
-		sources = internal.ToStringSlice(opts.Sources)
-	}
-	statuses := []string{"%"}
-	if len(opts.Statuses) > 0 {
-		statuses = internal.ToStringSlice(opts.Statuses)
-	}
-	planOnly := "%"
-	if opts.PlanOnly != nil {
-		planOnly = strconv.FormatBool(*opts.PlanOnly)
-	}
-	q.FindRunsBatch(batch, pggen.FindRunsParams{
-		OrganizationNames: []string{organization},
-		WorkspaceNames:    []string{workspaceName},
-		WorkspaceIds:      []string{workspaceID},
-		CommitSHA:         sql.StringPtr(opts.CommitSHA),
-		VCSUsername:       sql.StringPtr(opts.VCSUsername),
-		Sources:           sources,
-		Statuses:          statuses,
-		PlanOnly:          []string{planOnly},
-		Limit:             opts.GetLimit(),
-		Offset:            opts.GetOffset(),
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Run], error) {
+		organization := "%"
+		if opts.Organization != nil {
+			organization = *opts.Organization
+		}
+		workspaceName := "%"
+		if opts.WorkspaceName != nil {
+			workspaceName = *opts.WorkspaceName
+		}
+		workspaceID := "%"
+		if opts.WorkspaceID != nil {
+			workspaceID = *opts.WorkspaceID
+		}
+		sources := []string{"%"}
+		if len(opts.Sources) > 0 {
+			sources = internal.ToStringSlice(opts.Sources)
+		}
+		statuses := []string{"%"}
+		if len(opts.Statuses) > 0 {
+			statuses = internal.ToStringSlice(opts.Statuses)
+		}
+		planOnly := "%"
+		if opts.PlanOnly != nil {
+			planOnly = strconv.FormatBool(*opts.PlanOnly)
+		}
+
+		rows, err := q.FindRuns(ctx, pggen.FindRunsParams{
+			OrganizationNames: []string{organization},
+			WorkspaceNames:    []string{workspaceName},
+			WorkspaceIds:      []string{workspaceID},
+			CommitSHA:         sql.StringPtr(opts.CommitSHA),
+			VCSUsername:       sql.StringPtr(opts.VCSUsername),
+			Sources:           sources,
+			Statuses:          statuses,
+			PlanOnly:          []string{planOnly},
+			Limit:             opts.GetLimit(),
+			Offset:            opts.GetOffset(),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		count, err := q.CountRuns(ctx, pggen.CountRunsParams{
+			OrganizationNames: []string{organization},
+			WorkspaceNames:    []string{workspaceName},
+			WorkspaceIds:      []string{workspaceID},
+			CommitSHA:         sql.StringPtr(opts.CommitSHA),
+			VCSUsername:       sql.StringPtr(opts.VCSUsername),
+			Sources:           sources,
+			Statuses:          statuses,
+			PlanOnly:          []string{planOnly},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		items := make([]*Run, len(rows))
+		for i, r := range rows {
+			items[i] = pgresult(r).toRun()
+		}
+
+		return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int64)), nil
 	})
-	q.CountRunsBatch(batch, pggen.CountRunsParams{
-		OrganizationNames: []string{organization},
-		WorkspaceNames:    []string{workspaceName},
-		WorkspaceIds:      []string{workspaceID},
-		CommitSHA:         sql.StringPtr(opts.CommitSHA),
-		VCSUsername:       sql.StringPtr(opts.VCSUsername),
-		Sources:           sources,
-		Statuses:          statuses,
-		PlanOnly:          []string{planOnly},
-	})
-
-	results := db.SendBatch(ctx, batch)
-	defer results.Close()
-
-	rows, err := q.FindRunsScan(results)
-	if err != nil {
-		return nil, err
-	}
-	count, err := q.CountRunsScan(results)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]*Run, len(rows))
-	for i, r := range rows {
-		items[i] = pgresult(r).toRun()
-	}
-	return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int)), nil
 }
 
 // GetRun retrieves a run using the get options
 func (db *pgdb) GetRun(ctx context.Context, runID string) (*Run, error) {
-	result, err := db.Conn(ctx).FindRunByID(ctx, sql.String(runID))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return pgresult(result).toRun(), nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Run, error) {
+		result, err := q.FindRunByID(ctx, sql.String(runID))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		return pgresult(result).toRun(), nil
+	})
 }
 
 // SetPlanFile writes a plan file to the db
 func (db *pgdb) SetPlanFile(ctx context.Context, runID string, file []byte, format PlanFormat) error {
-	q := db.Conn(ctx)
-	switch format {
-	case PlanFormatBinary:
-		_, err := q.UpdatePlanBinByID(ctx, file, sql.String(runID))
-		return err
-	case PlanFormatJSON:
-		_, err := q.UpdatePlanJSONByID(ctx, file, sql.String(runID))
-		return err
-	default:
-		return fmt.Errorf("unknown plan format: %s", string(format))
-	}
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		switch format {
+		case PlanFormatBinary:
+			_, err := q.UpdatePlanBinByID(ctx, file, sql.String(runID))
+			return err
+		case PlanFormatJSON:
+			_, err := q.UpdatePlanJSONByID(ctx, file, sql.String(runID))
+			return err
+		default:
+			return fmt.Errorf("unknown plan format: %s", string(format))
+		}
+	})
 }
 
 // GetPlanFile retrieves a plan file for the run
 func (db *pgdb) GetPlanFile(ctx context.Context, runID string, format PlanFormat) ([]byte, error) {
-	q := db.Conn(ctx)
-	switch format {
-	case PlanFormatBinary:
-		return q.GetPlanBinByID(ctx, sql.String(runID))
-	case PlanFormatJSON:
-		return q.GetPlanJSONByID(ctx, sql.String(runID))
-	default:
-		return nil, fmt.Errorf("unknown plan format: %s", string(format))
-	}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+		switch format {
+		case PlanFormatBinary:
+			return q.GetPlanBinByID(ctx, sql.String(runID))
+		case PlanFormatJSON:
+			return q.GetPlanJSONByID(ctx, sql.String(runID))
+		default:
+			return nil, fmt.Errorf("unknown plan format: %s", string(format))
+		}
+	})
 }
 
 // GetLockFile retrieves the lock file for the run
 func (db *pgdb) GetLockFile(ctx context.Context, runID string) ([]byte, error) {
-	return db.Conn(ctx).GetLockFileByID(ctx, sql.String(runID))
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+		return q.GetLockFileByID(ctx, sql.String(runID))
+	})
 }
 
 // SetLockFile sets the lock file for the run
 func (db *pgdb) SetLockFile(ctx context.Context, runID string, lockFile []byte) error {
-	_, err := db.Conn(ctx).PutLockFile(ctx, lockFile, sql.String(runID))
-	return err
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.PutLockFile(ctx, lockFile, sql.String(runID))
+		return err
+	})
 }
 
 // DeleteRun deletes a run from the DB
 func (db *pgdb) DeleteRun(ctx context.Context, id string) error {
-	_, err := db.Conn(ctx).DeleteRunByID(ctx, sql.String(id))
-	return err
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.DeleteRunByID(ctx, sql.String(id))
+		return err
+	})
 }
 
 func (db *pgdb) insertRunStatusTimestamp(ctx context.Context, run *Run) error {
-	ts, err := run.StatusTimestamp(run.Status)
-	if err != nil {
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		ts, err := run.StatusTimestamp(run.Status)
+		if err != nil {
+			return err
+		}
+		_, err = q.InsertRunStatusTimestamp(ctx, pggen.InsertRunStatusTimestampParams{
+			ID:        sql.String(run.ID),
+			Status:    sql.String(string(run.Status)),
+			Timestamp: sql.Timestamptz(ts),
+		})
 		return err
-	}
-	_, err = db.Conn(ctx).InsertRunStatusTimestamp(ctx, pggen.InsertRunStatusTimestampParams{
-		ID:        sql.String(run.ID),
-		Status:    sql.String(string(run.Status)),
-		Timestamp: sql.Timestamptz(ts),
 	})
-	return err
 }
 
 func (db *pgdb) insertPhaseStatusTimestamp(ctx context.Context, phase Phase) error {
-	ts, err := phase.StatusTimestamp(phase.Status)
-	if err != nil {
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		ts, err := phase.StatusTimestamp(phase.Status)
+		if err != nil {
+			return err
+		}
+
+		_, err = q.InsertPhaseStatusTimestamp(ctx, pggen.InsertPhaseStatusTimestampParams{
+			RunID:     sql.String(phase.RunID),
+			Phase:     sql.String(string(phase.PhaseType)),
+			Status:    sql.String(string(phase.Status)),
+			Timestamp: sql.Timestamptz(ts),
+		})
 		return err
-	}
-	_, err = db.Conn(ctx).InsertPhaseStatusTimestamp(ctx, pggen.InsertPhaseStatusTimestampParams{
-		RunID:     sql.String(phase.RunID),
-		Phase:     sql.String(string(phase.PhaseType)),
-		Status:    sql.String(string(phase.Status)),
-		Timestamp: sql.Timestamptz(ts),
 	})
-	return err
+}
+
+func (db *pgdb) findLogs(ctx context.Context, runID string, phase internal.PhaseType) ([]byte, error) {
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+		data, err := q.FindLogs(ctx, sql.String(runID), sql.String(string(phase)))
+		if err != nil {
+			// Don't consider no rows an error because logs may not have been
+			// uploaded yet.
+			if sql.NoRowsInResultError(err) {
+				return nil, nil
+			}
+			return nil, sql.Error(err)
+		}
+
+		return data, nil
+	})
 }

@@ -34,7 +34,7 @@ type (
 		RunClient           runClient
 		Logger              *slog.Logger
 
-		*sql.DB
+		*sql.Pool
 		*tfeapi.Responder
 		html.Renderer
 	}
@@ -47,7 +47,7 @@ type (
 func NewService(opts Options) *Service {
 	svc := Service{
 		logger:       opts.Logger,
-		db:           &pgdb{opts.DB},
+		db:           &pgdb{opts.Pool},
 		workspace:    opts.WorkspaceAuthorizer,
 		organization: &organization.Authorizer{Logger: opts.Logger},
 		runs:         opts.RunClient,

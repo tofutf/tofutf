@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertLatestTerraformVersionSQL = `INSERT INTO latest_terraform_version (
     version,
@@ -24,21 +26,7 @@ func (q *DBQuerier) InsertLatestTerraformVersion(ctx context.Context, version pg
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertLatestTerraformVersion")
 	cmdTag, err := q.conn.Exec(ctx, insertLatestTerraformVersionSQL, version)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertLatestTerraformVersion: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertLatestTerraformVersionBatch implements Querier.InsertLatestTerraformVersionBatch.
-func (q *DBQuerier) InsertLatestTerraformVersionBatch(batch genericBatch, version pgtype.Text) {
-	batch.Queue(insertLatestTerraformVersionSQL, version)
-}
-
-// InsertLatestTerraformVersionScan implements Querier.InsertLatestTerraformVersionScan.
-func (q *DBQuerier) InsertLatestTerraformVersionScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertLatestTerraformVersionBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertLatestTerraformVersion: %w", err)
 	}
 	return cmdTag, err
 }
@@ -52,21 +40,7 @@ func (q *DBQuerier) UpdateLatestTerraformVersion(ctx context.Context, version pg
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateLatestTerraformVersion")
 	cmdTag, err := q.conn.Exec(ctx, updateLatestTerraformVersionSQL, version)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query UpdateLatestTerraformVersion: %w", err)
-	}
-	return cmdTag, err
-}
-
-// UpdateLatestTerraformVersionBatch implements Querier.UpdateLatestTerraformVersionBatch.
-func (q *DBQuerier) UpdateLatestTerraformVersionBatch(batch genericBatch, version pgtype.Text) {
-	batch.Queue(updateLatestTerraformVersionSQL, version)
-}
-
-// UpdateLatestTerraformVersionScan implements Querier.UpdateLatestTerraformVersionScan.
-func (q *DBQuerier) UpdateLatestTerraformVersionScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec UpdateLatestTerraformVersionBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query UpdateLatestTerraformVersion: %w", err)
 	}
 	return cmdTag, err
 }
@@ -86,43 +60,14 @@ func (q *DBQuerier) FindLatestTerraformVersion(ctx context.Context) ([]FindLates
 	if err != nil {
 		return nil, fmt.Errorf("query FindLatestTerraformVersion: %w", err)
 	}
-	defer rows.Close()
-	items := []FindLatestTerraformVersionRow{}
-	for rows.Next() {
-		var item FindLatestTerraformVersionRow
-		if err := rows.Scan(&item.Version, &item.Checkpoint); err != nil {
-			return nil, fmt.Errorf("scan FindLatestTerraformVersion row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindLatestTerraformVersion rows: %w", err)
-	}
-	return items, err
-}
 
-// FindLatestTerraformVersionBatch implements Querier.FindLatestTerraformVersionBatch.
-func (q *DBQuerier) FindLatestTerraformVersionBatch(batch genericBatch) {
-	batch.Queue(findLatestTerraformVersionSQL)
-}
-
-// FindLatestTerraformVersionScan implements Querier.FindLatestTerraformVersionScan.
-func (q *DBQuerier) FindLatestTerraformVersionScan(results pgx.BatchResults) ([]FindLatestTerraformVersionRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindLatestTerraformVersionBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindLatestTerraformVersionRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindLatestTerraformVersionRow, error) {
 		var item FindLatestTerraformVersionRow
-		if err := rows.Scan(&item.Version, &item.Checkpoint); err != nil {
-			return nil, fmt.Errorf("scan FindLatestTerraformVersionBatch row: %w", err)
+		if err := row.Scan(&item.Version, // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Checkpoint, // 'checkpoint', 'Checkpoint', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindLatestTerraformVersionBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }

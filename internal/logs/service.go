@@ -33,7 +33,7 @@ type (
 	Options struct {
 		Logger *slog.Logger
 		internal.Cache
-		*sql.DB
+		*sql.Pool
 		*sql.Listener
 		internal.Verifier
 
@@ -42,7 +42,7 @@ type (
 )
 
 func NewService(opts Options) *Service {
-	db := &pgdb{opts.DB}
+	db := &pgdb{opts.Pool}
 	svc := Service{
 		logger: opts.Logger,
 		run:    opts.RunAuthorizer,

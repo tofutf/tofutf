@@ -51,7 +51,7 @@ type (
 	Daemon struct {
 		Config
 
-		*sql.DB
+		*sql.Pool
 
 		Logger        *slog.Logger
 		Organizations *organization.Service
@@ -109,7 +109,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	}
 	logger.Info("started cache", "max_size", cfg.CacheConfig.Size, "ttl", cfg.CacheConfig.TTL)
 
-	var db *sql.DB
+	var db *sql.Pool
 	const maxRetries = 10
 	retryInterval := 5 * time.Second
 
@@ -151,7 +151,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	orgService := organization.NewService(organization.Options{
 		Logger:                       logger,
-		DB:                           db,
+		Pool:                         db,
 		Listener:                     listener,
 		Renderer:                     renderer,
 		Responder:                    responder,
@@ -161,7 +161,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	teamService := team.NewService(team.Options{
 		Logger:              logger,
-		DB:                  db,
+		Pool:                db,
 		Renderer:            renderer,
 		Responder:           responder,
 		OrganizationService: orgService,
@@ -169,7 +169,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	})
 	userService := user.NewService(user.Options{
 		Logger:        logger,
-		DB:            db,
+		Pool:          db,
 		Renderer:      renderer,
 		Responder:     responder,
 		TokensService: tokensService,
@@ -183,7 +183,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	githubAppService := github.NewService(github.Options{
 		Logger:              logger,
-		DB:                  db,
+		Pool:                db,
 		Renderer:            renderer,
 		HostnameService:     hostnameService,
 		GithubHostname:      cfg.GithubHostname,
@@ -194,7 +194,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	vcsProviderService := vcsprovider.NewService(vcsprovider.Options{
 		Logger:                  logger,
-		DB:                      db,
+		Pool:                    db,
 		Renderer:                renderer,
 		Responder:               responder,
 		HostnameService:         hostnameService,
@@ -207,7 +207,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	})
 	repoService := repohooks.NewService(ctx, repohooks.Options{
 		Logger:              logger,
-		DB:                  db,
+		Pool:                db,
 		HostnameService:     hostnameService,
 		OrganizationService: orgService,
 		VCSProviderService:  vcsProviderService,
@@ -220,20 +220,20 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	connectionService := connections.NewService(ctx, connections.Options{
 		Logger:             logger,
-		DB:                 db,
+		Pool:               db,
 		VCSProviderService: vcsProviderService,
 		RepoHooksService:   repoService,
 	})
 	releasesService := releases.NewService(releases.Options{
 		Logger: logger,
-		DB:     db,
+		Pool:   db,
 	})
 	if cfg.DisableLatestChecker == nil || !*cfg.DisableLatestChecker {
 		releasesService.StartLatestChecker(ctx)
 	}
 	workspaceService := workspace.NewService(workspace.Options{
 		Logger:              logger,
-		DB:                  db,
+		Pool:                db,
 		Listener:            listener,
 		Renderer:            renderer,
 		Responder:           responder,
@@ -244,7 +244,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	})
 	configService := configversion.NewService(configversion.Options{
 		Logger:              logger,
-		DB:                  db,
+		Pool:                db,
 		WorkspaceAuthorizer: workspaceService,
 		Responder:           responder,
 		Cache:               cache,
@@ -254,7 +254,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	runService := run.NewService(run.Options{
 		Logger:               logger,
-		DB:                   db,
+		Pool:                 db,
 		Listener:             listener,
 		Renderer:             renderer,
 		Responder:            responder,
@@ -271,7 +271,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	})
 	logsService := logs.NewService(logs.Options{
 		Logger:        logger,
-		DB:            db,
+		Pool:          db,
 		RunAuthorizer: runService,
 		Cache:         cache,
 		Listener:      listener,
@@ -279,7 +279,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	})
 	moduleService := module.NewService(module.Options{
 		Logger:             logger,
-		DB:                 db,
+		Pool:               db,
 		Renderer:           renderer,
 		HostnameService:    hostnameService,
 		VCSProviderService: vcsProviderService,
@@ -290,7 +290,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	})
 	providerService := provider.NewService(provider.Options{
 		Logger:             logger,
-		DB:                 db,
+		Pool:               db,
 		HostnameService:    hostnameService,
 		Signer:             signer,
 		Renderer:           renderer,
@@ -299,7 +299,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	})
 	stateService := state.NewService(state.Options{
 		Logger:           logger,
-		DB:               db,
+		Pool:             db,
 		WorkspaceService: workspaceService,
 		Cache:            cache,
 		Renderer:         renderer,
@@ -308,7 +308,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 	})
 	variableService := variable.NewService(variable.Options{
 		Logger:              logger,
-		DB:                  db,
+		Pool:                db,
 		Renderer:            renderer,
 		Responder:           responder,
 		WorkspaceAuthorizer: workspaceService,
@@ -318,7 +318,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	agentService := agent.NewService(agent.ServiceOptions{
 		Logger:           logger,
-		DB:               db,
+		Pool:             db,
 		Renderer:         renderer,
 		Responder:        responder,
 		RunService:       runService,
@@ -383,7 +383,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	notificationService := notifications.NewService(notifications.Options{
 		Logger:              logger,
-		DB:                  db,
+		Pool:                db,
 		Listener:            listener,
 		Responder:           responder,
 		WorkspaceAuthorizer: workspaceService,
@@ -391,7 +391,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 
 	privateregistryService, err := gpgkeys.NewService(gpgkeys.Options{
 		Logger:                 logger,
-		DB:                     db,
+		Pool:                   db,
 		HostnameService:        hostnameService,
 		Signer:                 signer,
 		Renderer:               renderer,
@@ -460,7 +460,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Daemon, error) 
 		GithubApp:     githubAppService,
 		Connections:   connectionService,
 		Agents:        agentService,
-		DB:            db,
+		Pool:          db,
 		agent:         agentDaemon,
 		listener:      listener,
 	}, nil
@@ -473,7 +473,7 @@ func (d *Daemon) Start(ctx context.Context, started chan struct{}) error {
 	g, ctx := errgroup.WithContext(ctx)
 
 	// close all db connections upon exit
-	defer d.DB.Close()
+	defer d.Pool.Close()
 
 	// Construct web server and start listening on port
 	server, err := http.NewServer(d.Logger, http.ServerConfig{
@@ -519,7 +519,7 @@ func (d *Daemon) Start(ctx context.Context, started chan struct{}) error {
 			Name:      "reporter",
 			Logger:    d.Logger,
 			Exclusive: true,
-			DB:        d.DB,
+			DB:        d.Pool,
 			LockID:    internal.Int64(run.ReporterLockID),
 			System: &run.Reporter{
 				Logger:          d.Logger.With("component", "reporter"),
@@ -534,7 +534,7 @@ func (d *Daemon) Start(ctx context.Context, started chan struct{}) error {
 			Name:      "notifier",
 			Logger:    d.Logger,
 			Exclusive: true,
-			DB:        d.DB,
+			DB:        d.Pool,
 			LockID:    internal.Int64(notifications.LockID),
 			System: notifications.NewNotifier(notifications.NotifierOptions{
 				Logger:             d.Logger,
@@ -542,14 +542,14 @@ func (d *Daemon) Start(ctx context.Context, started chan struct{}) error {
 				WorkspaceClient:    d.Workspaces,
 				RunClient:          d.Runs,
 				NotificationClient: d.Notifications,
-				DB:                 d.DB,
+				Pool:               d.Pool,
 			}),
 		},
 		{
 			Name:      "job-allocator",
 			Logger:    d.Logger,
 			Exclusive: true,
-			DB:        d.DB,
+			DB:        d.Pool,
 			LockID:    internal.Int64(agent.AllocatorLockID),
 			System:    d.Agents.NewAllocator(d.Logger),
 		},
@@ -557,14 +557,14 @@ func (d *Daemon) Start(ctx context.Context, started chan struct{}) error {
 			Name:      "agent-manager",
 			Logger:    d.Logger,
 			Exclusive: true,
-			DB:        d.DB,
+			DB:        d.Pool,
 			LockID:    internal.Int64(agent.ManagerLockID),
 			System:    d.Agents.NewManager(),
 		},
 		{
 			Name:   "agent-daemon",
 			Logger: d.Logger,
-			DB:     d.DB,
+			DB:     d.Pool,
 			System: d.agent,
 		},
 	}
@@ -573,7 +573,7 @@ func (d *Daemon) Start(ctx context.Context, started chan struct{}) error {
 			Name:      "scheduler",
 			Logger:    d.Logger,
 			Exclusive: true,
-			DB:        d.DB,
+			DB:        d.Pool,
 			LockID:    internal.Int64(scheduler.LockID),
 			System: scheduler.NewScheduler(scheduler.Options{
 				Logger:          d.Logger,

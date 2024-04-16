@@ -3,8 +3,9 @@ package state
 import (
 	"context"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal/sql"
+	"github.com/tofutf/tofutf/internal/sql/pggen"
 )
 
 type outputRow struct {
@@ -30,9 +31,12 @@ func (row outputRow) toOutput() *Output {
 }
 
 func (db *pgdb) getOutput(ctx context.Context, outputID string) (*Output, error) {
-	result, err := db.Conn(ctx).FindStateVersionOutputByID(ctx, sql.String(outputID))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return outputRow(result).toOutput(), nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Output, error) {
+		result, err := q.FindStateVersionOutputByID(ctx, sql.String(outputID))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		return outputRow(result).toOutput(), nil
+	})
 }
