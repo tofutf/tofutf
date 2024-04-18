@@ -65,7 +65,7 @@ type GPGKey struct {
 }
 
 func (db pgdb) getRegistryGPGKey(ctx context.Context, opts pgGetOptions) (*GPGKey, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*GPGKey, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*GPGKey, error) {
 		row, err := q.GetGPGKey(ctx, sql.String(opts.keyID), sql.String(opts.organization))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -76,7 +76,7 @@ func (db pgdb) getRegistryGPGKey(ctx context.Context, opts pgGetOptions) (*GPGKe
 }
 
 func (db *pgdb) listRegistryGPGKeys(ctx context.Context, organizationName []string) ([]*GPGKey, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*GPGKey, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*GPGKey, error) {
 		rows, err := q.ListGPGKeys(ctx, organizationName)
 		if err != nil {
 			return nil, sql.Error(err)
@@ -92,7 +92,7 @@ func (db *pgdb) listRegistryGPGKeys(ctx context.Context, organizationName []stri
 }
 
 func (db *pgdb) deleteRegistryGPGKey(ctx context.Context, opts pgDeleteOpts) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		response, err := q.DeleteGPGKey(ctx, sql.String(opts.keyID), sql.String(opts.organization))
 		if err != nil {
 			return sql.Error(err)
@@ -107,7 +107,7 @@ func (db *pgdb) deleteRegistryGPGKey(ctx context.Context, opts pgDeleteOpts) err
 }
 
 func (db *pgdb) updateRegistryGPGKey(ctx context.Context, opts pgUpdateOpts) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		response, err := q.UpdateGPGKey(ctx, pggen.UpdateGPGKeyParams{
 			OrganizationName:    sql.String(opts.organizationName),
 			NewOrganizationName: sql.String(opts.newOrganizationName),
@@ -127,7 +127,7 @@ func (db *pgdb) updateRegistryGPGKey(ctx context.Context, opts pgUpdateOpts) err
 }
 
 func (db *pgdb) createRegistryGPGKey(ctx context.Context, key *GPGKey) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertGPGKey(ctx, pggen.InsertGPGKeyParams{
 			ID:               sql.String(key.ID),
 			OrganizationName: sql.String(key.OrganizationName),

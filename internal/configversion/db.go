@@ -78,7 +78,7 @@ func (db *pgdb) UploadConfigurationVersion(ctx context.Context, id string, fn fu
 }
 
 func (db *pgdb) ListConfigurationVersions(ctx context.Context, workspaceID string, opts ListOptions) (*resource.Page[*ConfigurationVersion], error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*ConfigurationVersion], error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*ConfigurationVersion], error) {
 		rows, err := q.FindConfigurationVersionsByWorkspaceID(ctx, pggen.FindConfigurationVersionsByWorkspaceIDParams{
 			WorkspaceID: sql.String(workspaceID),
 			Limit:       opts.GetLimit(),
@@ -102,7 +102,7 @@ func (db *pgdb) ListConfigurationVersions(ctx context.Context, workspaceID strin
 }
 
 func (db *pgdb) GetConfigurationVersion(ctx context.Context, opts ConfigurationVersionGetOptions) (*ConfigurationVersion, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*ConfigurationVersion, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*ConfigurationVersion, error) {
 		if opts.ID != nil {
 			result, err := q.FindConfigurationVersionByID(ctx, sql.String(*opts.ID))
 			if err != nil {
@@ -122,7 +122,7 @@ func (db *pgdb) GetConfigurationVersion(ctx context.Context, opts ConfigurationV
 }
 
 func (db *pgdb) GetConfig(ctx context.Context, id string) ([]byte, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
 		cfg, err := q.DownloadConfigurationVersion(ctx, sql.String(id))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -133,7 +133,7 @@ func (db *pgdb) GetConfig(ctx context.Context, id string) ([]byte, error) {
 }
 
 func (db *pgdb) DeleteConfigurationVersion(ctx context.Context, id string) error {
-	return db.Pool.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Pool.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteConfigurationVersionByID(ctx, sql.String(id))
 		if err != nil {
 			return sql.Error(err)
@@ -144,7 +144,7 @@ func (db *pgdb) DeleteConfigurationVersion(ctx context.Context, id string) error
 }
 
 func (db *pgdb) insertCVStatusTimestamp(ctx context.Context, cv *ConfigurationVersion) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		sts, err := cv.StatusTimestamp(cv.Status)
 		if err != nil {
 			return err

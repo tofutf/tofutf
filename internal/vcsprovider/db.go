@@ -95,7 +95,7 @@ func (db *pgdb) update(ctx context.Context, id string, fn func(*VCSProvider) err
 }
 
 func (db *pgdb) get(ctx context.Context, id string) (*VCSProvider, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*VCSProvider, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*VCSProvider, error) {
 		row, err := q.FindVCSProvider(ctx, sql.String(id))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -106,7 +106,7 @@ func (db *pgdb) get(ctx context.Context, id string) (*VCSProvider, error) {
 }
 
 func (db *pgdb) list(ctx context.Context) ([]*VCSProvider, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*VCSProvider, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*VCSProvider, error) {
 		rows, err := q.FindVCSProviders(ctx)
 		if err != nil {
 			return nil, sql.Error(err)
@@ -126,7 +126,7 @@ func (db *pgdb) list(ctx context.Context) ([]*VCSProvider, error) {
 }
 
 func (db *pgdb) listByOrganization(ctx context.Context, organization string) ([]*VCSProvider, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*VCSProvider, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*VCSProvider, error) {
 		rows, err := q.FindVCSProvidersByOrganization(ctx, sql.String(organization))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -146,7 +146,7 @@ func (db *pgdb) listByOrganization(ctx context.Context, organization string) ([]
 }
 
 func (db *pgdb) listByGithubAppInstall(ctx context.Context, installID int64) ([]*VCSProvider, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*VCSProvider, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*VCSProvider, error) {
 		rows, err := q.FindVCSProvidersByGithubAppInstallID(ctx,
 			pgtype.Int8{Int64: installID, Valid: true},
 		)
@@ -166,7 +166,7 @@ func (db *pgdb) listByGithubAppInstall(ctx context.Context, installID int64) ([]
 }
 
 func (db *pgdb) delete(ctx context.Context, id string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteVCSProviderByID(ctx, sql.String(id))
 		if err != nil {
 			return sql.Error(err)

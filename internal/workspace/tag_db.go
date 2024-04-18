@@ -31,7 +31,7 @@ func (r tagresult) toTag() *Tag {
 }
 
 func (db *pgdb) listTags(ctx context.Context, organization string, opts ListTagsOptions) (*resource.Page[*Tag], error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Tag], error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Tag], error) {
 		rows, err := q.FindTags(ctx, pggen.FindTagsParams{
 			OrganizationName: sql.String(organization),
 			Limit:            opts.GetLimit(),
@@ -69,7 +69,7 @@ func (db *pgdb) deleteTags(ctx context.Context, organization string, tagIDs []st
 }
 
 func (db *pgdb) addTag(ctx context.Context, organization, name, id string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertTag(ctx, pggen.InsertTagParams{
 			TagID:            sql.String(id),
 			Name:             sql.String(name),
@@ -84,7 +84,7 @@ func (db *pgdb) addTag(ctx context.Context, organization, name, id string) error
 }
 
 func (db *pgdb) findTagByName(ctx context.Context, organization, name string) (*Tag, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Tag, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Tag, error) {
 		tag, err := q.FindTagByName(ctx, sql.String(name), sql.String(organization))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -95,7 +95,7 @@ func (db *pgdb) findTagByName(ctx context.Context, organization, name string) (*
 }
 
 func (db *pgdb) findTagByID(ctx context.Context, organization, id string) (*Tag, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Tag, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Tag, error) {
 		tag, err := q.FindTagByID(ctx, sql.String(id), sql.String(organization))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -106,7 +106,7 @@ func (db *pgdb) findTagByID(ctx context.Context, organization, id string) (*Tag,
 }
 
 func (db *pgdb) tagWorkspace(ctx context.Context, workspaceID, tagID string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertWorkspaceTag(ctx, sql.String(tagID), sql.String(workspaceID))
 		if err != nil {
 			return sql.Error(err)
@@ -117,7 +117,7 @@ func (db *pgdb) tagWorkspace(ctx context.Context, workspaceID, tagID string) err
 }
 
 func (db *pgdb) deleteWorkspaceTag(ctx context.Context, workspaceID, tagID string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteWorkspaceTag(ctx, sql.String(workspaceID), sql.String(tagID))
 		if err != nil {
 			return sql.Error(err)
@@ -128,7 +128,7 @@ func (db *pgdb) deleteWorkspaceTag(ctx context.Context, workspaceID, tagID strin
 }
 
 func (db *pgdb) listWorkspaceTags(ctx context.Context, workspaceID string, opts ListWorkspaceTagsOptions) (*resource.Page[*Tag], error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Tag], error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Tag], error) {
 		rows, err := q.FindWorkspaceTags(ctx, pggen.FindWorkspaceTagsParams{
 			WorkspaceID: sql.String(workspaceID),
 			Limit:       opts.GetLimit(),

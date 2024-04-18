@@ -48,7 +48,7 @@ func (r pgresult) toNotificationConfiguration() *Config {
 }
 
 func (db *pgdb) create(ctx context.Context, nc *Config) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		params := pggen.InsertNotificationConfigurationParams{
 			NotificationConfigurationID: sql.String(nc.ID),
 			CreatedAt:                   sql.Timestamptz(nc.CreatedAt),
@@ -105,7 +105,7 @@ func (db *pgdb) update(ctx context.Context, id string, updateFunc func(*Config) 
 }
 
 func (db *pgdb) list(ctx context.Context, workspaceID string) ([]*Config, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Config, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Config, error) {
 		results, err := q.FindNotificationConfigurationsByWorkspaceID(ctx, sql.String(workspaceID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -121,7 +121,7 @@ func (db *pgdb) list(ctx context.Context, workspaceID string) ([]*Config, error)
 }
 
 func (db *pgdb) listAll(ctx context.Context) ([]*Config, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Config, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Config, error) {
 		results, err := q.FindAllNotificationConfigurations(ctx)
 		if err != nil {
 			return nil, sql.Error(err)
@@ -136,7 +136,7 @@ func (db *pgdb) listAll(ctx context.Context) ([]*Config, error) {
 }
 
 func (db *pgdb) get(ctx context.Context, id string) (*Config, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Config, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Config, error) {
 		row, err := q.FindNotificationConfiguration(ctx, sql.String(id))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -147,7 +147,7 @@ func (db *pgdb) get(ctx context.Context, id string) (*Config, error) {
 }
 
 func (db *pgdb) delete(ctx context.Context, id string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteNotificationConfigurationByID(ctx, sql.String(id))
 		if err != nil {
 			return sql.Error(err)

@@ -38,7 +38,7 @@ func (r row) convert() *App {
 }
 
 func (db *pgdb) create(ctx context.Context, app *App) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertGithubApp(ctx, pggen.InsertGithubAppParams{
 			GithubAppID:   pgtype.Int8{Int64: app.ID, Valid: true},
 			WebhookSecret: sql.String(app.WebhookSecret),
@@ -51,7 +51,7 @@ func (db *pgdb) create(ctx context.Context, app *App) error {
 }
 
 func (db *pgdb) get(ctx context.Context) (*App, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*App, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*App, error) {
 		result, err := q.FindGithubApp(ctx)
 		if err != nil {
 			return nil, sql.Error(err)

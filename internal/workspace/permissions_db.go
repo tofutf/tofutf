@@ -10,7 +10,7 @@ import (
 )
 
 func (db *pgdb) SetWorkspacePermission(ctx context.Context, workspaceID, teamID string, role rbac.Role) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.UpsertWorkspacePermission(ctx, pggen.UpsertWorkspacePermissionParams{
 			WorkspaceID: sql.String(workspaceID),
 			TeamID:      sql.String(teamID),
@@ -25,7 +25,7 @@ func (db *pgdb) SetWorkspacePermission(ctx context.Context, workspaceID, teamID 
 }
 
 func (db *pgdb) GetWorkspacePolicy(ctx context.Context, workspaceID string) (internal.WorkspacePolicy, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (internal.WorkspacePolicy, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (internal.WorkspacePolicy, error) {
 		// Retrieve not only permissions but the workspace too, so that:
 		// (1) we ensure that workspace exists and return not found if not
 		// (2) we retrieve the name of the organization, which is part of a policy
@@ -59,7 +59,7 @@ func (db *pgdb) GetWorkspacePolicy(ctx context.Context, workspaceID string) (int
 }
 
 func (db *pgdb) UnsetWorkspacePermission(ctx context.Context, workspaceID, team string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteWorkspacePermissionByID(ctx, sql.String(workspaceID), sql.String(team))
 		if err != nil {
 			return sql.Error(err)
