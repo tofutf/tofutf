@@ -20,7 +20,7 @@ func TestSetFlagsFromEnvVariables(t *testing.T) {
 	t.Run("override flag with env var file", func(t *testing.T) {
 		fs := pflag.NewFlagSet("testing", pflag.ContinueOnError)
 		got := fs.String("foo", "default", "")
-		t.Setenv("OTF_FOO_FILE", "./testdata/otf_foo_file")
+		t.Setenv("OTF_FOO_FILE", "./testdata/tofutf_foo_file")
 		require.NoError(t, SetFlagsFromEnvVariables(fs))
 		require.NoError(t, fs.Parse(nil))
 		assert.Equal(t, "big\nmultiline\nsecret\n", *got)

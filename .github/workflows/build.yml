@@ -20,6 +20,8 @@ jobs:
           go-version-file: 'go.mod'
       - name: Vet check
         run: make vet
+      - name: Test
+        run: make test
       # - name: Add hosts to /etc/hosts
       #   run: |
       #     # API tests create webhooks on github.com, and github.com mandates

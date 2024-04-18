@@ -87,7 +87,7 @@ func TestPool(t *testing.T) {
 
 			// the previous transaction should have been committed.
 			err = pool.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
-				_, err := q.FindAgentByID(ctx, String("id"))
+				_, err := q.FindAgentByID(ctx, String("id1"))
 				return err
 			})
 			require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestPool(t *testing.T) {
 				})
 				require.NoError(t, err)
 
-				_, err = q.FindAgentByID(ctx, String("id"))
+				_, err = q.FindAgentByID(ctx, String("id2"))
 				require.NoError(t, err)
 
 				return fmt.Errorf("fake error")
@@ -125,7 +125,7 @@ func TestPool(t *testing.T) {
 
 			// the previous transaction should have been rolled back.
 			err = pool.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
-				_, err := q.FindAgentByID(ctx, String("id"))
+				_, err := q.FindAgentByID(ctx, String("id2"))
 				return err
 			})
 			require.Error(t, err)
