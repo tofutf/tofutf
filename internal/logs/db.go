@@ -20,7 +20,7 @@ type pgdb struct {
 
 // put persists data to the DB and returns a unique identifier for the chunk
 func (db *pgdb) put(ctx context.Context, opts internal.PutChunkOptions) (string, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (string, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (string, error) {
 		if len(opts.Data) == 0 {
 			return "", fmt.Errorf("refusing to persist empty chunk")
 		}
@@ -40,7 +40,7 @@ func (db *pgdb) put(ctx context.Context, opts internal.PutChunkOptions) (string,
 }
 
 func (db *pgdb) getChunk(ctx context.Context, chunkID string) (internal.Chunk, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (internal.Chunk, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (internal.Chunk, error) {
 		id, err := strconv.Atoi(chunkID)
 		if err != nil {
 			return internal.Chunk{}, err
@@ -62,7 +62,7 @@ func (db *pgdb) getChunk(ctx context.Context, chunkID string) (internal.Chunk, e
 }
 
 func (db *pgdb) getLogs(ctx context.Context, runID string, phase internal.PhaseType) ([]byte, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
 		data, err := q.FindLogs(ctx, sql.String(runID), sql.String(string(phase)))
 		if err != nil {
 			// Don't consider no rows an error because logs may not have been

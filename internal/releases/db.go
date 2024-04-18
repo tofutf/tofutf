@@ -40,7 +40,7 @@ func (db *db) getLatest(ctx context.Context) (string, time.Time, error) {
 		Checkpoint time.Time
 	}
 
-	latest, err := sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (latestRelease, error) {
+	latest, err := sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (latestRelease, error) {
 		rows, err := q.FindLatestTerraformVersion(ctx)
 		if err != nil {
 			return latestRelease{}, err

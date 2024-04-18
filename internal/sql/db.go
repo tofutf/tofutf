@@ -45,12 +45,23 @@ func New(ctx context.Context, opts Options) (*Pool, error) {
 		return nil, err
 	}
 
-	pool, err := pgxpool.New(ctx, connString)
+	config, err := pgxpool.ParseConfig(connString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse connection string: %w", err)
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
-	opts.Logger.Info("connected to database", "connstr", connString)
+	opts.Logger.Info(
+		"connected to database",
+		"database", config.ConnConfig.Database,
+		"host", config.ConnConfig.Host,
+		"port", config.ConnConfig.Port,
+		"user", config.ConnConfig.User,
+	)
 
 	// goose gets upset with max_pool_conns parameter so pass it the unaltered
 	// connection string
@@ -64,11 +75,11 @@ func New(ctx context.Context, opts Options) (*Pool, error) {
 	}, nil
 }
 
-// Func obtains a connection for the pool, executes the given function, and
+// Query obtains a connection for the pool, executes the given function, and
 // returns the connection to the pool.
-func Func[T any](ctx context.Context, pool *Pool, fn func(context.Context, pggen.Querier) (T, error)) (T, error) {
+func Query[T any](ctx context.Context, pool *Pool, fn func(context.Context, pggen.Querier) (T, error)) (T, error) {
 	var result T
-	err := pool.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	err := pool.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		v, err := fn(ctx, q)
 		if err != nil {
 			return fmt.Errorf("failed to invoke func: %w", err)
@@ -105,8 +116,9 @@ func Tx[T any](ctx context.Context, pool *Pool, fn func(context.Context, pggen.Q
 	return result, nil
 }
 
-// Conn provides pre-generated queries
-func (db *Pool) Func(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
+// Query obtains a connection for the pool, executes the given function, and
+// returns the connection to the pool.
+func (db *Pool) Query(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
 	if conn, ok := fromContext(ctx); ok {
 		querier, err := pggen.NewQuerier(ctx, conn)
 		if err != nil {
@@ -146,7 +158,7 @@ func (db *Pool) Func(ctx context.Context, callback func(context.Context, pggen.Q
 func (db *Pool) Tx(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
 	var conn interface {
 		Begin(ctx context.Context) (pgx.Tx, error)
-	}
+	} = db.Pool
 
 	// Use connection from context if found
 	if ctxConn, ok := fromContext(ctx); ok {

@@ -55,7 +55,7 @@ type pgdb struct {
 }
 
 func (db *pgdb) createTeam(ctx context.Context, team *Team) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertTeam(ctx, pggen.InsertTeamParams{
 			ID:                              sql.String(team.ID),
 			Name:                            sql.String(team.Name),
@@ -112,7 +112,7 @@ func (db *pgdb) UpdateTeam(ctx context.Context, teamID string, fn func(*Team) er
 }
 
 func (db *pgdb) getTeam(ctx context.Context, name, organization string) (*Team, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Team, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Team, error) {
 		result, err := q.FindTeamByName(ctx, sql.String(name), sql.String(organization))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -123,7 +123,7 @@ func (db *pgdb) getTeam(ctx context.Context, name, organization string) (*Team, 
 }
 
 func (db *pgdb) getTeamByID(ctx context.Context, id string) (*Team, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Team, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Team, error) {
 		result, err := q.FindTeamByID(ctx, sql.String(id))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -134,7 +134,7 @@ func (db *pgdb) getTeamByID(ctx context.Context, id string) (*Team, error) {
 }
 
 func (db *pgdb) getTeamByTokenID(ctx context.Context, tokenID string) (*Team, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Team, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Team, error) {
 		result, err := q.FindTeamByTokenID(ctx, sql.String(tokenID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -145,7 +145,7 @@ func (db *pgdb) getTeamByTokenID(ctx context.Context, tokenID string) (*Team, er
 }
 
 func (db *pgdb) listTeams(ctx context.Context, organization string) ([]*Team, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Team, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Team, error) {
 		result, err := q.FindTeamsByOrg(ctx, sql.String(organization))
 		if err != nil {
 			return nil, err
@@ -161,7 +161,7 @@ func (db *pgdb) listTeams(ctx context.Context, organization string) ([]*Team, er
 }
 
 func (db *pgdb) deleteTeam(ctx context.Context, teamID string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteTeamByID(ctx, sql.String(teamID))
 		if err != nil {
 			return sql.Error(err)
@@ -176,7 +176,7 @@ func (db *pgdb) deleteTeam(ctx context.Context, teamID string) error {
 //
 
 func (db *pgdb) createTeamToken(ctx context.Context, token *Token) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertTeamToken(ctx, pggen.InsertTeamTokenParams{
 			TeamTokenID: sql.String(token.ID),
 			TeamID:      sql.String(token.TeamID),
@@ -189,7 +189,7 @@ func (db *pgdb) createTeamToken(ctx context.Context, token *Token) error {
 }
 
 func (db *pgdb) getTeamTokenByTeamID(ctx context.Context, teamID string) (*Token, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Token, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Token, error) {
 		// query only returns 0 or 1 tokens
 		result, err := q.FindTeamTokensByID(ctx, sql.String(teamID))
 		if err != nil {
@@ -213,7 +213,7 @@ func (db *pgdb) getTeamTokenByTeamID(ctx context.Context, teamID string) (*Token
 }
 
 func (db *pgdb) deleteTeamToken(ctx context.Context, team string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteTeamTokenByID(ctx, sql.String(team))
 		if err != nil {
 			return sql.Error(err)

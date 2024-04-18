@@ -77,7 +77,7 @@ func (pdb *pgdb) createWorkspaceVariable(ctx context.Context, workspaceID string
 }
 
 func (pdb *pgdb) listWorkspaceVariables(ctx context.Context, workspaceID string) ([]*Variable, error) {
-	return sql.Func(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) ([]*Variable, error) {
+	return sql.Query(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) ([]*Variable, error) {
 		rows, err := q.FindWorkspaceVariablesByWorkspaceID(ctx, sql.String(workspaceID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -93,7 +93,7 @@ func (pdb *pgdb) listWorkspaceVariables(ctx context.Context, workspaceID string)
 }
 
 func (pdb *pgdb) getWorkspaceVariable(ctx context.Context, variableID string) (*WorkspaceVariable, error) {
-	return sql.Func(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) (*WorkspaceVariable, error) {
+	return sql.Query(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) (*WorkspaceVariable, error) {
 		row, err := q.FindWorkspaceVariableByVariableID(ctx, sql.String(variableID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -107,7 +107,7 @@ func (pdb *pgdb) getWorkspaceVariable(ctx context.Context, variableID string) (*
 }
 
 func (pdb *pgdb) deleteWorkspaceVariable(ctx context.Context, variableID string) (*WorkspaceVariable, error) {
-	return sql.Func(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) (*WorkspaceVariable, error) {
+	return sql.Query(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) (*WorkspaceVariable, error) {
 		row, err := q.DeleteWorkspaceVariableByID(ctx, sql.String(variableID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -121,7 +121,7 @@ func (pdb *pgdb) deleteWorkspaceVariable(ctx context.Context, variableID string)
 }
 
 func (pdb *pgdb) createVariableSet(ctx context.Context, set *VariableSet) error {
-	return pdb.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return pdb.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertVariableSet(ctx, pggen.InsertVariableSetParams{
 			VariableSetID:    sql.String(set.ID),
 			Name:             sql.String(set.Name),
@@ -161,7 +161,7 @@ func (pdb *pgdb) updateVariableSet(ctx context.Context, set *VariableSet) error 
 }
 
 func (pdb *pgdb) getVariableSet(ctx context.Context, setID string) (*VariableSet, error) {
-	return sql.Func(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) (*VariableSet, error) {
+	return sql.Query(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) (*VariableSet, error) {
 		row, err := q.FindVariableSetBySetID(ctx, sql.String(setID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -172,7 +172,7 @@ func (pdb *pgdb) getVariableSet(ctx context.Context, setID string) (*VariableSet
 }
 
 func (pdb *pgdb) getVariableSetByVariableID(ctx context.Context, variableID string) (*VariableSet, error) {
-	return sql.Func(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) (*VariableSet, error) {
+	return sql.Query(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) (*VariableSet, error) {
 		row, err := q.FindVariableSetByVariableID(ctx, sql.String(variableID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -183,7 +183,7 @@ func (pdb *pgdb) getVariableSetByVariableID(ctx context.Context, variableID stri
 }
 
 func (pdb *pgdb) listVariableSets(ctx context.Context, organization string) ([]*VariableSet, error) {
-	return sql.Func(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) ([]*VariableSet, error) {
+	return sql.Query(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) ([]*VariableSet, error) {
 		rows, err := q.FindVariableSetsByOrganization(ctx, sql.String(organization))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -199,7 +199,7 @@ func (pdb *pgdb) listVariableSets(ctx context.Context, organization string) ([]*
 }
 
 func (pdb *pgdb) listVariableSetsByWorkspace(ctx context.Context, workspaceID string) ([]*VariableSet, error) {
-	return sql.Func(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) ([]*VariableSet, error) {
+	return sql.Query(ctx, pdb.Pool, func(ctx context.Context, q pggen.Querier) ([]*VariableSet, error) {
 		rows, err := q.FindVariableSetsByWorkspace(ctx, sql.String(workspaceID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -215,7 +215,7 @@ func (pdb *pgdb) listVariableSetsByWorkspace(ctx context.Context, workspaceID st
 }
 
 func (pdb *pgdb) deleteVariableSet(ctx context.Context, setID string) error {
-	return pdb.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return pdb.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteVariableSetByID(ctx, sql.String(setID))
 		if err != nil {
 			return sql.Error(err)
@@ -250,7 +250,7 @@ func (pdb *pgdb) createVariableSetWorkspaces(ctx context.Context, setID string, 
 }
 
 func (pdb *pgdb) deleteAllVariableSetWorkspaces(ctx context.Context, setID string) error {
-	return pdb.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return pdb.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteVariableSetWorkspaces(ctx, sql.String(setID))
 		return sql.Error(err)
 	})
@@ -270,7 +270,7 @@ func (pdb *pgdb) deleteVariableSetWorkspaces(ctx context.Context, setID string, 
 }
 
 func (pdb *pgdb) createVariable(ctx context.Context, v *Variable) error {
-	return pdb.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return pdb.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertVariable(ctx, pggen.InsertVariableParams{
 			VariableID:  sql.String(v.ID),
 			Key:         sql.String(v.Key),
@@ -286,7 +286,7 @@ func (pdb *pgdb) createVariable(ctx context.Context, v *Variable) error {
 }
 
 func (pdb *pgdb) updateVariable(ctx context.Context, v *Variable) error {
-	return pdb.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return pdb.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.UpdateVariableByID(ctx, pggen.UpdateVariableByIDParams{
 			VariableID:  sql.String(v.ID),
 			Key:         sql.String(v.Key),
@@ -302,7 +302,7 @@ func (pdb *pgdb) updateVariable(ctx context.Context, v *Variable) error {
 }
 
 func (pdb *pgdb) deleteVariable(ctx context.Context, variableID string) error {
-	return pdb.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return pdb.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteVariableByID(ctx, sql.String(variableID))
 		return sql.Error(err)
 	})

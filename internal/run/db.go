@@ -271,7 +271,7 @@ func (db *pgdb) UpdateStatus(ctx context.Context, runID string, fn func(*Run) er
 }
 
 func (db *pgdb) CreatePlanReport(ctx context.Context, runID string, resource, output Report) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.UpdatePlannedChangesByID(ctx, pggen.UpdatePlannedChangesByIDParams{
 			RunID:                sql.String(runID),
 			ResourceAdditions:    sql.Int4(resource.Additions),
@@ -290,7 +290,7 @@ func (db *pgdb) CreatePlanReport(ctx context.Context, runID string, resource, ou
 }
 
 func (db *pgdb) CreateApplyReport(ctx context.Context, runID string, report Report) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.UpdateAppliedChangesByID(ctx, pggen.UpdateAppliedChangesByIDParams{
 			RunID:        sql.String(runID),
 			Additions:    sql.Int4(report.Additions),
@@ -306,7 +306,7 @@ func (db *pgdb) CreateApplyReport(ctx context.Context, runID string, report Repo
 }
 
 func (db *pgdb) ListRuns(ctx context.Context, opts ListOptions) (*resource.Page[*Run], error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Run], error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Run], error) {
 		organization := "%"
 		if opts.Organization != nil {
 			organization = *opts.Organization
@@ -373,7 +373,7 @@ func (db *pgdb) ListRuns(ctx context.Context, opts ListOptions) (*resource.Page[
 
 // GetRun retrieves a run using the get options
 func (db *pgdb) GetRun(ctx context.Context, runID string) (*Run, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Run, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Run, error) {
 		result, err := q.FindRunByID(ctx, sql.String(runID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -385,7 +385,7 @@ func (db *pgdb) GetRun(ctx context.Context, runID string) (*Run, error) {
 
 // SetPlanFile writes a plan file to the db
 func (db *pgdb) SetPlanFile(ctx context.Context, runID string, file []byte, format PlanFormat) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		switch format {
 		case PlanFormatBinary:
 			_, err := q.UpdatePlanBinByID(ctx, file, sql.String(runID))
@@ -401,7 +401,7 @@ func (db *pgdb) SetPlanFile(ctx context.Context, runID string, file []byte, form
 
 // GetPlanFile retrieves a plan file for the run
 func (db *pgdb) GetPlanFile(ctx context.Context, runID string, format PlanFormat) ([]byte, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
 		switch format {
 		case PlanFormatBinary:
 			return q.GetPlanBinByID(ctx, sql.String(runID))
@@ -415,14 +415,14 @@ func (db *pgdb) GetPlanFile(ctx context.Context, runID string, format PlanFormat
 
 // GetLockFile retrieves the lock file for the run
 func (db *pgdb) GetLockFile(ctx context.Context, runID string) ([]byte, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
 		return q.GetLockFileByID(ctx, sql.String(runID))
 	})
 }
 
 // SetLockFile sets the lock file for the run
 func (db *pgdb) SetLockFile(ctx context.Context, runID string, lockFile []byte) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.PutLockFile(ctx, lockFile, sql.String(runID))
 		return err
 	})
@@ -430,14 +430,14 @@ func (db *pgdb) SetLockFile(ctx context.Context, runID string, lockFile []byte) 
 
 // DeleteRun deletes a run from the DB
 func (db *pgdb) DeleteRun(ctx context.Context, id string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteRunByID(ctx, sql.String(id))
 		return err
 	})
 }
 
 func (db *pgdb) insertRunStatusTimestamp(ctx context.Context, run *Run) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		ts, err := run.StatusTimestamp(run.Status)
 		if err != nil {
 			return err
@@ -452,7 +452,7 @@ func (db *pgdb) insertRunStatusTimestamp(ctx context.Context, run *Run) error {
 }
 
 func (db *pgdb) insertPhaseStatusTimestamp(ctx context.Context, phase Phase) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		ts, err := phase.StatusTimestamp(phase.Status)
 		if err != nil {
 			return err
@@ -469,7 +469,7 @@ func (db *pgdb) insertPhaseStatusTimestamp(ctx context.Context, phase Phase) err
 }
 
 func (db *pgdb) findLogs(ctx context.Context, runID string, phase internal.PhaseType) ([]byte, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
 		data, err := q.FindLogs(ctx, sql.String(runID), sql.String(string(phase)))
 		if err != nil {
 			// Don't consider no rows an error because logs may not have been

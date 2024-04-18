@@ -64,7 +64,7 @@ func (db *pgdb) CreateUser(ctx context.Context, user *User) error {
 }
 
 func (db *pgdb) listUsers(ctx context.Context) ([]*User, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
 		result, err := q.FindUsers(ctx)
 		if err != nil {
 			return nil, err
@@ -80,7 +80,7 @@ func (db *pgdb) listUsers(ctx context.Context) ([]*User, error) {
 }
 
 func (db *pgdb) listOrganizationUsers(ctx context.Context, organization string) ([]*User, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
 		result, err := q.FindUsersByOrganization(ctx, sql.String(organization))
 		if err != nil {
 			return nil, err
@@ -96,7 +96,7 @@ func (db *pgdb) listOrganizationUsers(ctx context.Context, organization string) 
 }
 
 func (db *pgdb) listTeamUsers(ctx context.Context, teamID string) ([]*User, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*User, error) {
 		result, err := q.FindUsersByTeamID(ctx, sql.String(teamID))
 		if err != nil {
 			return nil, err
@@ -113,7 +113,7 @@ func (db *pgdb) listTeamUsers(ctx context.Context, teamID string) ([]*User, erro
 
 // getUser retrieves a user from the DB, along with its sessions.
 func (db *pgdb) getUser(ctx context.Context, spec UserSpec) (*User, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*User, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*User, error) {
 		if spec.UserID != nil {
 			result, err := q.FindUserByID(ctx, sql.String(*spec.UserID))
 			if err != nil {
@@ -139,7 +139,7 @@ func (db *pgdb) getUser(ctx context.Context, spec UserSpec) (*User, error) {
 }
 
 func (db *pgdb) addTeamMembership(ctx context.Context, teamID string, usernames ...string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertTeamMembership(ctx, usernames, sql.String(teamID))
 		if err != nil {
 			return sql.Error(err)
@@ -150,7 +150,7 @@ func (db *pgdb) addTeamMembership(ctx context.Context, teamID string, usernames 
 }
 
 func (db *pgdb) removeTeamMembership(ctx context.Context, teamID string, usernames ...string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteTeamMembership(ctx, usernames, sql.String(teamID))
 		if err != nil {
 			return sql.Error(err)
@@ -162,7 +162,7 @@ func (db *pgdb) removeTeamMembership(ctx context.Context, teamID string, usernam
 
 // DeleteUser deletes a user from the DB.
 func (db *pgdb) DeleteUser(ctx context.Context, spec UserSpec) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		if spec.UserID != nil {
 			_, err := q.DeleteUserByID(ctx, sql.String(*spec.UserID))
 			if err != nil {
@@ -227,7 +227,7 @@ func pgtextSliceDiff(a, b []pgtype.Text) []string {
 //
 
 func (db *pgdb) createUserToken(ctx context.Context, token *UserToken) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.InsertToken(ctx, pggen.InsertTokenParams{
 			TokenID:     sql.String(token.ID),
 			Description: sql.String(token.Description),
@@ -239,7 +239,7 @@ func (db *pgdb) createUserToken(ctx context.Context, token *UserToken) error {
 }
 
 func (db *pgdb) listUserTokens(ctx context.Context, username string) ([]*UserToken, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*UserToken, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*UserToken, error) {
 		result, err := q.FindTokensByUsername(ctx, sql.String(username))
 		if err != nil {
 			return nil, err
@@ -259,7 +259,7 @@ func (db *pgdb) listUserTokens(ctx context.Context, username string) ([]*UserTok
 }
 
 func (db *pgdb) getUserToken(ctx context.Context, id string) (*UserToken, error) {
-	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*UserToken, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*UserToken, error) {
 		row, err := q.FindTokenByID(ctx, sql.String(id))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -274,7 +274,7 @@ func (db *pgdb) getUserToken(ctx context.Context, id string) (*UserToken, error)
 }
 
 func (db *pgdb) deleteUserToken(ctx context.Context, id string) error {
-	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteTokenByID(ctx, sql.String(id))
 		if err != nil {
 			return sql.Error(err)

@@ -77,7 +77,7 @@ func TestTx(t *testing.T) {
 		assert.NoError(t, err)
 
 		// this should succeed because it is using the same ctx from the same tx
-		err = db.Func(txCtx, func(ctx context.Context, q pggen.Querier) error {
+		err = db.Query(txCtx, func(ctx context.Context, q pggen.Querier) error {
 			_, err = q.FindOrganizationByID(ctx, sql.String(org.ID))
 			return err
 		})
