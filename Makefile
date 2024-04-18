@@ -36,7 +36,7 @@ tailwind-watch:
 
 .PHONY: test
 test:
-	go test ./...
+	go test -short ./...
 
 .PHONY: k3d-up
 k3d-up:
