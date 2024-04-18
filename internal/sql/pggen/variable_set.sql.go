@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertVariableSetSQL = `INSERT INTO variable_sets (
     variable_set_id,
@@ -26,11 +28,11 @@ const insertVariableSetSQL = `INSERT INTO variable_sets (
 );`
 
 type InsertVariableSetParams struct {
-	VariableSetID    pgtype.Text
-	Global           pgtype.Bool
-	Name             pgtype.Text
-	Description      pgtype.Text
-	OrganizationName pgtype.Text
+	VariableSetID    pgtype.Text `json:"variable_set_id"`
+	Global           pgtype.Bool `json:"global"`
+	Name             pgtype.Text `json:"name"`
+	Description      pgtype.Text `json:"description"`
+	OrganizationName pgtype.Text `json:"organization_name"`
 }
 
 // InsertVariableSet implements Querier.InsertVariableSet.
@@ -38,21 +40,7 @@ func (q *DBQuerier) InsertVariableSet(ctx context.Context, params InsertVariable
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertVariableSet")
 	cmdTag, err := q.conn.Exec(ctx, insertVariableSetSQL, params.VariableSetID, params.Global, params.Name, params.Description, params.OrganizationName)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertVariableSet: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertVariableSetBatch implements Querier.InsertVariableSetBatch.
-func (q *DBQuerier) InsertVariableSetBatch(batch genericBatch, params InsertVariableSetParams) {
-	batch.Queue(insertVariableSetSQL, params.VariableSetID, params.Global, params.Name, params.Description, params.OrganizationName)
-}
-
-// InsertVariableSetScan implements Querier.InsertVariableSetScan.
-func (q *DBQuerier) InsertVariableSetScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertVariableSetBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertVariableSet: %w", err)
 	}
 	return cmdTag, err
 }
@@ -92,53 +80,21 @@ func (q *DBQuerier) FindVariableSetsByOrganization(ctx context.Context, organiza
 	if err != nil {
 		return nil, fmt.Errorf("query FindVariableSetsByOrganization: %w", err)
 	}
-	defer rows.Close()
-	items := []FindVariableSetsByOrganizationRow{}
-	variablesArray := q.types.newVariablesArray()
-	for rows.Next() {
-		var item FindVariableSetsByOrganizationRow
-		if err := rows.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-			return nil, fmt.Errorf("scan FindVariableSetsByOrganization row: %w", err)
-		}
-		if err := variablesArray.AssignTo(&item.Variables); err != nil {
-			return nil, fmt.Errorf("assign FindVariableSetsByOrganization row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindVariableSetsByOrganization rows: %w", err)
-	}
-	return items, err
-}
 
-// FindVariableSetsByOrganizationBatch implements Querier.FindVariableSetsByOrganizationBatch.
-func (q *DBQuerier) FindVariableSetsByOrganizationBatch(batch genericBatch, organizationName pgtype.Text) {
-	batch.Queue(findVariableSetsByOrganizationSQL, organizationName)
-}
-
-// FindVariableSetsByOrganizationScan implements Querier.FindVariableSetsByOrganizationScan.
-func (q *DBQuerier) FindVariableSetsByOrganizationScan(results pgx.BatchResults) ([]FindVariableSetsByOrganizationRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindVariableSetsByOrganizationBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindVariableSetsByOrganizationRow{}
-	variablesArray := q.types.newVariablesArray()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindVariableSetsByOrganizationRow, error) {
 		var item FindVariableSetsByOrganizationRow
-		if err := rows.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-			return nil, fmt.Errorf("scan FindVariableSetsByOrganizationBatch row: %w", err)
+		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := variablesArray.AssignTo(&item.Variables); err != nil {
-			return nil, fmt.Errorf("assign FindVariableSetsByOrganization row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindVariableSetsByOrganizationBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findVariableSetsByWorkspaceSQL = `SELECT
@@ -197,53 +153,21 @@ func (q *DBQuerier) FindVariableSetsByWorkspace(ctx context.Context, workspaceID
 	if err != nil {
 		return nil, fmt.Errorf("query FindVariableSetsByWorkspace: %w", err)
 	}
-	defer rows.Close()
-	items := []FindVariableSetsByWorkspaceRow{}
-	variablesArray := q.types.newVariablesArray()
-	for rows.Next() {
-		var item FindVariableSetsByWorkspaceRow
-		if err := rows.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-			return nil, fmt.Errorf("scan FindVariableSetsByWorkspace row: %w", err)
-		}
-		if err := variablesArray.AssignTo(&item.Variables); err != nil {
-			return nil, fmt.Errorf("assign FindVariableSetsByWorkspace row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindVariableSetsByWorkspace rows: %w", err)
-	}
-	return items, err
-}
 
-// FindVariableSetsByWorkspaceBatch implements Querier.FindVariableSetsByWorkspaceBatch.
-func (q *DBQuerier) FindVariableSetsByWorkspaceBatch(batch genericBatch, workspaceID pgtype.Text) {
-	batch.Queue(findVariableSetsByWorkspaceSQL, workspaceID)
-}
-
-// FindVariableSetsByWorkspaceScan implements Querier.FindVariableSetsByWorkspaceScan.
-func (q *DBQuerier) FindVariableSetsByWorkspaceScan(results pgx.BatchResults) ([]FindVariableSetsByWorkspaceRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindVariableSetsByWorkspaceBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindVariableSetsByWorkspaceRow{}
-	variablesArray := q.types.newVariablesArray()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindVariableSetsByWorkspaceRow, error) {
 		var item FindVariableSetsByWorkspaceRow
-		if err := rows.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-			return nil, fmt.Errorf("scan FindVariableSetsByWorkspaceBatch row: %w", err)
+		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := variablesArray.AssignTo(&item.Variables); err != nil {
-			return nil, fmt.Errorf("assign FindVariableSetsByWorkspace row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindVariableSetsByWorkspaceBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findVariableSetBySetIDSQL = `SELECT
@@ -277,35 +201,25 @@ type FindVariableSetBySetIDRow struct {
 // FindVariableSetBySetID implements Querier.FindVariableSetBySetID.
 func (q *DBQuerier) FindVariableSetBySetID(ctx context.Context, variableSetID pgtype.Text) (FindVariableSetBySetIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindVariableSetBySetID")
-	row := q.conn.QueryRow(ctx, findVariableSetBySetIDSQL, variableSetID)
-	var item FindVariableSetBySetIDRow
-	variablesArray := q.types.newVariablesArray()
-	if err := row.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-		return item, fmt.Errorf("query FindVariableSetBySetID: %w", err)
+	rows, err := q.conn.Query(ctx, findVariableSetBySetIDSQL, variableSetID)
+	if err != nil {
+		return FindVariableSetBySetIDRow{}, fmt.Errorf("query FindVariableSetBySetID: %w", err)
 	}
-	if err := variablesArray.AssignTo(&item.Variables); err != nil {
-		return item, fmt.Errorf("assign FindVariableSetBySetID row: %w", err)
-	}
-	return item, nil
-}
 
-// FindVariableSetBySetIDBatch implements Querier.FindVariableSetBySetIDBatch.
-func (q *DBQuerier) FindVariableSetBySetIDBatch(batch genericBatch, variableSetID pgtype.Text) {
-	batch.Queue(findVariableSetBySetIDSQL, variableSetID)
-}
-
-// FindVariableSetBySetIDScan implements Querier.FindVariableSetBySetIDScan.
-func (q *DBQuerier) FindVariableSetBySetIDScan(results pgx.BatchResults) (FindVariableSetBySetIDRow, error) {
-	row := results.QueryRow()
-	var item FindVariableSetBySetIDRow
-	variablesArray := q.types.newVariablesArray()
-	if err := row.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-		return item, fmt.Errorf("scan FindVariableSetBySetIDBatch row: %w", err)
-	}
-	if err := variablesArray.AssignTo(&item.Variables); err != nil {
-		return item, fmt.Errorf("assign FindVariableSetBySetID row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetBySetIDRow, error) {
+		var item FindVariableSetBySetIDRow
+		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findVariableSetByVariableIDSQL = `SELECT
@@ -340,35 +254,25 @@ type FindVariableSetByVariableIDRow struct {
 // FindVariableSetByVariableID implements Querier.FindVariableSetByVariableID.
 func (q *DBQuerier) FindVariableSetByVariableID(ctx context.Context, variableID pgtype.Text) (FindVariableSetByVariableIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindVariableSetByVariableID")
-	row := q.conn.QueryRow(ctx, findVariableSetByVariableIDSQL, variableID)
-	var item FindVariableSetByVariableIDRow
-	variablesArray := q.types.newVariablesArray()
-	if err := row.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-		return item, fmt.Errorf("query FindVariableSetByVariableID: %w", err)
+	rows, err := q.conn.Query(ctx, findVariableSetByVariableIDSQL, variableID)
+	if err != nil {
+		return FindVariableSetByVariableIDRow{}, fmt.Errorf("query FindVariableSetByVariableID: %w", err)
 	}
-	if err := variablesArray.AssignTo(&item.Variables); err != nil {
-		return item, fmt.Errorf("assign FindVariableSetByVariableID row: %w", err)
-	}
-	return item, nil
-}
 
-// FindVariableSetByVariableIDBatch implements Querier.FindVariableSetByVariableIDBatch.
-func (q *DBQuerier) FindVariableSetByVariableIDBatch(batch genericBatch, variableID pgtype.Text) {
-	batch.Queue(findVariableSetByVariableIDSQL, variableID)
-}
-
-// FindVariableSetByVariableIDScan implements Querier.FindVariableSetByVariableIDScan.
-func (q *DBQuerier) FindVariableSetByVariableIDScan(results pgx.BatchResults) (FindVariableSetByVariableIDRow, error) {
-	row := results.QueryRow()
-	var item FindVariableSetByVariableIDRow
-	variablesArray := q.types.newVariablesArray()
-	if err := row.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-		return item, fmt.Errorf("scan FindVariableSetByVariableIDBatch row: %w", err)
-	}
-	if err := variablesArray.AssignTo(&item.Variables); err != nil {
-		return item, fmt.Errorf("assign FindVariableSetByVariableID row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetByVariableIDRow, error) {
+		var item FindVariableSetByVariableIDRow
+		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findVariableSetForUpdateSQL = `SELECT
@@ -403,35 +307,25 @@ type FindVariableSetForUpdateRow struct {
 // FindVariableSetForUpdate implements Querier.FindVariableSetForUpdate.
 func (q *DBQuerier) FindVariableSetForUpdate(ctx context.Context, variableSetID pgtype.Text) (FindVariableSetForUpdateRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindVariableSetForUpdate")
-	row := q.conn.QueryRow(ctx, findVariableSetForUpdateSQL, variableSetID)
-	var item FindVariableSetForUpdateRow
-	variablesArray := q.types.newVariablesArray()
-	if err := row.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-		return item, fmt.Errorf("query FindVariableSetForUpdate: %w", err)
+	rows, err := q.conn.Query(ctx, findVariableSetForUpdateSQL, variableSetID)
+	if err != nil {
+		return FindVariableSetForUpdateRow{}, fmt.Errorf("query FindVariableSetForUpdate: %w", err)
 	}
-	if err := variablesArray.AssignTo(&item.Variables); err != nil {
-		return item, fmt.Errorf("assign FindVariableSetForUpdate row: %w", err)
-	}
-	return item, nil
-}
 
-// FindVariableSetForUpdateBatch implements Querier.FindVariableSetForUpdateBatch.
-func (q *DBQuerier) FindVariableSetForUpdateBatch(batch genericBatch, variableSetID pgtype.Text) {
-	batch.Queue(findVariableSetForUpdateSQL, variableSetID)
-}
-
-// FindVariableSetForUpdateScan implements Querier.FindVariableSetForUpdateScan.
-func (q *DBQuerier) FindVariableSetForUpdateScan(results pgx.BatchResults) (FindVariableSetForUpdateRow, error) {
-	row := results.QueryRow()
-	var item FindVariableSetForUpdateRow
-	variablesArray := q.types.newVariablesArray()
-	if err := row.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName, variablesArray, &item.WorkspaceIds); err != nil {
-		return item, fmt.Errorf("scan FindVariableSetForUpdateBatch row: %w", err)
-	}
-	if err := variablesArray.AssignTo(&item.Variables); err != nil {
-		return item, fmt.Errorf("assign FindVariableSetForUpdate row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetForUpdateRow, error) {
+		var item FindVariableSetForUpdateRow
+		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateVariableSetByIDSQL = `UPDATE variable_sets
@@ -443,36 +337,27 @@ WHERE variable_set_id = $4
 RETURNING variable_set_id;`
 
 type UpdateVariableSetByIDParams struct {
-	Global        pgtype.Bool
-	Name          pgtype.Text
-	Description   pgtype.Text
-	VariableSetID pgtype.Text
+	Global        pgtype.Bool `json:"global"`
+	Name          pgtype.Text `json:"name"`
+	Description   pgtype.Text `json:"description"`
+	VariableSetID pgtype.Text `json:"variable_set_id"`
 }
 
 // UpdateVariableSetByID implements Querier.UpdateVariableSetByID.
 func (q *DBQuerier) UpdateVariableSetByID(ctx context.Context, params UpdateVariableSetByIDParams) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateVariableSetByID")
-	row := q.conn.QueryRow(ctx, updateVariableSetByIDSQL, params.Global, params.Name, params.Description, params.VariableSetID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query UpdateVariableSetByID: %w", err)
+	rows, err := q.conn.Query(ctx, updateVariableSetByIDSQL, params.Global, params.Name, params.Description, params.VariableSetID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query UpdateVariableSetByID: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateVariableSetByIDBatch implements Querier.UpdateVariableSetByIDBatch.
-func (q *DBQuerier) UpdateVariableSetByIDBatch(batch genericBatch, params UpdateVariableSetByIDParams) {
-	batch.Queue(updateVariableSetByIDSQL, params.Global, params.Name, params.Description, params.VariableSetID)
-}
-
-// UpdateVariableSetByIDScan implements Querier.UpdateVariableSetByIDScan.
-func (q *DBQuerier) UpdateVariableSetByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan UpdateVariableSetByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteVariableSetByIDSQL = `DELETE
@@ -491,27 +376,23 @@ type DeleteVariableSetByIDRow struct {
 // DeleteVariableSetByID implements Querier.DeleteVariableSetByID.
 func (q *DBQuerier) DeleteVariableSetByID(ctx context.Context, variableSetID pgtype.Text) (DeleteVariableSetByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteVariableSetByID")
-	row := q.conn.QueryRow(ctx, deleteVariableSetByIDSQL, variableSetID)
-	var item DeleteVariableSetByIDRow
-	if err := row.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName); err != nil {
-		return item, fmt.Errorf("query DeleteVariableSetByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteVariableSetByIDSQL, variableSetID)
+	if err != nil {
+		return DeleteVariableSetByIDRow{}, fmt.Errorf("query DeleteVariableSetByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteVariableSetByIDBatch implements Querier.DeleteVariableSetByIDBatch.
-func (q *DBQuerier) DeleteVariableSetByIDBatch(batch genericBatch, variableSetID pgtype.Text) {
-	batch.Queue(deleteVariableSetByIDSQL, variableSetID)
-}
-
-// DeleteVariableSetByIDScan implements Querier.DeleteVariableSetByIDScan.
-func (q *DBQuerier) DeleteVariableSetByIDScan(results pgx.BatchResults) (DeleteVariableSetByIDRow, error) {
-	row := results.QueryRow()
-	var item DeleteVariableSetByIDRow
-	if err := row.Scan(&item.VariableSetID, &item.Global, &item.Name, &item.Description, &item.OrganizationName); err != nil {
-		return item, fmt.Errorf("scan DeleteVariableSetByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetByIDRow, error) {
+		var item DeleteVariableSetByIDRow
+		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const insertVariableSetVariableSQL = `INSERT INTO variable_set_variables (
@@ -527,21 +408,7 @@ func (q *DBQuerier) InsertVariableSetVariable(ctx context.Context, variableSetID
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertVariableSetVariable")
 	cmdTag, err := q.conn.Exec(ctx, insertVariableSetVariableSQL, variableSetID, variableID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertVariableSetVariable: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertVariableSetVariableBatch implements Querier.InsertVariableSetVariableBatch.
-func (q *DBQuerier) InsertVariableSetVariableBatch(batch genericBatch, variableSetID pgtype.Text, variableID pgtype.Text) {
-	batch.Queue(insertVariableSetVariableSQL, variableSetID, variableID)
-}
-
-// InsertVariableSetVariableScan implements Querier.InsertVariableSetVariableScan.
-func (q *DBQuerier) InsertVariableSetVariableScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertVariableSetVariableBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertVariableSetVariable: %w", err)
 	}
 	return cmdTag, err
 }
@@ -560,27 +427,20 @@ type DeleteVariableSetVariableRow struct {
 // DeleteVariableSetVariable implements Querier.DeleteVariableSetVariable.
 func (q *DBQuerier) DeleteVariableSetVariable(ctx context.Context, variableSetID pgtype.Text, variableID pgtype.Text) (DeleteVariableSetVariableRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteVariableSetVariable")
-	row := q.conn.QueryRow(ctx, deleteVariableSetVariableSQL, variableSetID, variableID)
-	var item DeleteVariableSetVariableRow
-	if err := row.Scan(&item.VariableSetID, &item.VariableID); err != nil {
-		return item, fmt.Errorf("query DeleteVariableSetVariable: %w", err)
+	rows, err := q.conn.Query(ctx, deleteVariableSetVariableSQL, variableSetID, variableID)
+	if err != nil {
+		return DeleteVariableSetVariableRow{}, fmt.Errorf("query DeleteVariableSetVariable: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteVariableSetVariableBatch implements Querier.DeleteVariableSetVariableBatch.
-func (q *DBQuerier) DeleteVariableSetVariableBatch(batch genericBatch, variableSetID pgtype.Text, variableID pgtype.Text) {
-	batch.Queue(deleteVariableSetVariableSQL, variableSetID, variableID)
-}
-
-// DeleteVariableSetVariableScan implements Querier.DeleteVariableSetVariableScan.
-func (q *DBQuerier) DeleteVariableSetVariableScan(results pgx.BatchResults) (DeleteVariableSetVariableRow, error) {
-	row := results.QueryRow()
-	var item DeleteVariableSetVariableRow
-	if err := row.Scan(&item.VariableSetID, &item.VariableID); err != nil {
-		return item, fmt.Errorf("scan DeleteVariableSetVariableBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetVariableRow, error) {
+		var item DeleteVariableSetVariableRow
+		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.VariableID, // 'variable_id', 'VariableID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const insertVariableSetWorkspaceSQL = `INSERT INTO variable_set_workspaces (
@@ -596,21 +456,7 @@ func (q *DBQuerier) InsertVariableSetWorkspace(ctx context.Context, variableSetI
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertVariableSetWorkspace")
 	cmdTag, err := q.conn.Exec(ctx, insertVariableSetWorkspaceSQL, variableSetID, workspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertVariableSetWorkspace: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertVariableSetWorkspaceBatch implements Querier.InsertVariableSetWorkspaceBatch.
-func (q *DBQuerier) InsertVariableSetWorkspaceBatch(batch genericBatch, variableSetID pgtype.Text, workspaceID pgtype.Text) {
-	batch.Queue(insertVariableSetWorkspaceSQL, variableSetID, workspaceID)
-}
-
-// InsertVariableSetWorkspaceScan implements Querier.InsertVariableSetWorkspaceScan.
-func (q *DBQuerier) InsertVariableSetWorkspaceScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertVariableSetWorkspaceBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertVariableSetWorkspace: %w", err)
 	}
 	return cmdTag, err
 }
@@ -629,27 +475,20 @@ type DeleteVariableSetWorkspaceRow struct {
 // DeleteVariableSetWorkspace implements Querier.DeleteVariableSetWorkspace.
 func (q *DBQuerier) DeleteVariableSetWorkspace(ctx context.Context, variableSetID pgtype.Text, workspaceID pgtype.Text) (DeleteVariableSetWorkspaceRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteVariableSetWorkspace")
-	row := q.conn.QueryRow(ctx, deleteVariableSetWorkspaceSQL, variableSetID, workspaceID)
-	var item DeleteVariableSetWorkspaceRow
-	if err := row.Scan(&item.VariableSetID, &item.WorkspaceID); err != nil {
-		return item, fmt.Errorf("query DeleteVariableSetWorkspace: %w", err)
+	rows, err := q.conn.Query(ctx, deleteVariableSetWorkspaceSQL, variableSetID, workspaceID)
+	if err != nil {
+		return DeleteVariableSetWorkspaceRow{}, fmt.Errorf("query DeleteVariableSetWorkspace: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteVariableSetWorkspaceBatch implements Querier.DeleteVariableSetWorkspaceBatch.
-func (q *DBQuerier) DeleteVariableSetWorkspaceBatch(batch genericBatch, variableSetID pgtype.Text, workspaceID pgtype.Text) {
-	batch.Queue(deleteVariableSetWorkspaceSQL, variableSetID, workspaceID)
-}
-
-// DeleteVariableSetWorkspaceScan implements Querier.DeleteVariableSetWorkspaceScan.
-func (q *DBQuerier) DeleteVariableSetWorkspaceScan(results pgx.BatchResults) (DeleteVariableSetWorkspaceRow, error) {
-	row := results.QueryRow()
-	var item DeleteVariableSetWorkspaceRow
-	if err := row.Scan(&item.VariableSetID, &item.WorkspaceID); err != nil {
-		return item, fmt.Errorf("scan DeleteVariableSetWorkspaceBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetWorkspaceRow, error) {
+		var item DeleteVariableSetWorkspaceRow
+		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteVariableSetWorkspacesSQL = `DELETE
@@ -661,21 +500,7 @@ func (q *DBQuerier) DeleteVariableSetWorkspaces(ctx context.Context, variableSet
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteVariableSetWorkspaces")
 	cmdTag, err := q.conn.Exec(ctx, deleteVariableSetWorkspacesSQL, variableSetID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query DeleteVariableSetWorkspaces: %w", err)
-	}
-	return cmdTag, err
-}
-
-// DeleteVariableSetWorkspacesBatch implements Querier.DeleteVariableSetWorkspacesBatch.
-func (q *DBQuerier) DeleteVariableSetWorkspacesBatch(batch genericBatch, variableSetID pgtype.Text) {
-	batch.Queue(deleteVariableSetWorkspacesSQL, variableSetID)
-}
-
-// DeleteVariableSetWorkspacesScan implements Querier.DeleteVariableSetWorkspacesScan.
-func (q *DBQuerier) DeleteVariableSetWorkspacesScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec DeleteVariableSetWorkspacesBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query DeleteVariableSetWorkspaces: %w", err)
 	}
 	return cmdTag, err
 }

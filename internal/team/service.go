@@ -36,7 +36,7 @@ type (
 	}
 
 	Options struct {
-		*sql.DB
+		*sql.Pool
 		*tfeapi.Responder
 		html.Renderer
 		Logger *slog.Logger
@@ -51,7 +51,7 @@ func NewService(opts Options) *Service {
 		logger:       opts.Logger,
 		organization: &organization.Authorizer{Logger: opts.Logger},
 		team:         &authorizer{Logger: opts.Logger},
-		db:           &pgdb{opts.DB, opts.Logger},
+		db:           &pgdb{opts.Pool, opts.Logger},
 		teamTokenFactory: &teamTokenFactory{
 			tokens: opts.TokensService,
 		},

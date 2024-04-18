@@ -3,8 +3,7 @@ package workspace
 import (
 	"context"
 
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/sql"
@@ -27,37 +26,33 @@ func (r tagresult) toTag() *Tag {
 		ID:            r.TagID.String,
 		Name:          r.Name.String,
 		Organization:  r.OrganizationName.String,
-		InstanceCount: int(r.InstanceCount.Int),
+		InstanceCount: int(r.InstanceCount.Int64),
 	}
 }
 
 func (db *pgdb) listTags(ctx context.Context, organization string, opts ListTagsOptions) (*resource.Page[*Tag], error) {
-	q := db.Conn(ctx)
-	batch := &pgx.Batch{}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Tag], error) {
+		rows, err := q.FindTags(ctx, pggen.FindTagsParams{
+			OrganizationName: sql.String(organization),
+			Limit:            opts.GetLimit(),
+			Offset:           opts.GetOffset(),
+		})
+		if err != nil {
+			return nil, sql.Error(err)
+		}
 
-	q.FindTagsBatch(batch, pggen.FindTagsParams{
-		OrganizationName: sql.String(organization),
-		Limit:            opts.GetLimit(),
-		Offset:           opts.GetOffset(),
+		count, err := q.CountTags(ctx, sql.String(organization))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		items := make([]*Tag, len(rows))
+		for i, r := range rows {
+			items[i] = tagresult(r).toTag()
+		}
+
+		return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int64)), nil
 	})
-	q.CountTagsBatch(batch, sql.String(organization))
-	results := db.SendBatch(ctx, batch)
-	defer results.Close()
-
-	rows, err := q.FindTagsScan(results)
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	count, err := q.CountTagsScan(results)
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-
-	items := make([]*Tag, len(rows))
-	for i, r := range rows {
-		items[i] = tagresult(r).toTag()
-	}
-	return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int)), nil
 }
 
 func (db *pgdb) deleteTags(ctx context.Context, organization string, tagIDs []string) error {
@@ -74,74 +69,84 @@ func (db *pgdb) deleteTags(ctx context.Context, organization string, tagIDs []st
 }
 
 func (db *pgdb) addTag(ctx context.Context, organization, name, id string) error {
-	_, err := db.Conn(ctx).InsertTag(ctx, pggen.InsertTagParams{
-		TagID:            sql.String(id),
-		Name:             sql.String(name),
-		OrganizationName: sql.String(organization),
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.InsertTag(ctx, pggen.InsertTagParams{
+			TagID:            sql.String(id),
+			Name:             sql.String(name),
+			OrganizationName: sql.String(organization),
+		})
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return nil
 	})
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
 }
 
 func (db *pgdb) findTagByName(ctx context.Context, organization, name string) (*Tag, error) {
-	tag, err := db.Conn(ctx).FindTagByName(ctx, sql.String(name), sql.String(organization))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return tagresult(tag).toTag(), nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Tag, error) {
+		tag, err := q.FindTagByName(ctx, sql.String(name), sql.String(organization))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		return tagresult(tag).toTag(), nil
+	})
 }
 
 func (db *pgdb) findTagByID(ctx context.Context, organization, id string) (*Tag, error) {
-	tag, err := db.Conn(ctx).FindTagByID(ctx, sql.String(id), sql.String(organization))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return tagresult(tag).toTag(), nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Tag, error) {
+		tag, err := q.FindTagByID(ctx, sql.String(id), sql.String(organization))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		return tagresult(tag).toTag(), nil
+	})
 }
 
 func (db *pgdb) tagWorkspace(ctx context.Context, workspaceID, tagID string) error {
-	_, err := db.Conn(ctx).InsertWorkspaceTag(ctx, sql.String(tagID), sql.String(workspaceID))
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.InsertWorkspaceTag(ctx, sql.String(tagID), sql.String(workspaceID))
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return nil
+	})
 }
 
 func (db *pgdb) deleteWorkspaceTag(ctx context.Context, workspaceID, tagID string) error {
-	_, err := db.Conn(ctx).DeleteWorkspaceTag(ctx, sql.String(workspaceID), sql.String(tagID))
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.DeleteWorkspaceTag(ctx, sql.String(workspaceID), sql.String(tagID))
+		if err != nil {
+			return sql.Error(err)
+		}
+
+		return nil
+	})
 }
 
 func (db *pgdb) listWorkspaceTags(ctx context.Context, workspaceID string, opts ListWorkspaceTagsOptions) (*resource.Page[*Tag], error) {
-	q := db.Conn(ctx)
-	batch := &pgx.Batch{}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Tag], error) {
+		rows, err := q.FindWorkspaceTags(ctx, pggen.FindWorkspaceTagsParams{
+			WorkspaceID: sql.String(workspaceID),
+			Limit:       opts.GetLimit(),
+			Offset:      opts.GetOffset(),
+		})
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+		count, err := q.CountWorkspaceTags(ctx, sql.String(workspaceID))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
 
-	q.FindWorkspaceTagsBatch(batch, pggen.FindWorkspaceTagsParams{
-		WorkspaceID: sql.String(workspaceID),
-		Limit:       opts.GetLimit(),
-		Offset:      opts.GetOffset(),
+		items := make([]*Tag, len(rows))
+		for i, r := range rows {
+			items[i] = tagresult(r).toTag()
+		}
+
+		return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int64)), nil
 	})
-	q.CountTagsBatch(batch, sql.String(workspaceID))
-	results := db.SendBatch(ctx, batch)
-	defer results.Close()
-
-	rows, err := q.FindWorkspaceTagsScan(results)
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	count, err := q.CountWorkspaceTagsScan(results)
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-
-	items := make([]*Tag, len(rows))
-	for i, r := range rows {
-		items[i] = tagresult(r).toTag()
-	}
-	return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int)), nil
 }

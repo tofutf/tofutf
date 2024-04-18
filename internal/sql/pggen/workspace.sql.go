@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertWorkspaceSQL = `INSERT INTO workspaces (
     workspace_id,
@@ -68,32 +70,32 @@ const insertWorkspaceSQL = `INSERT INTO workspaces (
 );`
 
 type InsertWorkspaceParams struct {
-	ID                         pgtype.Text
-	CreatedAt                  pgtype.Timestamptz
-	UpdatedAt                  pgtype.Timestamptz
-	AgentPoolID                pgtype.Text
-	AllowCLIApply              pgtype.Bool
-	AllowDestroyPlan           pgtype.Bool
-	AutoApply                  pgtype.Bool
-	Branch                     pgtype.Text
-	CanQueueDestroyPlan        pgtype.Bool
-	Description                pgtype.Text
-	Environment                pgtype.Text
-	ExecutionMode              pgtype.Text
-	GlobalRemoteState          pgtype.Bool
-	MigrationEnvironment       pgtype.Text
-	Name                       pgtype.Text
-	QueueAllRuns               pgtype.Bool
-	SpeculativeEnabled         pgtype.Bool
-	SourceName                 pgtype.Text
-	SourceURL                  pgtype.Text
-	StructuredRunOutputEnabled pgtype.Bool
-	TerraformVersion           pgtype.Text
-	TriggerPrefixes            []string
-	TriggerPatterns            []string
-	VCSTagsRegex               pgtype.Text
-	WorkingDirectory           pgtype.Text
-	OrganizationName           pgtype.Text
+	ID                         pgtype.Text        `json:"id"`
+	CreatedAt                  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                  pgtype.Timestamptz `json:"updated_at"`
+	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
+	AllowCLIApply              pgtype.Bool        `json:"allow_cli_apply"`
+	AllowDestroyPlan           pgtype.Bool        `json:"allow_destroy_plan"`
+	AutoApply                  pgtype.Bool        `json:"auto_apply"`
+	Branch                     pgtype.Text        `json:"branch"`
+	CanQueueDestroyPlan        pgtype.Bool        `json:"can_queue_destroy_plan"`
+	Description                pgtype.Text        `json:"description"`
+	Environment                pgtype.Text        `json:"environment"`
+	ExecutionMode              pgtype.Text        `json:"execution_mode"`
+	GlobalRemoteState          pgtype.Bool        `json:"global_remote_state"`
+	MigrationEnvironment       pgtype.Text        `json:"migration_environment"`
+	Name                       pgtype.Text        `json:"name"`
+	QueueAllRuns               pgtype.Bool        `json:"queue_all_runs"`
+	SpeculativeEnabled         pgtype.Bool        `json:"speculative_enabled"`
+	SourceName                 pgtype.Text        `json:"source_name"`
+	SourceURL                  pgtype.Text        `json:"source_url"`
+	StructuredRunOutputEnabled pgtype.Bool        `json:"structured_run_output_enabled"`
+	TerraformVersion           pgtype.Text        `json:"terraform_version"`
+	TriggerPrefixes            []string           `json:"trigger_prefixes"`
+	TriggerPatterns            []string           `json:"trigger_patterns"`
+	VCSTagsRegex               pgtype.Text        `json:"vcs_tags_regex"`
+	WorkingDirectory           pgtype.Text        `json:"working_directory"`
+	OrganizationName           pgtype.Text        `json:"organization_name"`
 }
 
 // InsertWorkspace implements Querier.InsertWorkspace.
@@ -101,21 +103,7 @@ func (q *DBQuerier) InsertWorkspace(ctx context.Context, params InsertWorkspaceP
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertWorkspace")
 	cmdTag, err := q.conn.Exec(ctx, insertWorkspaceSQL, params.ID, params.CreatedAt, params.UpdatedAt, params.AgentPoolID, params.AllowCLIApply, params.AllowDestroyPlan, params.AutoApply, params.Branch, params.CanQueueDestroyPlan, params.Description, params.Environment, params.ExecutionMode, params.GlobalRemoteState, params.MigrationEnvironment, params.Name, params.QueueAllRuns, params.SpeculativeEnabled, params.SourceName, params.SourceURL, params.StructuredRunOutputEnabled, params.TerraformVersion, params.TriggerPrefixes, params.TriggerPatterns, params.VCSTagsRegex, params.WorkingDirectory, params.OrganizationName)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertWorkspace: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertWorkspaceBatch implements Querier.InsertWorkspaceBatch.
-func (q *DBQuerier) InsertWorkspaceBatch(batch genericBatch, params InsertWorkspaceParams) {
-	batch.Queue(insertWorkspaceSQL, params.ID, params.CreatedAt, params.UpdatedAt, params.AgentPoolID, params.AllowCLIApply, params.AllowDestroyPlan, params.AutoApply, params.Branch, params.CanQueueDestroyPlan, params.Description, params.Environment, params.ExecutionMode, params.GlobalRemoteState, params.MigrationEnvironment, params.Name, params.QueueAllRuns, params.SpeculativeEnabled, params.SourceName, params.SourceURL, params.StructuredRunOutputEnabled, params.TerraformVersion, params.TriggerPrefixes, params.TriggerPatterns, params.VCSTagsRegex, params.WorkingDirectory, params.OrganizationName)
-}
-
-// InsertWorkspaceScan implements Querier.InsertWorkspaceScan.
-func (q *DBQuerier) InsertWorkspaceScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertWorkspaceBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertWorkspace: %w", err)
 	}
 	return cmdTag, err
 }
@@ -157,11 +145,11 @@ OFFSET $5
 ;`
 
 type FindWorkspacesParams struct {
-	Search            pgtype.Text
-	OrganizationNames []string
-	Tags              []string
-	Limit             pgtype.Int8
-	Offset            pgtype.Int8
+	Search            pgtype.Text `json:"search"`
+	OrganizationNames []string    `json:"organization_names"`
+	Tags              []string    `json:"tags"`
+	Limit             pgtype.Int8 `json:"limit"`
+	Offset            pgtype.Int8 `json:"offset"`
 }
 
 type FindWorkspacesRow struct {
@@ -197,9 +185,9 @@ type FindWorkspacesRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   *Users             `json:"user_lock"`
-	RunLock                    *Runs              `json:"run_lock"`
-	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
+	UserLock                   Users              `json:"user_lock"`
+	RunLock                    Runs               `json:"run_lock"`
+	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
 }
 
 // FindWorkspaces implements Querier.FindWorkspaces.
@@ -209,69 +197,49 @@ func (q *DBQuerier) FindWorkspaces(ctx context.Context, params FindWorkspacesPar
 	if err != nil {
 		return nil, fmt.Errorf("query FindWorkspaces: %w", err)
 	}
-	defer rows.Close()
-	items := []FindWorkspacesRow{}
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	for rows.Next() {
-		var item FindWorkspacesRow
-		if err := rows.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-			return nil, fmt.Errorf("scan FindWorkspaces row: %w", err)
-		}
-		if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspaces row: %w", err)
-		}
-		if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspaces row: %w", err)
-		}
-		if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspaces row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindWorkspaces rows: %w", err)
-	}
-	return items, err
-}
 
-// FindWorkspacesBatch implements Querier.FindWorkspacesBatch.
-func (q *DBQuerier) FindWorkspacesBatch(batch genericBatch, params FindWorkspacesParams) {
-	batch.Queue(findWorkspacesSQL, params.Search, params.OrganizationNames, params.Tags, params.Limit, params.Offset)
-}
-
-// FindWorkspacesScan implements Querier.FindWorkspacesScan.
-func (q *DBQuerier) FindWorkspacesScan(results pgx.BatchResults) ([]FindWorkspacesRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindWorkspacesBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindWorkspacesRow{}
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindWorkspacesRow, error) {
 		var item FindWorkspacesRow
-		if err := rows.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-			return nil, fmt.Errorf("scan FindWorkspacesBatch row: %w", err)
+		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.AllowDestroyPlan,           // 'allow_destroy_plan', 'AllowDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AutoApply,                  // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CanQueueDestroyPlan,        // 'can_queue_destroy_plan', 'CanQueueDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Description,                // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Environment,                // 'environment', 'Environment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.ExecutionMode,              // 'execution_mode', 'ExecutionMode', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.GlobalRemoteState,          // 'global_remote_state', 'GlobalRemoteState', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.MigrationEnvironment,       // 'migration_environment', 'MigrationEnvironment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.QueueAllRuns,               // 'queue_all_runs', 'QueueAllRuns', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SpeculativeEnabled,         // 'speculative_enabled', 'SpeculativeEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SourceName,                 // 'source_name', 'SourceName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SourceURL,                  // 'source_url', 'SourceURL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StructuredRunOutputEnabled, // 'structured_run_output_enabled', 'StructuredRunOutputEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.TerraformVersion,           // 'terraform_version', 'TerraformVersion', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPrefixes,            // 'trigger_prefixes', 'TriggerPrefixes', '[]string', '', '[]string'
+			&item.WorkingDirectory,           // 'working_directory', 'WorkingDirectory', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockRunID,                  // 'lock_run_id', 'LockRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LatestRunID,                // 'latest_run_id', 'LatestRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName,           // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Branch,                     // 'branch', 'Branch', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockUsername,               // 'lock_username', 'LockUsername', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CurrentStateVersionID,      // 'current_state_version_id', 'CurrentStateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPatterns,            // 'trigger_patterns', 'TriggerPatterns', '[]string', '', '[]string'
+			&item.VCSTagsRegex,               // 'vcs_tags_regex', 'VCSTagsRegex', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowCLIApply,              // 'allow_cli_apply', 'AllowCLIApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
+			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspaces row: %w", err)
-		}
-		if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspaces row: %w", err)
-		}
-		if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspaces row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindWorkspacesBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const countWorkspacesSQL = `WITH
@@ -289,35 +257,26 @@ FROM workspaces
 ;`
 
 type CountWorkspacesParams struct {
-	Search            pgtype.Text
-	OrganizationNames []string
-	Tags              []string
+	Search            pgtype.Text `json:"search"`
+	OrganizationNames []string    `json:"organization_names"`
+	Tags              []string    `json:"tags"`
 }
 
 // CountWorkspaces implements Querier.CountWorkspaces.
 func (q *DBQuerier) CountWorkspaces(ctx context.Context, params CountWorkspacesParams) (pgtype.Int8, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "CountWorkspaces")
-	row := q.conn.QueryRow(ctx, countWorkspacesSQL, params.Search, params.OrganizationNames, params.Tags)
-	var item pgtype.Int8
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query CountWorkspaces: %w", err)
+	rows, err := q.conn.Query(ctx, countWorkspacesSQL, params.Search, params.OrganizationNames, params.Tags)
+	if err != nil {
+		return pgtype.Int8{}, fmt.Errorf("query CountWorkspaces: %w", err)
 	}
-	return item, nil
-}
 
-// CountWorkspacesBatch implements Querier.CountWorkspacesBatch.
-func (q *DBQuerier) CountWorkspacesBatch(batch genericBatch, params CountWorkspacesParams) {
-	batch.Queue(countWorkspacesSQL, params.Search, params.OrganizationNames, params.Tags)
-}
-
-// CountWorkspacesScan implements Querier.CountWorkspacesScan.
-func (q *DBQuerier) CountWorkspacesScan(results pgx.BatchResults) (pgtype.Int8, error) {
-	row := results.QueryRow()
-	var item pgtype.Int8
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan CountWorkspacesBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+		var item pgtype.Int8
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findWorkspacesByConnectionSQL = `SELECT
@@ -374,9 +333,9 @@ type FindWorkspacesByConnectionRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   *Users             `json:"user_lock"`
-	RunLock                    *Runs              `json:"run_lock"`
-	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
+	UserLock                   Users              `json:"user_lock"`
+	RunLock                    Runs               `json:"run_lock"`
+	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
 }
 
 // FindWorkspacesByConnection implements Querier.FindWorkspacesByConnection.
@@ -386,69 +345,49 @@ func (q *DBQuerier) FindWorkspacesByConnection(ctx context.Context, vcsProviderI
 	if err != nil {
 		return nil, fmt.Errorf("query FindWorkspacesByConnection: %w", err)
 	}
-	defer rows.Close()
-	items := []FindWorkspacesByConnectionRow{}
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	for rows.Next() {
-		var item FindWorkspacesByConnectionRow
-		if err := rows.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-			return nil, fmt.Errorf("scan FindWorkspacesByConnection row: %w", err)
-		}
-		if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByConnection row: %w", err)
-		}
-		if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByConnection row: %w", err)
-		}
-		if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByConnection row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindWorkspacesByConnection rows: %w", err)
-	}
-	return items, err
-}
 
-// FindWorkspacesByConnectionBatch implements Querier.FindWorkspacesByConnectionBatch.
-func (q *DBQuerier) FindWorkspacesByConnectionBatch(batch genericBatch, vcsProviderID pgtype.Text, repoPath pgtype.Text) {
-	batch.Queue(findWorkspacesByConnectionSQL, vcsProviderID, repoPath)
-}
-
-// FindWorkspacesByConnectionScan implements Querier.FindWorkspacesByConnectionScan.
-func (q *DBQuerier) FindWorkspacesByConnectionScan(results pgx.BatchResults) ([]FindWorkspacesByConnectionRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindWorkspacesByConnectionBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindWorkspacesByConnectionRow{}
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindWorkspacesByConnectionRow, error) {
 		var item FindWorkspacesByConnectionRow
-		if err := rows.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-			return nil, fmt.Errorf("scan FindWorkspacesByConnectionBatch row: %w", err)
+		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.AllowDestroyPlan,           // 'allow_destroy_plan', 'AllowDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AutoApply,                  // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CanQueueDestroyPlan,        // 'can_queue_destroy_plan', 'CanQueueDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Description,                // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Environment,                // 'environment', 'Environment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.ExecutionMode,              // 'execution_mode', 'ExecutionMode', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.GlobalRemoteState,          // 'global_remote_state', 'GlobalRemoteState', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.MigrationEnvironment,       // 'migration_environment', 'MigrationEnvironment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.QueueAllRuns,               // 'queue_all_runs', 'QueueAllRuns', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SpeculativeEnabled,         // 'speculative_enabled', 'SpeculativeEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SourceName,                 // 'source_name', 'SourceName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SourceURL,                  // 'source_url', 'SourceURL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StructuredRunOutputEnabled, // 'structured_run_output_enabled', 'StructuredRunOutputEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.TerraformVersion,           // 'terraform_version', 'TerraformVersion', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPrefixes,            // 'trigger_prefixes', 'TriggerPrefixes', '[]string', '', '[]string'
+			&item.WorkingDirectory,           // 'working_directory', 'WorkingDirectory', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockRunID,                  // 'lock_run_id', 'LockRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LatestRunID,                // 'latest_run_id', 'LatestRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName,           // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Branch,                     // 'branch', 'Branch', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockUsername,               // 'lock_username', 'LockUsername', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CurrentStateVersionID,      // 'current_state_version_id', 'CurrentStateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPatterns,            // 'trigger_patterns', 'TriggerPatterns', '[]string', '', '[]string'
+			&item.VCSTagsRegex,               // 'vcs_tags_regex', 'VCSTagsRegex', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowCLIApply,              // 'allow_cli_apply', 'AllowCLIApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
+			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByConnection row: %w", err)
-		}
-		if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByConnection row: %w", err)
-		}
-		if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByConnection row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindWorkspacesByConnectionBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findWorkspacesByUsernameSQL = `SELECT
@@ -480,10 +419,10 @@ OFFSET $4
 ;`
 
 type FindWorkspacesByUsernameParams struct {
-	OrganizationName pgtype.Text
-	Username         pgtype.Text
-	Limit            pgtype.Int8
-	Offset           pgtype.Int8
+	OrganizationName pgtype.Text `json:"organization_name"`
+	Username         pgtype.Text `json:"username"`
+	Limit            pgtype.Int8 `json:"limit"`
+	Offset           pgtype.Int8 `json:"offset"`
 }
 
 type FindWorkspacesByUsernameRow struct {
@@ -519,9 +458,9 @@ type FindWorkspacesByUsernameRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   *Users             `json:"user_lock"`
-	RunLock                    *Runs              `json:"run_lock"`
-	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
+	UserLock                   Users              `json:"user_lock"`
+	RunLock                    Runs               `json:"run_lock"`
+	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
 }
 
 // FindWorkspacesByUsername implements Querier.FindWorkspacesByUsername.
@@ -531,69 +470,49 @@ func (q *DBQuerier) FindWorkspacesByUsername(ctx context.Context, params FindWor
 	if err != nil {
 		return nil, fmt.Errorf("query FindWorkspacesByUsername: %w", err)
 	}
-	defer rows.Close()
-	items := []FindWorkspacesByUsernameRow{}
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	for rows.Next() {
-		var item FindWorkspacesByUsernameRow
-		if err := rows.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-			return nil, fmt.Errorf("scan FindWorkspacesByUsername row: %w", err)
-		}
-		if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByUsername row: %w", err)
-		}
-		if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByUsername row: %w", err)
-		}
-		if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByUsername row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindWorkspacesByUsername rows: %w", err)
-	}
-	return items, err
-}
 
-// FindWorkspacesByUsernameBatch implements Querier.FindWorkspacesByUsernameBatch.
-func (q *DBQuerier) FindWorkspacesByUsernameBatch(batch genericBatch, params FindWorkspacesByUsernameParams) {
-	batch.Queue(findWorkspacesByUsernameSQL, params.OrganizationName, params.Username, params.Limit, params.Offset)
-}
-
-// FindWorkspacesByUsernameScan implements Querier.FindWorkspacesByUsernameScan.
-func (q *DBQuerier) FindWorkspacesByUsernameScan(results pgx.BatchResults) ([]FindWorkspacesByUsernameRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindWorkspacesByUsernameBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindWorkspacesByUsernameRow{}
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindWorkspacesByUsernameRow, error) {
 		var item FindWorkspacesByUsernameRow
-		if err := rows.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-			return nil, fmt.Errorf("scan FindWorkspacesByUsernameBatch row: %w", err)
+		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.AllowDestroyPlan,           // 'allow_destroy_plan', 'AllowDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AutoApply,                  // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CanQueueDestroyPlan,        // 'can_queue_destroy_plan', 'CanQueueDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Description,                // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Environment,                // 'environment', 'Environment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.ExecutionMode,              // 'execution_mode', 'ExecutionMode', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.GlobalRemoteState,          // 'global_remote_state', 'GlobalRemoteState', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.MigrationEnvironment,       // 'migration_environment', 'MigrationEnvironment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.QueueAllRuns,               // 'queue_all_runs', 'QueueAllRuns', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SpeculativeEnabled,         // 'speculative_enabled', 'SpeculativeEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SourceName,                 // 'source_name', 'SourceName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SourceURL,                  // 'source_url', 'SourceURL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StructuredRunOutputEnabled, // 'structured_run_output_enabled', 'StructuredRunOutputEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.TerraformVersion,           // 'terraform_version', 'TerraformVersion', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPrefixes,            // 'trigger_prefixes', 'TriggerPrefixes', '[]string', '', '[]string'
+			&item.WorkingDirectory,           // 'working_directory', 'WorkingDirectory', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockRunID,                  // 'lock_run_id', 'LockRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LatestRunID,                // 'latest_run_id', 'LatestRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName,           // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Branch,                     // 'branch', 'Branch', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockUsername,               // 'lock_username', 'LockUsername', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CurrentStateVersionID,      // 'current_state_version_id', 'CurrentStateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPatterns,            // 'trigger_patterns', 'TriggerPatterns', '[]string', '', '[]string'
+			&item.VCSTagsRegex,               // 'vcs_tags_regex', 'VCSTagsRegex', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowCLIApply,              // 'allow_cli_apply', 'AllowCLIApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
+			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByUsername row: %w", err)
-		}
-		if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByUsername row: %w", err)
-		}
-		if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-			return nil, fmt.Errorf("assign FindWorkspacesByUsername row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindWorkspacesByUsernameBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const countWorkspacesByUsernameSQL = `SELECT count(*)
@@ -609,27 +528,18 @@ AND   u.username          = $2
 // CountWorkspacesByUsername implements Querier.CountWorkspacesByUsername.
 func (q *DBQuerier) CountWorkspacesByUsername(ctx context.Context, organizationName pgtype.Text, username pgtype.Text) (pgtype.Int8, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "CountWorkspacesByUsername")
-	row := q.conn.QueryRow(ctx, countWorkspacesByUsernameSQL, organizationName, username)
-	var item pgtype.Int8
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query CountWorkspacesByUsername: %w", err)
+	rows, err := q.conn.Query(ctx, countWorkspacesByUsernameSQL, organizationName, username)
+	if err != nil {
+		return pgtype.Int8{}, fmt.Errorf("query CountWorkspacesByUsername: %w", err)
 	}
-	return item, nil
-}
 
-// CountWorkspacesByUsernameBatch implements Querier.CountWorkspacesByUsernameBatch.
-func (q *DBQuerier) CountWorkspacesByUsernameBatch(batch genericBatch, organizationName pgtype.Text, username pgtype.Text) {
-	batch.Queue(countWorkspacesByUsernameSQL, organizationName, username)
-}
-
-// CountWorkspacesByUsernameScan implements Querier.CountWorkspacesByUsernameScan.
-func (q *DBQuerier) CountWorkspacesByUsernameScan(results pgx.BatchResults) (pgtype.Int8, error) {
-	row := results.QueryRow()
-	var item pgtype.Int8
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan CountWorkspacesByUsernameBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+		var item pgtype.Int8
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findWorkspaceByNameSQL = `SELECT w.*,
@@ -685,59 +595,61 @@ type FindWorkspaceByNameRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   *Users             `json:"user_lock"`
-	RunLock                    *Runs              `json:"run_lock"`
-	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
+	UserLock                   Users              `json:"user_lock"`
+	RunLock                    Runs               `json:"run_lock"`
+	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
 }
 
 // FindWorkspaceByName implements Querier.FindWorkspaceByName.
 func (q *DBQuerier) FindWorkspaceByName(ctx context.Context, name pgtype.Text, organizationName pgtype.Text) (FindWorkspaceByNameRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindWorkspaceByName")
-	row := q.conn.QueryRow(ctx, findWorkspaceByNameSQL, name, organizationName)
-	var item FindWorkspaceByNameRow
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	if err := row.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-		return item, fmt.Errorf("query FindWorkspaceByName: %w", err)
+	rows, err := q.conn.Query(ctx, findWorkspaceByNameSQL, name, organizationName)
+	if err != nil {
+		return FindWorkspaceByNameRow{}, fmt.Errorf("query FindWorkspaceByName: %w", err)
 	}
-	if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByName row: %w", err)
-	}
-	if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByName row: %w", err)
-	}
-	if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByName row: %w", err)
-	}
-	return item, nil
-}
 
-// FindWorkspaceByNameBatch implements Querier.FindWorkspaceByNameBatch.
-func (q *DBQuerier) FindWorkspaceByNameBatch(batch genericBatch, name pgtype.Text, organizationName pgtype.Text) {
-	batch.Queue(findWorkspaceByNameSQL, name, organizationName)
-}
-
-// FindWorkspaceByNameScan implements Querier.FindWorkspaceByNameScan.
-func (q *DBQuerier) FindWorkspaceByNameScan(results pgx.BatchResults) (FindWorkspaceByNameRow, error) {
-	row := results.QueryRow()
-	var item FindWorkspaceByNameRow
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	if err := row.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-		return item, fmt.Errorf("scan FindWorkspaceByNameBatch row: %w", err)
-	}
-	if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByName row: %w", err)
-	}
-	if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByName row: %w", err)
-	}
-	if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByName row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByNameRow, error) {
+		var item FindWorkspaceByNameRow
+		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.AllowDestroyPlan,           // 'allow_destroy_plan', 'AllowDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AutoApply,                  // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CanQueueDestroyPlan,        // 'can_queue_destroy_plan', 'CanQueueDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Description,                // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Environment,                // 'environment', 'Environment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.ExecutionMode,              // 'execution_mode', 'ExecutionMode', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.GlobalRemoteState,          // 'global_remote_state', 'GlobalRemoteState', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.MigrationEnvironment,       // 'migration_environment', 'MigrationEnvironment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.QueueAllRuns,               // 'queue_all_runs', 'QueueAllRuns', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SpeculativeEnabled,         // 'speculative_enabled', 'SpeculativeEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SourceName,                 // 'source_name', 'SourceName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SourceURL,                  // 'source_url', 'SourceURL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StructuredRunOutputEnabled, // 'structured_run_output_enabled', 'StructuredRunOutputEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.TerraformVersion,           // 'terraform_version', 'TerraformVersion', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPrefixes,            // 'trigger_prefixes', 'TriggerPrefixes', '[]string', '', '[]string'
+			&item.WorkingDirectory,           // 'working_directory', 'WorkingDirectory', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockRunID,                  // 'lock_run_id', 'LockRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LatestRunID,                // 'latest_run_id', 'LatestRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName,           // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Branch,                     // 'branch', 'Branch', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockUsername,               // 'lock_username', 'LockUsername', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CurrentStateVersionID,      // 'current_state_version_id', 'CurrentStateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPatterns,            // 'trigger_patterns', 'TriggerPatterns', '[]string', '', '[]string'
+			&item.VCSTagsRegex,               // 'vcs_tags_regex', 'VCSTagsRegex', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowCLIApply,              // 'allow_cli_apply', 'AllowCLIApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
+			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findWorkspaceByIDSQL = `SELECT w.*,
@@ -792,59 +704,61 @@ type FindWorkspaceByIDRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   *Users             `json:"user_lock"`
-	RunLock                    *Runs              `json:"run_lock"`
-	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
+	UserLock                   Users              `json:"user_lock"`
+	RunLock                    Runs               `json:"run_lock"`
+	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
 }
 
 // FindWorkspaceByID implements Querier.FindWorkspaceByID.
 func (q *DBQuerier) FindWorkspaceByID(ctx context.Context, id pgtype.Text) (FindWorkspaceByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindWorkspaceByID")
-	row := q.conn.QueryRow(ctx, findWorkspaceByIDSQL, id)
-	var item FindWorkspaceByIDRow
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	if err := row.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-		return item, fmt.Errorf("query FindWorkspaceByID: %w", err)
+	rows, err := q.conn.Query(ctx, findWorkspaceByIDSQL, id)
+	if err != nil {
+		return FindWorkspaceByIDRow{}, fmt.Errorf("query FindWorkspaceByID: %w", err)
 	}
-	if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByID row: %w", err)
-	}
-	if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByID row: %w", err)
-	}
-	if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByID row: %w", err)
-	}
-	return item, nil
-}
 
-// FindWorkspaceByIDBatch implements Querier.FindWorkspaceByIDBatch.
-func (q *DBQuerier) FindWorkspaceByIDBatch(batch genericBatch, id pgtype.Text) {
-	batch.Queue(findWorkspaceByIDSQL, id)
-}
-
-// FindWorkspaceByIDScan implements Querier.FindWorkspaceByIDScan.
-func (q *DBQuerier) FindWorkspaceByIDScan(results pgx.BatchResults) (FindWorkspaceByIDRow, error) {
-	row := results.QueryRow()
-	var item FindWorkspaceByIDRow
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	if err := row.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-		return item, fmt.Errorf("scan FindWorkspaceByIDBatch row: %w", err)
-	}
-	if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByID row: %w", err)
-	}
-	if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByID row: %w", err)
-	}
-	if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByID row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByIDRow, error) {
+		var item FindWorkspaceByIDRow
+		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.AllowDestroyPlan,           // 'allow_destroy_plan', 'AllowDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AutoApply,                  // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CanQueueDestroyPlan,        // 'can_queue_destroy_plan', 'CanQueueDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Description,                // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Environment,                // 'environment', 'Environment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.ExecutionMode,              // 'execution_mode', 'ExecutionMode', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.GlobalRemoteState,          // 'global_remote_state', 'GlobalRemoteState', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.MigrationEnvironment,       // 'migration_environment', 'MigrationEnvironment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.QueueAllRuns,               // 'queue_all_runs', 'QueueAllRuns', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SpeculativeEnabled,         // 'speculative_enabled', 'SpeculativeEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SourceName,                 // 'source_name', 'SourceName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SourceURL,                  // 'source_url', 'SourceURL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StructuredRunOutputEnabled, // 'structured_run_output_enabled', 'StructuredRunOutputEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.TerraformVersion,           // 'terraform_version', 'TerraformVersion', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPrefixes,            // 'trigger_prefixes', 'TriggerPrefixes', '[]string', '', '[]string'
+			&item.WorkingDirectory,           // 'working_directory', 'WorkingDirectory', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockRunID,                  // 'lock_run_id', 'LockRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LatestRunID,                // 'latest_run_id', 'LatestRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName,           // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Branch,                     // 'branch', 'Branch', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockUsername,               // 'lock_username', 'LockUsername', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CurrentStateVersionID,      // 'current_state_version_id', 'CurrentStateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPatterns,            // 'trigger_patterns', 'TriggerPatterns', '[]string', '', '[]string'
+			&item.VCSTagsRegex,               // 'vcs_tags_regex', 'VCSTagsRegex', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowCLIApply,              // 'allow_cli_apply', 'AllowCLIApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
+			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findWorkspaceByIDForUpdateSQL = `SELECT w.*,
@@ -899,59 +813,61 @@ type FindWorkspaceByIDForUpdateRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   *Users             `json:"user_lock"`
-	RunLock                    *Runs              `json:"run_lock"`
-	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
+	UserLock                   Users              `json:"user_lock"`
+	RunLock                    Runs               `json:"run_lock"`
+	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
 }
 
 // FindWorkspaceByIDForUpdate implements Querier.FindWorkspaceByIDForUpdate.
 func (q *DBQuerier) FindWorkspaceByIDForUpdate(ctx context.Context, id pgtype.Text) (FindWorkspaceByIDForUpdateRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindWorkspaceByIDForUpdate")
-	row := q.conn.QueryRow(ctx, findWorkspaceByIDForUpdateSQL, id)
-	var item FindWorkspaceByIDForUpdateRow
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	if err := row.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-		return item, fmt.Errorf("query FindWorkspaceByIDForUpdate: %w", err)
+	rows, err := q.conn.Query(ctx, findWorkspaceByIDForUpdateSQL, id)
+	if err != nil {
+		return FindWorkspaceByIDForUpdateRow{}, fmt.Errorf("query FindWorkspaceByIDForUpdate: %w", err)
 	}
-	if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByIDForUpdate row: %w", err)
-	}
-	if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByIDForUpdate row: %w", err)
-	}
-	if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByIDForUpdate row: %w", err)
-	}
-	return item, nil
-}
 
-// FindWorkspaceByIDForUpdateBatch implements Querier.FindWorkspaceByIDForUpdateBatch.
-func (q *DBQuerier) FindWorkspaceByIDForUpdateBatch(batch genericBatch, id pgtype.Text) {
-	batch.Queue(findWorkspaceByIDForUpdateSQL, id)
-}
-
-// FindWorkspaceByIDForUpdateScan implements Querier.FindWorkspaceByIDForUpdateScan.
-func (q *DBQuerier) FindWorkspaceByIDForUpdateScan(results pgx.BatchResults) (FindWorkspaceByIDForUpdateRow, error) {
-	row := results.QueryRow()
-	var item FindWorkspaceByIDForUpdateRow
-	userLockRow := q.types.newUsers()
-	runLockRow := q.types.newRuns()
-	workspaceConnectionRow := q.types.newRepoConnections()
-	if err := row.Scan(&item.WorkspaceID, &item.CreatedAt, &item.UpdatedAt, &item.AllowDestroyPlan, &item.AutoApply, &item.CanQueueDestroyPlan, &item.Description, &item.Environment, &item.ExecutionMode, &item.GlobalRemoteState, &item.MigrationEnvironment, &item.Name, &item.QueueAllRuns, &item.SpeculativeEnabled, &item.SourceName, &item.SourceURL, &item.StructuredRunOutputEnabled, &item.TerraformVersion, &item.TriggerPrefixes, &item.WorkingDirectory, &item.LockRunID, &item.LatestRunID, &item.OrganizationName, &item.Branch, &item.LockUsername, &item.CurrentStateVersionID, &item.TriggerPatterns, &item.VCSTagsRegex, &item.AllowCLIApply, &item.AgentPoolID, &item.Tags, &item.LatestRunStatus, userLockRow, runLockRow, workspaceConnectionRow); err != nil {
-		return item, fmt.Errorf("scan FindWorkspaceByIDForUpdateBatch row: %w", err)
-	}
-	if err := userLockRow.AssignTo(&item.UserLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByIDForUpdate row: %w", err)
-	}
-	if err := runLockRow.AssignTo(&item.RunLock); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByIDForUpdate row: %w", err)
-	}
-	if err := workspaceConnectionRow.AssignTo(&item.WorkspaceConnection); err != nil {
-		return item, fmt.Errorf("assign FindWorkspaceByIDForUpdate row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByIDForUpdateRow, error) {
+		var item FindWorkspaceByIDForUpdateRow
+		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,                  // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.AllowDestroyPlan,           // 'allow_destroy_plan', 'AllowDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AutoApply,                  // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.CanQueueDestroyPlan,        // 'can_queue_destroy_plan', 'CanQueueDestroyPlan', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Description,                // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Environment,                // 'environment', 'Environment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.ExecutionMode,              // 'execution_mode', 'ExecutionMode', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.GlobalRemoteState,          // 'global_remote_state', 'GlobalRemoteState', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.MigrationEnvironment,       // 'migration_environment', 'MigrationEnvironment', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                       // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.QueueAllRuns,               // 'queue_all_runs', 'QueueAllRuns', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SpeculativeEnabled,         // 'speculative_enabled', 'SpeculativeEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.SourceName,                 // 'source_name', 'SourceName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.SourceURL,                  // 'source_url', 'SourceURL', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StructuredRunOutputEnabled, // 'structured_run_output_enabled', 'StructuredRunOutputEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.TerraformVersion,           // 'terraform_version', 'TerraformVersion', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPrefixes,            // 'trigger_prefixes', 'TriggerPrefixes', '[]string', '', '[]string'
+			&item.WorkingDirectory,           // 'working_directory', 'WorkingDirectory', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockRunID,                  // 'lock_run_id', 'LockRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LatestRunID,                // 'latest_run_id', 'LatestRunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName,           // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Branch,                     // 'branch', 'Branch', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.LockUsername,               // 'lock_username', 'LockUsername', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CurrentStateVersionID,      // 'current_state_version_id', 'CurrentStateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.TriggerPatterns,            // 'trigger_patterns', 'TriggerPatterns', '[]string', '', '[]string'
+			&item.VCSTagsRegex,               // 'vcs_tags_regex', 'VCSTagsRegex', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AllowCLIApply,              // 'allow_cli_apply', 'AllowCLIApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
+			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateWorkspaceByIDSQL = `UPDATE workspaces
@@ -978,51 +894,42 @@ WHERE workspace_id = $19
 RETURNING workspace_id;`
 
 type UpdateWorkspaceByIDParams struct {
-	AgentPoolID                pgtype.Text
-	AllowDestroyPlan           pgtype.Bool
-	AllowCLIApply              pgtype.Bool
-	AutoApply                  pgtype.Bool
-	Branch                     pgtype.Text
-	Description                pgtype.Text
-	ExecutionMode              pgtype.Text
-	GlobalRemoteState          pgtype.Bool
-	Name                       pgtype.Text
-	QueueAllRuns               pgtype.Bool
-	SpeculativeEnabled         pgtype.Bool
-	StructuredRunOutputEnabled pgtype.Bool
-	TerraformVersion           pgtype.Text
-	TriggerPrefixes            []string
-	TriggerPatterns            []string
-	VCSTagsRegex               pgtype.Text
-	WorkingDirectory           pgtype.Text
-	UpdatedAt                  pgtype.Timestamptz
-	ID                         pgtype.Text
+	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
+	AllowDestroyPlan           pgtype.Bool        `json:"allow_destroy_plan"`
+	AllowCLIApply              pgtype.Bool        `json:"allow_cli_apply"`
+	AutoApply                  pgtype.Bool        `json:"auto_apply"`
+	Branch                     pgtype.Text        `json:"branch"`
+	Description                pgtype.Text        `json:"description"`
+	ExecutionMode              pgtype.Text        `json:"execution_mode"`
+	GlobalRemoteState          pgtype.Bool        `json:"global_remote_state"`
+	Name                       pgtype.Text        `json:"name"`
+	QueueAllRuns               pgtype.Bool        `json:"queue_all_runs"`
+	SpeculativeEnabled         pgtype.Bool        `json:"speculative_enabled"`
+	StructuredRunOutputEnabled pgtype.Bool        `json:"structured_run_output_enabled"`
+	TerraformVersion           pgtype.Text        `json:"terraform_version"`
+	TriggerPrefixes            []string           `json:"trigger_prefixes"`
+	TriggerPatterns            []string           `json:"trigger_patterns"`
+	VCSTagsRegex               pgtype.Text        `json:"vcs_tags_regex"`
+	WorkingDirectory           pgtype.Text        `json:"working_directory"`
+	UpdatedAt                  pgtype.Timestamptz `json:"updated_at"`
+	ID                         pgtype.Text        `json:"id"`
 }
 
 // UpdateWorkspaceByID implements Querier.UpdateWorkspaceByID.
 func (q *DBQuerier) UpdateWorkspaceByID(ctx context.Context, params UpdateWorkspaceByIDParams) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateWorkspaceByID")
-	row := q.conn.QueryRow(ctx, updateWorkspaceByIDSQL, params.AgentPoolID, params.AllowDestroyPlan, params.AllowCLIApply, params.AutoApply, params.Branch, params.Description, params.ExecutionMode, params.GlobalRemoteState, params.Name, params.QueueAllRuns, params.SpeculativeEnabled, params.StructuredRunOutputEnabled, params.TerraformVersion, params.TriggerPrefixes, params.TriggerPatterns, params.VCSTagsRegex, params.WorkingDirectory, params.UpdatedAt, params.ID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query UpdateWorkspaceByID: %w", err)
+	rows, err := q.conn.Query(ctx, updateWorkspaceByIDSQL, params.AgentPoolID, params.AllowDestroyPlan, params.AllowCLIApply, params.AutoApply, params.Branch, params.Description, params.ExecutionMode, params.GlobalRemoteState, params.Name, params.QueueAllRuns, params.SpeculativeEnabled, params.StructuredRunOutputEnabled, params.TerraformVersion, params.TriggerPrefixes, params.TriggerPatterns, params.VCSTagsRegex, params.WorkingDirectory, params.UpdatedAt, params.ID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query UpdateWorkspaceByID: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateWorkspaceByIDBatch implements Querier.UpdateWorkspaceByIDBatch.
-func (q *DBQuerier) UpdateWorkspaceByIDBatch(batch genericBatch, params UpdateWorkspaceByIDParams) {
-	batch.Queue(updateWorkspaceByIDSQL, params.AgentPoolID, params.AllowDestroyPlan, params.AllowCLIApply, params.AutoApply, params.Branch, params.Description, params.ExecutionMode, params.GlobalRemoteState, params.Name, params.QueueAllRuns, params.SpeculativeEnabled, params.StructuredRunOutputEnabled, params.TerraformVersion, params.TriggerPrefixes, params.TriggerPatterns, params.VCSTagsRegex, params.WorkingDirectory, params.UpdatedAt, params.ID)
-}
-
-// UpdateWorkspaceByIDScan implements Querier.UpdateWorkspaceByIDScan.
-func (q *DBQuerier) UpdateWorkspaceByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan UpdateWorkspaceByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateWorkspaceLockByIDSQL = `UPDATE workspaces
@@ -1032,9 +939,9 @@ SET
 WHERE workspace_id = $3;`
 
 type UpdateWorkspaceLockByIDParams struct {
-	Username    pgtype.Text
-	RunID       pgtype.Text
-	WorkspaceID pgtype.Text
+	Username    pgtype.Text `json:"username"`
+	RunID       pgtype.Text `json:"run_id"`
+	WorkspaceID pgtype.Text `json:"workspace_id"`
 }
 
 // UpdateWorkspaceLockByID implements Querier.UpdateWorkspaceLockByID.
@@ -1042,21 +949,7 @@ func (q *DBQuerier) UpdateWorkspaceLockByID(ctx context.Context, params UpdateWo
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateWorkspaceLockByID")
 	cmdTag, err := q.conn.Exec(ctx, updateWorkspaceLockByIDSQL, params.Username, params.RunID, params.WorkspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query UpdateWorkspaceLockByID: %w", err)
-	}
-	return cmdTag, err
-}
-
-// UpdateWorkspaceLockByIDBatch implements Querier.UpdateWorkspaceLockByIDBatch.
-func (q *DBQuerier) UpdateWorkspaceLockByIDBatch(batch genericBatch, params UpdateWorkspaceLockByIDParams) {
-	batch.Queue(updateWorkspaceLockByIDSQL, params.Username, params.RunID, params.WorkspaceID)
-}
-
-// UpdateWorkspaceLockByIDScan implements Querier.UpdateWorkspaceLockByIDScan.
-func (q *DBQuerier) UpdateWorkspaceLockByIDScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec UpdateWorkspaceLockByIDBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query UpdateWorkspaceLockByID: %w", err)
 	}
 	return cmdTag, err
 }
@@ -1070,21 +963,7 @@ func (q *DBQuerier) UpdateWorkspaceLatestRun(ctx context.Context, runID pgtype.T
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateWorkspaceLatestRun")
 	cmdTag, err := q.conn.Exec(ctx, updateWorkspaceLatestRunSQL, runID, workspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query UpdateWorkspaceLatestRun: %w", err)
-	}
-	return cmdTag, err
-}
-
-// UpdateWorkspaceLatestRunBatch implements Querier.UpdateWorkspaceLatestRunBatch.
-func (q *DBQuerier) UpdateWorkspaceLatestRunBatch(batch genericBatch, runID pgtype.Text, workspaceID pgtype.Text) {
-	batch.Queue(updateWorkspaceLatestRunSQL, runID, workspaceID)
-}
-
-// UpdateWorkspaceLatestRunScan implements Querier.UpdateWorkspaceLatestRunScan.
-func (q *DBQuerier) UpdateWorkspaceLatestRunScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec UpdateWorkspaceLatestRunBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query UpdateWorkspaceLatestRun: %w", err)
 	}
 	return cmdTag, err
 }
@@ -1097,27 +976,18 @@ RETURNING workspace_id;`
 // UpdateWorkspaceCurrentStateVersionID implements Querier.UpdateWorkspaceCurrentStateVersionID.
 func (q *DBQuerier) UpdateWorkspaceCurrentStateVersionID(ctx context.Context, stateVersionID pgtype.Text, workspaceID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateWorkspaceCurrentStateVersionID")
-	row := q.conn.QueryRow(ctx, updateWorkspaceCurrentStateVersionIDSQL, stateVersionID, workspaceID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query UpdateWorkspaceCurrentStateVersionID: %w", err)
+	rows, err := q.conn.Query(ctx, updateWorkspaceCurrentStateVersionIDSQL, stateVersionID, workspaceID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query UpdateWorkspaceCurrentStateVersionID: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateWorkspaceCurrentStateVersionIDBatch implements Querier.UpdateWorkspaceCurrentStateVersionIDBatch.
-func (q *DBQuerier) UpdateWorkspaceCurrentStateVersionIDBatch(batch genericBatch, stateVersionID pgtype.Text, workspaceID pgtype.Text) {
-	batch.Queue(updateWorkspaceCurrentStateVersionIDSQL, stateVersionID, workspaceID)
-}
-
-// UpdateWorkspaceCurrentStateVersionIDScan implements Querier.UpdateWorkspaceCurrentStateVersionIDScan.
-func (q *DBQuerier) UpdateWorkspaceCurrentStateVersionIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan UpdateWorkspaceCurrentStateVersionIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteWorkspaceByIDSQL = `DELETE
@@ -1129,21 +999,7 @@ func (q *DBQuerier) DeleteWorkspaceByID(ctx context.Context, workspaceID pgtype.
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteWorkspaceByID")
 	cmdTag, err := q.conn.Exec(ctx, deleteWorkspaceByIDSQL, workspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query DeleteWorkspaceByID: %w", err)
-	}
-	return cmdTag, err
-}
-
-// DeleteWorkspaceByIDBatch implements Querier.DeleteWorkspaceByIDBatch.
-func (q *DBQuerier) DeleteWorkspaceByIDBatch(batch genericBatch, workspaceID pgtype.Text) {
-	batch.Queue(deleteWorkspaceByIDSQL, workspaceID)
-}
-
-// DeleteWorkspaceByIDScan implements Querier.DeleteWorkspaceByIDScan.
-func (q *DBQuerier) DeleteWorkspaceByIDScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec DeleteWorkspaceByIDBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query DeleteWorkspaceByID: %w", err)
 	}
 	return cmdTag, err
 }

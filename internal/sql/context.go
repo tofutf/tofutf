@@ -2,6 +2,8 @@ package sql
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -11,11 +13,11 @@ const (
 
 type ctxKey int
 
-func newContext(ctx context.Context, conn genericConnection) context.Context {
+func newContext(ctx context.Context, conn *pgx.Conn) context.Context {
 	return context.WithValue(ctx, connCtxKey, conn)
 }
 
-func fromContext(ctx context.Context) (genericConnection, bool) {
-	conn, ok := ctx.Value(connCtxKey).(genericConnection)
+func fromContext(ctx context.Context) (*pgx.Conn, bool) {
+	conn, ok := ctx.Value(connCtxKey).(*pgx.Conn)
 	return conn, ok
 }

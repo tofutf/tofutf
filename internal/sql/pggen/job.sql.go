@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertJobSQL = `INSERT INTO jobs (
     run_id,
@@ -22,9 +24,9 @@ const insertJobSQL = `INSERT INTO jobs (
 );`
 
 type InsertJobParams struct {
-	RunID  pgtype.Text
-	Phase  pgtype.Text
-	Status pgtype.Text
+	RunID  pgtype.Text `json:"run_id"`
+	Phase  pgtype.Text `json:"phase"`
+	Status pgtype.Text `json:"status"`
 }
 
 // InsertJob implements Querier.InsertJob.
@@ -32,21 +34,7 @@ func (q *DBQuerier) InsertJob(ctx context.Context, params InsertJobParams) (pgco
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertJob")
 	cmdTag, err := q.conn.Exec(ctx, insertJobSQL, params.RunID, params.Phase, params.Status)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertJob: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertJobBatch implements Querier.InsertJobBatch.
-func (q *DBQuerier) InsertJobBatch(batch genericBatch, params InsertJobParams) {
-	batch.Queue(insertJobSQL, params.RunID, params.Phase, params.Status)
-}
-
-// InsertJobScan implements Querier.InsertJobScan.
-func (q *DBQuerier) InsertJobScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertJobBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertJob: %w", err)
 	}
 	return cmdTag, err
 }
@@ -83,45 +71,22 @@ func (q *DBQuerier) FindJobs(ctx context.Context) ([]FindJobsRow, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query FindJobs: %w", err)
 	}
-	defer rows.Close()
-	items := []FindJobsRow{}
-	for rows.Next() {
-		var item FindJobsRow
-		if err := rows.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-			return nil, fmt.Errorf("scan FindJobs row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindJobs rows: %w", err)
-	}
-	return items, err
-}
 
-// FindJobsBatch implements Querier.FindJobsBatch.
-func (q *DBQuerier) FindJobsBatch(batch genericBatch) {
-	batch.Queue(findJobsSQL)
-}
-
-// FindJobsScan implements Querier.FindJobsScan.
-func (q *DBQuerier) FindJobsScan(results pgx.BatchResults) ([]FindJobsRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindJobsBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindJobsRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindJobsRow, error) {
 		var item FindJobsRow
-		if err := rows.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-			return nil, fmt.Errorf("scan FindJobsBatch row: %w", err)
+		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Phase,            // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Signaled,         // 'signaled', 'Signaled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentID,          // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AgentPoolID,      // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,      // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindJobsBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findJobSQL = `SELECT
@@ -154,27 +119,26 @@ type FindJobRow struct {
 // FindJob implements Querier.FindJob.
 func (q *DBQuerier) FindJob(ctx context.Context, runID pgtype.Text, phase pgtype.Text) (FindJobRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindJob")
-	row := q.conn.QueryRow(ctx, findJobSQL, runID, phase)
-	var item FindJobRow
-	if err := row.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-		return item, fmt.Errorf("query FindJob: %w", err)
+	rows, err := q.conn.Query(ctx, findJobSQL, runID, phase)
+	if err != nil {
+		return FindJobRow{}, fmt.Errorf("query FindJob: %w", err)
 	}
-	return item, nil
-}
 
-// FindJobBatch implements Querier.FindJobBatch.
-func (q *DBQuerier) FindJobBatch(batch genericBatch, runID pgtype.Text, phase pgtype.Text) {
-	batch.Queue(findJobSQL, runID, phase)
-}
-
-// FindJobScan implements Querier.FindJobScan.
-func (q *DBQuerier) FindJobScan(results pgx.BatchResults) (FindJobRow, error) {
-	row := results.QueryRow()
-	var item FindJobRow
-	if err := row.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-		return item, fmt.Errorf("scan FindJobBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindJobRow, error) {
+		var item FindJobRow
+		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Phase,            // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Signaled,         // 'signaled', 'Signaled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentID,          // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AgentPoolID,      // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,      // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findJobForUpdateSQL = `SELECT
@@ -208,27 +172,26 @@ type FindJobForUpdateRow struct {
 // FindJobForUpdate implements Querier.FindJobForUpdate.
 func (q *DBQuerier) FindJobForUpdate(ctx context.Context, runID pgtype.Text, phase pgtype.Text) (FindJobForUpdateRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindJobForUpdate")
-	row := q.conn.QueryRow(ctx, findJobForUpdateSQL, runID, phase)
-	var item FindJobForUpdateRow
-	if err := row.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-		return item, fmt.Errorf("query FindJobForUpdate: %w", err)
+	rows, err := q.conn.Query(ctx, findJobForUpdateSQL, runID, phase)
+	if err != nil {
+		return FindJobForUpdateRow{}, fmt.Errorf("query FindJobForUpdate: %w", err)
 	}
-	return item, nil
-}
 
-// FindJobForUpdateBatch implements Querier.FindJobForUpdateBatch.
-func (q *DBQuerier) FindJobForUpdateBatch(batch genericBatch, runID pgtype.Text, phase pgtype.Text) {
-	batch.Queue(findJobForUpdateSQL, runID, phase)
-}
-
-// FindJobForUpdateScan implements Querier.FindJobForUpdateScan.
-func (q *DBQuerier) FindJobForUpdateScan(results pgx.BatchResults) (FindJobForUpdateRow, error) {
-	row := results.QueryRow()
-	var item FindJobForUpdateRow
-	if err := row.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-		return item, fmt.Errorf("scan FindJobForUpdateBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindJobForUpdateRow, error) {
+		var item FindJobForUpdateRow
+		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Phase,            // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Signaled,         // 'signaled', 'Signaled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentID,          // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AgentPoolID,      // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,      // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findAllocatedJobsSQL = `SELECT
@@ -264,45 +227,22 @@ func (q *DBQuerier) FindAllocatedJobs(ctx context.Context, agentID pgtype.Text) 
 	if err != nil {
 		return nil, fmt.Errorf("query FindAllocatedJobs: %w", err)
 	}
-	defer rows.Close()
-	items := []FindAllocatedJobsRow{}
-	for rows.Next() {
-		var item FindAllocatedJobsRow
-		if err := rows.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-			return nil, fmt.Errorf("scan FindAllocatedJobs row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAllocatedJobs rows: %w", err)
-	}
-	return items, err
-}
 
-// FindAllocatedJobsBatch implements Querier.FindAllocatedJobsBatch.
-func (q *DBQuerier) FindAllocatedJobsBatch(batch genericBatch, agentID pgtype.Text) {
-	batch.Queue(findAllocatedJobsSQL, agentID)
-}
-
-// FindAllocatedJobsScan implements Querier.FindAllocatedJobsScan.
-func (q *DBQuerier) FindAllocatedJobsScan(results pgx.BatchResults) ([]FindAllocatedJobsRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindAllocatedJobsBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindAllocatedJobsRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindAllocatedJobsRow, error) {
 		var item FindAllocatedJobsRow
-		if err := rows.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-			return nil, fmt.Errorf("scan FindAllocatedJobsBatch row: %w", err)
+		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Phase,            // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Signaled,         // 'signaled', 'Signaled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentID,          // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AgentPoolID,      // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,      // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAllocatedJobsBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findAndUpdateSignaledJobsSQL = `UPDATE jobs AS j
@@ -342,45 +282,22 @@ func (q *DBQuerier) FindAndUpdateSignaledJobs(ctx context.Context, agentID pgtyp
 	if err != nil {
 		return nil, fmt.Errorf("query FindAndUpdateSignaledJobs: %w", err)
 	}
-	defer rows.Close()
-	items := []FindAndUpdateSignaledJobsRow{}
-	for rows.Next() {
-		var item FindAndUpdateSignaledJobsRow
-		if err := rows.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-			return nil, fmt.Errorf("scan FindAndUpdateSignaledJobs row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAndUpdateSignaledJobs rows: %w", err)
-	}
-	return items, err
-}
 
-// FindAndUpdateSignaledJobsBatch implements Querier.FindAndUpdateSignaledJobsBatch.
-func (q *DBQuerier) FindAndUpdateSignaledJobsBatch(batch genericBatch, agentID pgtype.Text) {
-	batch.Queue(findAndUpdateSignaledJobsSQL, agentID)
-}
-
-// FindAndUpdateSignaledJobsScan implements Querier.FindAndUpdateSignaledJobsScan.
-func (q *DBQuerier) FindAndUpdateSignaledJobsScan(results pgx.BatchResults) ([]FindAndUpdateSignaledJobsRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindAndUpdateSignaledJobsBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindAndUpdateSignaledJobsRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindAndUpdateSignaledJobsRow, error) {
 		var item FindAndUpdateSignaledJobsRow
-		if err := rows.Scan(&item.RunID, &item.Phase, &item.Status, &item.Signaled, &item.AgentID, &item.AgentPoolID, &item.WorkspaceID, &item.OrganizationName); err != nil {
-			return nil, fmt.Errorf("scan FindAndUpdateSignaledJobsBatch row: %w", err)
+		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Phase,            // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Signaled,         // 'signaled', 'Signaled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.AgentID,          // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AgentPoolID,      // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.WorkspaceID,      // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAndUpdateSignaledJobsBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const updateJobSQL = `UPDATE jobs
@@ -392,11 +309,11 @@ AND   phase = $5
 RETURNING *;`
 
 type UpdateJobParams struct {
-	Status   pgtype.Text
-	Signaled pgtype.Bool
-	AgentID  pgtype.Text
-	RunID    pgtype.Text
-	Phase    pgtype.Text
+	Status   pgtype.Text `json:"status"`
+	Signaled pgtype.Bool `json:"signaled"`
+	AgentID  pgtype.Text `json:"agent_id"`
+	RunID    pgtype.Text `json:"run_id"`
+	Phase    pgtype.Text `json:"phase"`
 }
 
 type UpdateJobRow struct {
@@ -410,25 +327,21 @@ type UpdateJobRow struct {
 // UpdateJob implements Querier.UpdateJob.
 func (q *DBQuerier) UpdateJob(ctx context.Context, params UpdateJobParams) (UpdateJobRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateJob")
-	row := q.conn.QueryRow(ctx, updateJobSQL, params.Status, params.Signaled, params.AgentID, params.RunID, params.Phase)
-	var item UpdateJobRow
-	if err := row.Scan(&item.RunID, &item.Phase, &item.Status, &item.AgentID, &item.Signaled); err != nil {
-		return item, fmt.Errorf("query UpdateJob: %w", err)
+	rows, err := q.conn.Query(ctx, updateJobSQL, params.Status, params.Signaled, params.AgentID, params.RunID, params.Phase)
+	if err != nil {
+		return UpdateJobRow{}, fmt.Errorf("query UpdateJob: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateJobBatch implements Querier.UpdateJobBatch.
-func (q *DBQuerier) UpdateJobBatch(batch genericBatch, params UpdateJobParams) {
-	batch.Queue(updateJobSQL, params.Status, params.Signaled, params.AgentID, params.RunID, params.Phase)
-}
-
-// UpdateJobScan implements Querier.UpdateJobScan.
-func (q *DBQuerier) UpdateJobScan(results pgx.BatchResults) (UpdateJobRow, error) {
-	row := results.QueryRow()
-	var item UpdateJobRow
-	if err := row.Scan(&item.RunID, &item.Phase, &item.Status, &item.AgentID, &item.Signaled); err != nil {
-		return item, fmt.Errorf("scan UpdateJobBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (UpdateJobRow, error) {
+		var item UpdateJobRow
+		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Phase,    // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,   // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AgentID,  // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Signaled, // 'signaled', 'Signaled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

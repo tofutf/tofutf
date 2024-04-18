@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal/connections"
 	"github.com/tofutf/tofutf/internal/semver"
 	"github.com/tofutf/tofutf/internal/sql"
@@ -14,7 +14,7 @@ import (
 type (
 	// pgdb is the registry database on postgres
 	pgdb struct {
-		*sql.DB // provides access to generated SQL queries
+		*sql.Pool // provides access to generated SQL queries
 	}
 
 	// moduleRow is a row from a database query for modules.
@@ -26,129 +26,157 @@ type (
 		Provider         pgtype.Text            `json:"provider"`
 		Status           pgtype.Text            `json:"status"`
 		OrganizationName pgtype.Text            `json:"organization_name"`
-		ModuleConnection *pggen.RepoConnections `json:"module_connection"`
+		ModuleConnection pggen.RepoConnections  `json:"module_connection"`
 		Versions         []pggen.ModuleVersions `json:"versions"`
 	}
 )
 
 func (db *pgdb) createModule(ctx context.Context, mod *Module) error {
-	_, err := db.Conn(ctx).InsertModule(ctx, pggen.InsertModuleParams{
-		ID:               sql.String(mod.ID),
-		CreatedAt:        sql.Timestamptz(mod.CreatedAt),
-		UpdatedAt:        sql.Timestamptz(mod.UpdatedAt),
-		Name:             sql.String(mod.Name),
-		Provider:         sql.String(mod.Provider),
-		Status:           sql.String(string(mod.Status)),
-		OrganizationName: sql.String(mod.Organization),
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.InsertModule(ctx, pggen.InsertModuleParams{
+			ID:               sql.String(mod.ID),
+			CreatedAt:        sql.Timestamptz(mod.CreatedAt),
+			UpdatedAt:        sql.Timestamptz(mod.UpdatedAt),
+			Name:             sql.String(mod.Name),
+			Provider:         sql.String(mod.Provider),
+			Status:           sql.String(string(mod.Status)),
+			OrganizationName: sql.String(mod.Organization),
+		})
+		return sql.Error(err)
 	})
-	return sql.Error(err)
 }
 
 func (db *pgdb) updateModuleStatus(ctx context.Context, moduleID string, status ModuleStatus) error {
-	_, err := db.Conn(ctx).UpdateModuleStatusByID(ctx, sql.String(string(status)), sql.String(moduleID))
-	if err != nil {
-		return sql.Error(err)
-	}
-	return nil
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.UpdateModuleStatusByID(ctx, sql.String(string(status)), sql.String(moduleID))
+		if err != nil {
+			return sql.Error(err)
+		}
+		return nil
+	})
 }
 
 func (db *pgdb) listModules(ctx context.Context, opts ListModulesOptions) ([]*Module, error) {
-	rows, err := db.Conn(ctx).ListModulesByOrganization(ctx, sql.String(opts.Organization))
-	if err != nil {
-		return nil, err
-	}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Module, error) {
+		rows, err := q.ListModulesByOrganization(ctx, sql.String(opts.Organization))
+		if err != nil {
+			return nil, err
+		}
 
-	modules := make([]*Module, len(rows))
-	for i, r := range rows {
-		modules[i] = moduleRow(r).toModule()
-	}
-	return modules, nil
+		modules := make([]*Module, len(rows))
+		for i, r := range rows {
+			modules[i] = moduleRow(r).toModule()
+		}
+		return modules, nil
+	})
 }
 
 func (db *pgdb) getModule(ctx context.Context, opts GetModuleOptions) (*Module, error) {
-	row, err := db.Conn(ctx).FindModuleByName(ctx, pggen.FindModuleByNameParams{
-		Name:             sql.String(opts.Name),
-		Provider:         sql.String(opts.Provider),
-		OrganizationName: sql.String(opts.Organization),
-	})
-	if err != nil {
-		return nil, sql.Error(err)
-	}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Module, error) {
+		row, err := q.FindModuleByName(ctx, pggen.FindModuleByNameParams{
+			Name:             sql.String(opts.Name),
+			Provider:         sql.String(opts.Provider),
+			OrganizationName: sql.String(opts.Organization),
+		})
+		if err != nil {
+			return nil, sql.Error(err)
+		}
 
-	return moduleRow(row).toModule(), nil
+		return moduleRow(row).toModule(), nil
+	})
 }
 
 func (db *pgdb) getModuleByID(ctx context.Context, id string) (*Module, error) {
-	row, err := db.Conn(ctx).FindModuleByID(ctx, sql.String(id))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Module, error) {
+		row, err := q.FindModuleByID(ctx, sql.String(id))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
 
-	return moduleRow(row).toModule(), nil
+		return moduleRow(row).toModule(), nil
+	})
 }
 
 func (db *pgdb) getModuleByConnection(ctx context.Context, vcsProviderID, repoPath string) (*Module, error) {
-	row, err := db.Conn(ctx).FindModuleByConnection(ctx, sql.String(vcsProviderID), sql.String(repoPath))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Module, error) {
+		row, err := q.FindModuleByConnection(ctx, sql.String(vcsProviderID), sql.String(repoPath))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
 
-	return moduleRow(row).toModule(), nil
+		return moduleRow(row).toModule(), nil
+	})
 }
 
 func (db *pgdb) delete(ctx context.Context, id string) error {
-	_, err := db.Conn(ctx).DeleteModuleByID(ctx, sql.String(id))
-	return sql.Error(err)
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.DeleteModuleByID(ctx, sql.String(id))
+		return sql.Error(err)
+	})
 }
 
 func (db *pgdb) createModuleVersion(ctx context.Context, version *ModuleVersion) error {
-	_, err := db.Conn(ctx).InsertModuleVersion(ctx, pggen.InsertModuleVersionParams{
-		ModuleVersionID: sql.String(version.ID),
-		Version:         sql.String(version.Version),
-		CreatedAt:       sql.Timestamptz(version.CreatedAt),
-		UpdatedAt:       sql.Timestamptz(version.UpdatedAt),
-		ModuleID:        sql.String(version.ModuleID),
-		Status:          sql.String(string(version.Status)),
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.InsertModuleVersion(ctx, pggen.InsertModuleVersionParams{
+			ModuleVersionID: sql.String(version.ID),
+			Version:         sql.String(version.Version),
+			CreatedAt:       sql.Timestamptz(version.CreatedAt),
+			UpdatedAt:       sql.Timestamptz(version.UpdatedAt),
+			ModuleID:        sql.String(version.ModuleID),
+			Status:          sql.String(string(version.Status)),
+		})
+		if err != nil {
+			return err
+		}
+		return nil
 	})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (db *pgdb) updateModuleVersionStatus(ctx context.Context, opts UpdateModuleVersionStatusOptions) error {
-	_, err := db.Conn(ctx).UpdateModuleVersionStatusByID(ctx, pggen.UpdateModuleVersionStatusByIDParams{
-		ModuleVersionID: sql.String(opts.ID),
-		Status:          sql.String(string(opts.Status)),
-		StatusError:     sql.String(opts.Error),
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.UpdateModuleVersionStatusByID(ctx, pggen.UpdateModuleVersionStatusByIDParams{
+			ModuleVersionID: sql.String(opts.ID),
+			Status:          sql.String(string(opts.Status)),
+			StatusError:     sql.String(opts.Error),
+		})
+		return sql.Error(err)
 	})
-	return sql.Error(err)
 }
 
 func (db *pgdb) getModuleByVersionID(ctx context.Context, versionID string) (*Module, error) {
-	row, err := db.Conn(ctx).FindModuleByModuleVersionID(ctx, sql.String(versionID))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return moduleRow(row).toModule(), nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Module, error) {
+		row, err := q.FindModuleByModuleVersionID(ctx, sql.String(versionID))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		return moduleRow(row).toModule(), nil
+	})
 }
 
 func (db *pgdb) deleteModuleVersion(ctx context.Context, versionID string) error {
-	_, err := db.Conn(ctx).DeleteModuleVersionByID(ctx, sql.String(versionID))
-	return sql.Error(err)
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.DeleteModuleVersionByID(ctx, sql.String(versionID))
+		return sql.Error(err)
+	})
 }
 
 func (db *pgdb) saveTarball(ctx context.Context, versionID string, tarball []byte) error {
-	_, err := db.Conn(ctx).InsertModuleTarball(ctx, tarball, sql.String(versionID))
-	return sql.Error(err)
+	return db.Func(ctx, func(ctx context.Context, q pggen.Querier) error {
+		_, err := q.InsertModuleTarball(ctx, tarball, sql.String(versionID))
+		return sql.Error(err)
+	})
 }
 
 func (db *pgdb) getTarball(ctx context.Context, versionID string) ([]byte, error) {
-	tarball, err := db.Conn(ctx).FindModuleTarball(ctx, sql.String(versionID))
-	if err != nil {
-		return nil, sql.Error(err)
-	}
-	return tarball, nil
+	return sql.Func(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
+		tarball, err := q.FindModuleTarball(ctx, sql.String(versionID))
+		if err != nil {
+			return nil, sql.Error(err)
+		}
+
+		return tarball, nil
+	})
 }
 
 // toModule converts a database row into a module
@@ -162,7 +190,7 @@ func (row moduleRow) toModule() *Module {
 		Status:       ModuleStatus(row.Status.String),
 		Organization: row.OrganizationName.String,
 	}
-	if row.ModuleConnection != nil {
+	if row.ModuleConnection != (pggen.RepoConnections{}) {
 		module.Connection = &connections.Connection{
 			VCSProviderID: row.ModuleConnection.VCSProviderID.String,
 			Repo:          row.ModuleConnection.RepoPath.String,

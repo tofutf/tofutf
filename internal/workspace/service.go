@@ -40,7 +40,7 @@ type (
 	}
 
 	Options struct {
-		*sql.DB
+		*sql.Pool
 		*sql.Listener
 		*tfeapi.Responder
 		html.Renderer
@@ -55,7 +55,7 @@ type (
 )
 
 func NewService(opts Options) *Service {
-	db := &pgdb{opts.DB}
+	db := &pgdb{opts.Pool}
 	svc := Service{
 		logger: opts.Logger,
 		Authorizer: &authorizer{

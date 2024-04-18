@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertUserSQL = `INSERT INTO users (
     user_id,
@@ -24,10 +26,10 @@ const insertUserSQL = `INSERT INTO users (
 );`
 
 type InsertUserParams struct {
-	ID        pgtype.Text
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Username  pgtype.Text
+	ID        pgtype.Text        `json:"id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	Username  pgtype.Text        `json:"username"`
 }
 
 // InsertUser implements Querier.InsertUser.
@@ -35,21 +37,7 @@ func (q *DBQuerier) InsertUser(ctx context.Context, params InsertUserParams) (pg
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertUser")
 	cmdTag, err := q.conn.Exec(ctx, insertUserSQL, params.ID, params.CreatedAt, params.UpdatedAt, params.Username)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertUser: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertUserBatch implements Querier.InsertUserBatch.
-func (q *DBQuerier) InsertUserBatch(batch genericBatch, params InsertUserParams) {
-	batch.Queue(insertUserSQL, params.ID, params.CreatedAt, params.UpdatedAt, params.Username)
-}
-
-// InsertUserScan implements Querier.InsertUserScan.
-func (q *DBQuerier) InsertUserScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertUserBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertUser: %w", err)
 	}
 	return cmdTag, err
 }
@@ -80,53 +68,20 @@ func (q *DBQuerier) FindUsers(ctx context.Context) ([]FindUsersRow, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query FindUsers: %w", err)
 	}
-	defer rows.Close()
-	items := []FindUsersRow{}
-	teamsArray := q.types.newTeamsArray()
-	for rows.Next() {
-		var item FindUsersRow
-		if err := rows.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-			return nil, fmt.Errorf("scan FindUsers row: %w", err)
-		}
-		if err := teamsArray.AssignTo(&item.Teams); err != nil {
-			return nil, fmt.Errorf("assign FindUsers row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindUsers rows: %w", err)
-	}
-	return items, err
-}
 
-// FindUsersBatch implements Querier.FindUsersBatch.
-func (q *DBQuerier) FindUsersBatch(batch genericBatch) {
-	batch.Queue(findUsersSQL)
-}
-
-// FindUsersScan implements Querier.FindUsersScan.
-func (q *DBQuerier) FindUsersScan(results pgx.BatchResults) ([]FindUsersRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindUsersBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindUsersRow{}
-	teamsArray := q.types.newTeamsArray()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindUsersRow, error) {
 		var item FindUsersRow
-		if err := rows.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-			return nil, fmt.Errorf("scan FindUsersBatch row: %w", err)
+		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := teamsArray.AssignTo(&item.Teams); err != nil {
-			return nil, fmt.Errorf("assign FindUsers row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindUsersBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findUsersByOrganizationSQL = `SELECT u.*,
@@ -159,53 +114,20 @@ func (q *DBQuerier) FindUsersByOrganization(ctx context.Context, organizationNam
 	if err != nil {
 		return nil, fmt.Errorf("query FindUsersByOrganization: %w", err)
 	}
-	defer rows.Close()
-	items := []FindUsersByOrganizationRow{}
-	teamsArray := q.types.newTeamsArray()
-	for rows.Next() {
-		var item FindUsersByOrganizationRow
-		if err := rows.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-			return nil, fmt.Errorf("scan FindUsersByOrganization row: %w", err)
-		}
-		if err := teamsArray.AssignTo(&item.Teams); err != nil {
-			return nil, fmt.Errorf("assign FindUsersByOrganization row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindUsersByOrganization rows: %w", err)
-	}
-	return items, err
-}
 
-// FindUsersByOrganizationBatch implements Querier.FindUsersByOrganizationBatch.
-func (q *DBQuerier) FindUsersByOrganizationBatch(batch genericBatch, organizationName pgtype.Text) {
-	batch.Queue(findUsersByOrganizationSQL, organizationName)
-}
-
-// FindUsersByOrganizationScan implements Querier.FindUsersByOrganizationScan.
-func (q *DBQuerier) FindUsersByOrganizationScan(results pgx.BatchResults) ([]FindUsersByOrganizationRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindUsersByOrganizationBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindUsersByOrganizationRow{}
-	teamsArray := q.types.newTeamsArray()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindUsersByOrganizationRow, error) {
 		var item FindUsersByOrganizationRow
-		if err := rows.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-			return nil, fmt.Errorf("scan FindUsersByOrganizationBatch row: %w", err)
+		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := teamsArray.AssignTo(&item.Teams); err != nil {
-			return nil, fmt.Errorf("assign FindUsersByOrganization row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindUsersByOrganizationBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findUsersByTeamIDSQL = `SELECT
@@ -238,53 +160,20 @@ func (q *DBQuerier) FindUsersByTeamID(ctx context.Context, teamID pgtype.Text) (
 	if err != nil {
 		return nil, fmt.Errorf("query FindUsersByTeamID: %w", err)
 	}
-	defer rows.Close()
-	items := []FindUsersByTeamIDRow{}
-	teamsArray := q.types.newTeamsArray()
-	for rows.Next() {
-		var item FindUsersByTeamIDRow
-		if err := rows.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-			return nil, fmt.Errorf("scan FindUsersByTeamID row: %w", err)
-		}
-		if err := teamsArray.AssignTo(&item.Teams); err != nil {
-			return nil, fmt.Errorf("assign FindUsersByTeamID row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindUsersByTeamID rows: %w", err)
-	}
-	return items, err
-}
 
-// FindUsersByTeamIDBatch implements Querier.FindUsersByTeamIDBatch.
-func (q *DBQuerier) FindUsersByTeamIDBatch(batch genericBatch, teamID pgtype.Text) {
-	batch.Queue(findUsersByTeamIDSQL, teamID)
-}
-
-// FindUsersByTeamIDScan implements Querier.FindUsersByTeamIDScan.
-func (q *DBQuerier) FindUsersByTeamIDScan(results pgx.BatchResults) ([]FindUsersByTeamIDRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindUsersByTeamIDBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindUsersByTeamIDRow{}
-	teamsArray := q.types.newTeamsArray()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindUsersByTeamIDRow, error) {
 		var item FindUsersByTeamIDRow
-		if err := rows.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-			return nil, fmt.Errorf("scan FindUsersByTeamIDBatch row: %w", err)
+		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := teamsArray.AssignTo(&item.Teams); err != nil {
-			return nil, fmt.Errorf("assign FindUsersByTeamID row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindUsersByTeamIDBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findUserByIDSQL = `SELECT u.*,
@@ -310,35 +199,24 @@ type FindUserByIDRow struct {
 // FindUserByID implements Querier.FindUserByID.
 func (q *DBQuerier) FindUserByID(ctx context.Context, userID pgtype.Text) (FindUserByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindUserByID")
-	row := q.conn.QueryRow(ctx, findUserByIDSQL, userID)
-	var item FindUserByIDRow
-	teamsArray := q.types.newTeamsArray()
-	if err := row.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-		return item, fmt.Errorf("query FindUserByID: %w", err)
+	rows, err := q.conn.Query(ctx, findUserByIDSQL, userID)
+	if err != nil {
+		return FindUserByIDRow{}, fmt.Errorf("query FindUserByID: %w", err)
 	}
-	if err := teamsArray.AssignTo(&item.Teams); err != nil {
-		return item, fmt.Errorf("assign FindUserByID row: %w", err)
-	}
-	return item, nil
-}
 
-// FindUserByIDBatch implements Querier.FindUserByIDBatch.
-func (q *DBQuerier) FindUserByIDBatch(batch genericBatch, userID pgtype.Text) {
-	batch.Queue(findUserByIDSQL, userID)
-}
-
-// FindUserByIDScan implements Querier.FindUserByIDScan.
-func (q *DBQuerier) FindUserByIDScan(results pgx.BatchResults) (FindUserByIDRow, error) {
-	row := results.QueryRow()
-	var item FindUserByIDRow
-	teamsArray := q.types.newTeamsArray()
-	if err := row.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-		return item, fmt.Errorf("scan FindUserByIDBatch row: %w", err)
-	}
-	if err := teamsArray.AssignTo(&item.Teams); err != nil {
-		return item, fmt.Errorf("assign FindUserByID row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindUserByIDRow, error) {
+		var item FindUserByIDRow
+		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findUserByUsernameSQL = `SELECT u.*,
@@ -364,35 +242,24 @@ type FindUserByUsernameRow struct {
 // FindUserByUsername implements Querier.FindUserByUsername.
 func (q *DBQuerier) FindUserByUsername(ctx context.Context, username pgtype.Text) (FindUserByUsernameRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindUserByUsername")
-	row := q.conn.QueryRow(ctx, findUserByUsernameSQL, username)
-	var item FindUserByUsernameRow
-	teamsArray := q.types.newTeamsArray()
-	if err := row.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-		return item, fmt.Errorf("query FindUserByUsername: %w", err)
+	rows, err := q.conn.Query(ctx, findUserByUsernameSQL, username)
+	if err != nil {
+		return FindUserByUsernameRow{}, fmt.Errorf("query FindUserByUsername: %w", err)
 	}
-	if err := teamsArray.AssignTo(&item.Teams); err != nil {
-		return item, fmt.Errorf("assign FindUserByUsername row: %w", err)
-	}
-	return item, nil
-}
 
-// FindUserByUsernameBatch implements Querier.FindUserByUsernameBatch.
-func (q *DBQuerier) FindUserByUsernameBatch(batch genericBatch, username pgtype.Text) {
-	batch.Queue(findUserByUsernameSQL, username)
-}
-
-// FindUserByUsernameScan implements Querier.FindUserByUsernameScan.
-func (q *DBQuerier) FindUserByUsernameScan(results pgx.BatchResults) (FindUserByUsernameRow, error) {
-	row := results.QueryRow()
-	var item FindUserByUsernameRow
-	teamsArray := q.types.newTeamsArray()
-	if err := row.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-		return item, fmt.Errorf("scan FindUserByUsernameBatch row: %w", err)
-	}
-	if err := teamsArray.AssignTo(&item.Teams); err != nil {
-		return item, fmt.Errorf("assign FindUserByUsername row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindUserByUsernameRow, error) {
+		var item FindUserByUsernameRow
+		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findUserByAuthenticationTokenIDSQL = `SELECT u.*,
@@ -419,35 +286,24 @@ type FindUserByAuthenticationTokenIDRow struct {
 // FindUserByAuthenticationTokenID implements Querier.FindUserByAuthenticationTokenID.
 func (q *DBQuerier) FindUserByAuthenticationTokenID(ctx context.Context, tokenID pgtype.Text) (FindUserByAuthenticationTokenIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindUserByAuthenticationTokenID")
-	row := q.conn.QueryRow(ctx, findUserByAuthenticationTokenIDSQL, tokenID)
-	var item FindUserByAuthenticationTokenIDRow
-	teamsArray := q.types.newTeamsArray()
-	if err := row.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-		return item, fmt.Errorf("query FindUserByAuthenticationTokenID: %w", err)
+	rows, err := q.conn.Query(ctx, findUserByAuthenticationTokenIDSQL, tokenID)
+	if err != nil {
+		return FindUserByAuthenticationTokenIDRow{}, fmt.Errorf("query FindUserByAuthenticationTokenID: %w", err)
 	}
-	if err := teamsArray.AssignTo(&item.Teams); err != nil {
-		return item, fmt.Errorf("assign FindUserByAuthenticationTokenID row: %w", err)
-	}
-	return item, nil
-}
 
-// FindUserByAuthenticationTokenIDBatch implements Querier.FindUserByAuthenticationTokenIDBatch.
-func (q *DBQuerier) FindUserByAuthenticationTokenIDBatch(batch genericBatch, tokenID pgtype.Text) {
-	batch.Queue(findUserByAuthenticationTokenIDSQL, tokenID)
-}
-
-// FindUserByAuthenticationTokenIDScan implements Querier.FindUserByAuthenticationTokenIDScan.
-func (q *DBQuerier) FindUserByAuthenticationTokenIDScan(results pgx.BatchResults) (FindUserByAuthenticationTokenIDRow, error) {
-	row := results.QueryRow()
-	var item FindUserByAuthenticationTokenIDRow
-	teamsArray := q.types.newTeamsArray()
-	if err := row.Scan(&item.UserID, &item.Username, &item.CreatedAt, &item.UpdatedAt, &item.SiteAdmin, teamsArray); err != nil {
-		return item, fmt.Errorf("scan FindUserByAuthenticationTokenIDBatch row: %w", err)
-	}
-	if err := teamsArray.AssignTo(&item.Teams); err != nil {
-		return item, fmt.Errorf("assign FindUserByAuthenticationTokenID row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindUserByAuthenticationTokenIDRow, error) {
+		var item FindUserByAuthenticationTokenIDRow
+		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateUserSiteAdminsSQL = `UPDATE users
@@ -463,45 +319,14 @@ func (q *DBQuerier) UpdateUserSiteAdmins(ctx context.Context, usernames []string
 	if err != nil {
 		return nil, fmt.Errorf("query UpdateUserSiteAdmins: %w", err)
 	}
-	defer rows.Close()
-	items := []pgtype.Text{}
-	for rows.Next() {
-		var item pgtype.Text
-		if err := rows.Scan(&item); err != nil {
-			return nil, fmt.Errorf("scan UpdateUserSiteAdmins row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close UpdateUserSiteAdmins rows: %w", err)
-	}
-	return items, err
-}
 
-// UpdateUserSiteAdminsBatch implements Querier.UpdateUserSiteAdminsBatch.
-func (q *DBQuerier) UpdateUserSiteAdminsBatch(batch genericBatch, usernames []string) {
-	batch.Queue(updateUserSiteAdminsSQL, usernames)
-}
-
-// UpdateUserSiteAdminsScan implements Querier.UpdateUserSiteAdminsScan.
-func (q *DBQuerier) UpdateUserSiteAdminsScan(results pgx.BatchResults) ([]pgtype.Text, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query UpdateUserSiteAdminsBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []pgtype.Text{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
-		if err := rows.Scan(&item); err != nil {
-			return nil, fmt.Errorf("scan UpdateUserSiteAdminsBatch row: %w", err)
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close UpdateUserSiteAdminsBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const resetUserSiteAdminsSQL = `UPDATE users
@@ -517,45 +342,14 @@ func (q *DBQuerier) ResetUserSiteAdmins(ctx context.Context) ([]pgtype.Text, err
 	if err != nil {
 		return nil, fmt.Errorf("query ResetUserSiteAdmins: %w", err)
 	}
-	defer rows.Close()
-	items := []pgtype.Text{}
-	for rows.Next() {
-		var item pgtype.Text
-		if err := rows.Scan(&item); err != nil {
-			return nil, fmt.Errorf("scan ResetUserSiteAdmins row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close ResetUserSiteAdmins rows: %w", err)
-	}
-	return items, err
-}
 
-// ResetUserSiteAdminsBatch implements Querier.ResetUserSiteAdminsBatch.
-func (q *DBQuerier) ResetUserSiteAdminsBatch(batch genericBatch) {
-	batch.Queue(resetUserSiteAdminsSQL)
-}
-
-// ResetUserSiteAdminsScan implements Querier.ResetUserSiteAdminsScan.
-func (q *DBQuerier) ResetUserSiteAdminsScan(results pgx.BatchResults) ([]pgtype.Text, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query ResetUserSiteAdminsBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []pgtype.Text{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
-		if err := rows.Scan(&item); err != nil {
-			return nil, fmt.Errorf("scan ResetUserSiteAdminsBatch row: %w", err)
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close ResetUserSiteAdminsBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const deleteUserByIDSQL = `DELETE
@@ -567,27 +361,18 @@ RETURNING user_id
 // DeleteUserByID implements Querier.DeleteUserByID.
 func (q *DBQuerier) DeleteUserByID(ctx context.Context, userID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteUserByID")
-	row := q.conn.QueryRow(ctx, deleteUserByIDSQL, userID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteUserByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteUserByIDSQL, userID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteUserByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteUserByIDBatch implements Querier.DeleteUserByIDBatch.
-func (q *DBQuerier) DeleteUserByIDBatch(batch genericBatch, userID pgtype.Text) {
-	batch.Queue(deleteUserByIDSQL, userID)
-}
-
-// DeleteUserByIDScan implements Querier.DeleteUserByIDScan.
-func (q *DBQuerier) DeleteUserByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteUserByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteUserByUsernameSQL = `DELETE
@@ -599,25 +384,16 @@ RETURNING user_id
 // DeleteUserByUsername implements Querier.DeleteUserByUsername.
 func (q *DBQuerier) DeleteUserByUsername(ctx context.Context, username pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteUserByUsername")
-	row := q.conn.QueryRow(ctx, deleteUserByUsernameSQL, username)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteUserByUsername: %w", err)
+	rows, err := q.conn.Query(ctx, deleteUserByUsernameSQL, username)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteUserByUsername: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteUserByUsernameBatch implements Querier.DeleteUserByUsernameBatch.
-func (q *DBQuerier) DeleteUserByUsernameBatch(batch genericBatch, username pgtype.Text) {
-	batch.Queue(deleteUserByUsernameSQL, username)
-}
-
-// DeleteUserByUsernameScan implements Querier.DeleteUserByUsernameScan.
-func (q *DBQuerier) DeleteUserByUsernameScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteUserByUsernameBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertAgentPoolSQL = `INSERT INTO agent_pools (
     agent_pool_id,
@@ -26,11 +28,11 @@ const insertAgentPoolSQL = `INSERT INTO agent_pools (
 );`
 
 type InsertAgentPoolParams struct {
-	AgentPoolID        pgtype.Text
-	Name               pgtype.Text
-	CreatedAt          pgtype.Timestamptz
-	OrganizationName   pgtype.Text
-	OrganizationScoped pgtype.Bool
+	AgentPoolID        pgtype.Text        `json:"agent_pool_id"`
+	Name               pgtype.Text        `json:"name"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	OrganizationName   pgtype.Text        `json:"organization_name"`
+	OrganizationScoped pgtype.Bool        `json:"organization_scoped"`
 }
 
 // InsertAgentPool implements Querier.InsertAgentPool.
@@ -38,21 +40,7 @@ func (q *DBQuerier) InsertAgentPool(ctx context.Context, params InsertAgentPoolP
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertAgentPool")
 	cmdTag, err := q.conn.Exec(ctx, insertAgentPoolSQL, params.AgentPoolID, params.Name, params.CreatedAt, params.OrganizationName, params.OrganizationScoped)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertAgentPool: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertAgentPoolBatch implements Querier.InsertAgentPoolBatch.
-func (q *DBQuerier) InsertAgentPoolBatch(batch genericBatch, params InsertAgentPoolParams) {
-	batch.Queue(insertAgentPoolSQL, params.AgentPoolID, params.Name, params.CreatedAt, params.OrganizationName, params.OrganizationScoped)
-}
-
-// InsertAgentPoolScan implements Querier.InsertAgentPoolScan.
-func (q *DBQuerier) InsertAgentPoolScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertAgentPoolBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertAgentPool: %w", err)
 	}
 	return cmdTag, err
 }
@@ -89,45 +77,21 @@ func (q *DBQuerier) FindAgentPools(ctx context.Context) ([]FindAgentPoolsRow, er
 	if err != nil {
 		return nil, fmt.Errorf("query FindAgentPools: %w", err)
 	}
-	defer rows.Close()
-	items := []FindAgentPoolsRow{}
-	for rows.Next() {
-		var item FindAgentPoolsRow
-		if err := rows.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped, &item.WorkspaceIds, &item.AllowedWorkspaceIds); err != nil {
-			return nil, fmt.Errorf("scan FindAgentPools row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAgentPools rows: %w", err)
-	}
-	return items, err
-}
 
-// FindAgentPoolsBatch implements Querier.FindAgentPoolsBatch.
-func (q *DBQuerier) FindAgentPoolsBatch(batch genericBatch) {
-	batch.Queue(findAgentPoolsSQL)
-}
-
-// FindAgentPoolsScan implements Querier.FindAgentPoolsScan.
-func (q *DBQuerier) FindAgentPoolsScan(results pgx.BatchResults) ([]FindAgentPoolsRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindAgentPoolsBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindAgentPoolsRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindAgentPoolsRow, error) {
 		var item FindAgentPoolsRow
-		if err := rows.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped, &item.WorkspaceIds, &item.AllowedWorkspaceIds); err != nil {
-			return nil, fmt.Errorf("scan FindAgentPoolsBatch row: %w", err)
+		if err := row.Scan(&item.AgentPoolID, // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName,    // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationScoped,  // 'organization_scoped', 'OrganizationScoped', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.WorkspaceIds,        // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+			&item.AllowedWorkspaceIds, // 'allowed_workspace_ids', 'AllowedWorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAgentPoolsBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findAgentPoolsByOrganizationSQL = `SELECT ap.*,
@@ -158,10 +122,10 @@ ORDER BY ap.created_at DESC
 ;`
 
 type FindAgentPoolsByOrganizationParams struct {
-	OrganizationName     pgtype.Text
-	NameSubstring        pgtype.Text
-	AllowedWorkspaceName pgtype.Text
-	AllowedWorkspaceID   pgtype.Text
+	OrganizationName     pgtype.Text `json:"organization_name"`
+	NameSubstring        pgtype.Text `json:"name_substring"`
+	AllowedWorkspaceName pgtype.Text `json:"allowed_workspace_name"`
+	AllowedWorkspaceID   pgtype.Text `json:"allowed_workspace_id"`
 }
 
 type FindAgentPoolsByOrganizationRow struct {
@@ -181,45 +145,21 @@ func (q *DBQuerier) FindAgentPoolsByOrganization(ctx context.Context, params Fin
 	if err != nil {
 		return nil, fmt.Errorf("query FindAgentPoolsByOrganization: %w", err)
 	}
-	defer rows.Close()
-	items := []FindAgentPoolsByOrganizationRow{}
-	for rows.Next() {
-		var item FindAgentPoolsByOrganizationRow
-		if err := rows.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped, &item.WorkspaceIds, &item.AllowedWorkspaceIds); err != nil {
-			return nil, fmt.Errorf("scan FindAgentPoolsByOrganization row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAgentPoolsByOrganization rows: %w", err)
-	}
-	return items, err
-}
 
-// FindAgentPoolsByOrganizationBatch implements Querier.FindAgentPoolsByOrganizationBatch.
-func (q *DBQuerier) FindAgentPoolsByOrganizationBatch(batch genericBatch, params FindAgentPoolsByOrganizationParams) {
-	batch.Queue(findAgentPoolsByOrganizationSQL, params.OrganizationName, params.NameSubstring, params.AllowedWorkspaceName, params.AllowedWorkspaceID)
-}
-
-// FindAgentPoolsByOrganizationScan implements Querier.FindAgentPoolsByOrganizationScan.
-func (q *DBQuerier) FindAgentPoolsByOrganizationScan(results pgx.BatchResults) ([]FindAgentPoolsByOrganizationRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindAgentPoolsByOrganizationBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindAgentPoolsByOrganizationRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindAgentPoolsByOrganizationRow, error) {
 		var item FindAgentPoolsByOrganizationRow
-		if err := rows.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped, &item.WorkspaceIds, &item.AllowedWorkspaceIds); err != nil {
-			return nil, fmt.Errorf("scan FindAgentPoolsByOrganizationBatch row: %w", err)
+		if err := row.Scan(&item.AgentPoolID, // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName,    // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationScoped,  // 'organization_scoped', 'OrganizationScoped', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.WorkspaceIds,        // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+			&item.AllowedWorkspaceIds, // 'allowed_workspace_ids', 'AllowedWorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAgentPoolsByOrganizationBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findAgentPoolSQL = `SELECT ap.*,
@@ -251,27 +191,25 @@ type FindAgentPoolRow struct {
 // FindAgentPool implements Querier.FindAgentPool.
 func (q *DBQuerier) FindAgentPool(ctx context.Context, poolID pgtype.Text) (FindAgentPoolRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindAgentPool")
-	row := q.conn.QueryRow(ctx, findAgentPoolSQL, poolID)
-	var item FindAgentPoolRow
-	if err := row.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped, &item.WorkspaceIds, &item.AllowedWorkspaceIds); err != nil {
-		return item, fmt.Errorf("query FindAgentPool: %w", err)
+	rows, err := q.conn.Query(ctx, findAgentPoolSQL, poolID)
+	if err != nil {
+		return FindAgentPoolRow{}, fmt.Errorf("query FindAgentPool: %w", err)
 	}
-	return item, nil
-}
 
-// FindAgentPoolBatch implements Querier.FindAgentPoolBatch.
-func (q *DBQuerier) FindAgentPoolBatch(batch genericBatch, poolID pgtype.Text) {
-	batch.Queue(findAgentPoolSQL, poolID)
-}
-
-// FindAgentPoolScan implements Querier.FindAgentPoolScan.
-func (q *DBQuerier) FindAgentPoolScan(results pgx.BatchResults) (FindAgentPoolRow, error) {
-	row := results.QueryRow()
-	var item FindAgentPoolRow
-	if err := row.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped, &item.WorkspaceIds, &item.AllowedWorkspaceIds); err != nil {
-		return item, fmt.Errorf("scan FindAgentPoolBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindAgentPoolRow, error) {
+		var item FindAgentPoolRow
+		if err := row.Scan(&item.AgentPoolID, // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName,    // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationScoped,  // 'organization_scoped', 'OrganizationScoped', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.WorkspaceIds,        // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+			&item.AllowedWorkspaceIds, // 'allowed_workspace_ids', 'AllowedWorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findAgentPoolByAgentTokenIDSQL = `SELECT ap.*,
@@ -304,27 +242,25 @@ type FindAgentPoolByAgentTokenIDRow struct {
 // FindAgentPoolByAgentTokenID implements Querier.FindAgentPoolByAgentTokenID.
 func (q *DBQuerier) FindAgentPoolByAgentTokenID(ctx context.Context, agentTokenID pgtype.Text) (FindAgentPoolByAgentTokenIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindAgentPoolByAgentTokenID")
-	row := q.conn.QueryRow(ctx, findAgentPoolByAgentTokenIDSQL, agentTokenID)
-	var item FindAgentPoolByAgentTokenIDRow
-	if err := row.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped, &item.WorkspaceIds, &item.AllowedWorkspaceIds); err != nil {
-		return item, fmt.Errorf("query FindAgentPoolByAgentTokenID: %w", err)
+	rows, err := q.conn.Query(ctx, findAgentPoolByAgentTokenIDSQL, agentTokenID)
+	if err != nil {
+		return FindAgentPoolByAgentTokenIDRow{}, fmt.Errorf("query FindAgentPoolByAgentTokenID: %w", err)
 	}
-	return item, nil
-}
 
-// FindAgentPoolByAgentTokenIDBatch implements Querier.FindAgentPoolByAgentTokenIDBatch.
-func (q *DBQuerier) FindAgentPoolByAgentTokenIDBatch(batch genericBatch, agentTokenID pgtype.Text) {
-	batch.Queue(findAgentPoolByAgentTokenIDSQL, agentTokenID)
-}
-
-// FindAgentPoolByAgentTokenIDScan implements Querier.FindAgentPoolByAgentTokenIDScan.
-func (q *DBQuerier) FindAgentPoolByAgentTokenIDScan(results pgx.BatchResults) (FindAgentPoolByAgentTokenIDRow, error) {
-	row := results.QueryRow()
-	var item FindAgentPoolByAgentTokenIDRow
-	if err := row.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped, &item.WorkspaceIds, &item.AllowedWorkspaceIds); err != nil {
-		return item, fmt.Errorf("scan FindAgentPoolByAgentTokenIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindAgentPoolByAgentTokenIDRow, error) {
+		var item FindAgentPoolByAgentTokenIDRow
+		if err := row.Scan(&item.AgentPoolID, // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,                // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName,    // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationScoped,  // 'organization_scoped', 'OrganizationScoped', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.WorkspaceIds,        // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
+			&item.AllowedWorkspaceIds, // 'allowed_workspace_ids', 'AllowedWorkspaceIds', '[]string', '', '[]string'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateAgentPoolSQL = `UPDATE agent_pools
@@ -334,9 +270,9 @@ WHERE agent_pool_id = $3
 RETURNING *;`
 
 type UpdateAgentPoolParams struct {
-	Name               pgtype.Text
-	OrganizationScoped pgtype.Bool
-	PoolID             pgtype.Text
+	Name               pgtype.Text `json:"name"`
+	OrganizationScoped pgtype.Bool `json:"organization_scoped"`
+	PoolID             pgtype.Text `json:"pool_id"`
 }
 
 type UpdateAgentPoolRow struct {
@@ -350,27 +286,23 @@ type UpdateAgentPoolRow struct {
 // UpdateAgentPool implements Querier.UpdateAgentPool.
 func (q *DBQuerier) UpdateAgentPool(ctx context.Context, params UpdateAgentPoolParams) (UpdateAgentPoolRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateAgentPool")
-	row := q.conn.QueryRow(ctx, updateAgentPoolSQL, params.Name, params.OrganizationScoped, params.PoolID)
-	var item UpdateAgentPoolRow
-	if err := row.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped); err != nil {
-		return item, fmt.Errorf("query UpdateAgentPool: %w", err)
+	rows, err := q.conn.Query(ctx, updateAgentPoolSQL, params.Name, params.OrganizationScoped, params.PoolID)
+	if err != nil {
+		return UpdateAgentPoolRow{}, fmt.Errorf("query UpdateAgentPool: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateAgentPoolBatch implements Querier.UpdateAgentPoolBatch.
-func (q *DBQuerier) UpdateAgentPoolBatch(batch genericBatch, params UpdateAgentPoolParams) {
-	batch.Queue(updateAgentPoolSQL, params.Name, params.OrganizationScoped, params.PoolID)
-}
-
-// UpdateAgentPoolScan implements Querier.UpdateAgentPoolScan.
-func (q *DBQuerier) UpdateAgentPoolScan(results pgx.BatchResults) (UpdateAgentPoolRow, error) {
-	row := results.QueryRow()
-	var item UpdateAgentPoolRow
-	if err := row.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped); err != nil {
-		return item, fmt.Errorf("scan UpdateAgentPoolBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (UpdateAgentPoolRow, error) {
+		var item UpdateAgentPoolRow
+		if err := row.Scan(&item.AgentPoolID, // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,               // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,          // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName,   // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationScoped, // 'organization_scoped', 'OrganizationScoped', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteAgentPoolSQL = `DELETE
@@ -390,27 +322,23 @@ type DeleteAgentPoolRow struct {
 // DeleteAgentPool implements Querier.DeleteAgentPool.
 func (q *DBQuerier) DeleteAgentPool(ctx context.Context, poolID pgtype.Text) (DeleteAgentPoolRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteAgentPool")
-	row := q.conn.QueryRow(ctx, deleteAgentPoolSQL, poolID)
-	var item DeleteAgentPoolRow
-	if err := row.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped); err != nil {
-		return item, fmt.Errorf("query DeleteAgentPool: %w", err)
+	rows, err := q.conn.Query(ctx, deleteAgentPoolSQL, poolID)
+	if err != nil {
+		return DeleteAgentPoolRow{}, fmt.Errorf("query DeleteAgentPool: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteAgentPoolBatch implements Querier.DeleteAgentPoolBatch.
-func (q *DBQuerier) DeleteAgentPoolBatch(batch genericBatch, poolID pgtype.Text) {
-	batch.Queue(deleteAgentPoolSQL, poolID)
-}
-
-// DeleteAgentPoolScan implements Querier.DeleteAgentPoolScan.
-func (q *DBQuerier) DeleteAgentPoolScan(results pgx.BatchResults) (DeleteAgentPoolRow, error) {
-	row := results.QueryRow()
-	var item DeleteAgentPoolRow
-	if err := row.Scan(&item.AgentPoolID, &item.Name, &item.CreatedAt, &item.OrganizationName, &item.OrganizationScoped); err != nil {
-		return item, fmt.Errorf("scan DeleteAgentPoolBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteAgentPoolRow, error) {
+		var item DeleteAgentPoolRow
+		if err := row.Scan(&item.AgentPoolID, // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,               // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,          // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName,   // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationScoped, // 'organization_scoped', 'OrganizationScoped', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const insertAgentPoolAllowedWorkspaceSQL = `INSERT INTO agent_pool_allowed_workspaces (
@@ -426,21 +354,7 @@ func (q *DBQuerier) InsertAgentPoolAllowedWorkspace(ctx context.Context, poolID 
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertAgentPoolAllowedWorkspace")
 	cmdTag, err := q.conn.Exec(ctx, insertAgentPoolAllowedWorkspaceSQL, poolID, workspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertAgentPoolAllowedWorkspace: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertAgentPoolAllowedWorkspaceBatch implements Querier.InsertAgentPoolAllowedWorkspaceBatch.
-func (q *DBQuerier) InsertAgentPoolAllowedWorkspaceBatch(batch genericBatch, poolID pgtype.Text, workspaceID pgtype.Text) {
-	batch.Queue(insertAgentPoolAllowedWorkspaceSQL, poolID, workspaceID)
-}
-
-// InsertAgentPoolAllowedWorkspaceScan implements Querier.InsertAgentPoolAllowedWorkspaceScan.
-func (q *DBQuerier) InsertAgentPoolAllowedWorkspaceScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertAgentPoolAllowedWorkspaceBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertAgentPoolAllowedWorkspace: %w", err)
 	}
 	return cmdTag, err
 }
@@ -456,21 +370,7 @@ func (q *DBQuerier) DeleteAgentPoolAllowedWorkspace(ctx context.Context, poolID 
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteAgentPoolAllowedWorkspace")
 	cmdTag, err := q.conn.Exec(ctx, deleteAgentPoolAllowedWorkspaceSQL, poolID, workspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query DeleteAgentPoolAllowedWorkspace: %w", err)
-	}
-	return cmdTag, err
-}
-
-// DeleteAgentPoolAllowedWorkspaceBatch implements Querier.DeleteAgentPoolAllowedWorkspaceBatch.
-func (q *DBQuerier) DeleteAgentPoolAllowedWorkspaceBatch(batch genericBatch, poolID pgtype.Text, workspaceID pgtype.Text) {
-	batch.Queue(deleteAgentPoolAllowedWorkspaceSQL, poolID, workspaceID)
-}
-
-// DeleteAgentPoolAllowedWorkspaceScan implements Querier.DeleteAgentPoolAllowedWorkspaceScan.
-func (q *DBQuerier) DeleteAgentPoolAllowedWorkspaceScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec DeleteAgentPoolAllowedWorkspaceBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query DeleteAgentPoolAllowedWorkspace: %w", err)
 	}
 	return cmdTag, err
 }

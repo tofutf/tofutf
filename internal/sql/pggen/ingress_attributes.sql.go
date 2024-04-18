@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertIngressAttributesSQL = `INSERT INTO ingress_attributes (
     branch,
@@ -44,20 +46,20 @@ const insertIngressAttributesSQL = `INSERT INTO ingress_attributes (
 );`
 
 type InsertIngressAttributesParams struct {
-	Branch                 pgtype.Text
-	CommitSHA              pgtype.Text
-	CommitURL              pgtype.Text
-	PullRequestNumber      pgtype.Int4
-	PullRequestURL         pgtype.Text
-	PullRequestTitle       pgtype.Text
-	SenderUsername         pgtype.Text
-	SenderAvatarURL        pgtype.Text
-	SenderHTMLURL          pgtype.Text
-	Identifier             pgtype.Text
-	Tag                    pgtype.Text
-	IsPullRequest          pgtype.Bool
-	OnDefaultBranch        pgtype.Bool
-	ConfigurationVersionID pgtype.Text
+	Branch                 pgtype.Text `json:"branch"`
+	CommitSHA              pgtype.Text `json:"commit_sha"`
+	CommitURL              pgtype.Text `json:"commit_url"`
+	PullRequestNumber      pgtype.Int4 `json:"pull_request_number"`
+	PullRequestURL         pgtype.Text `json:"pull_request_url"`
+	PullRequestTitle       pgtype.Text `json:"pull_request_title"`
+	SenderUsername         pgtype.Text `json:"sender_username"`
+	SenderAvatarURL        pgtype.Text `json:"sender_avatar_url"`
+	SenderHTMLURL          pgtype.Text `json:"sender_html_url"`
+	Identifier             pgtype.Text `json:"identifier"`
+	Tag                    pgtype.Text `json:"tag"`
+	IsPullRequest          pgtype.Bool `json:"is_pull_request"`
+	OnDefaultBranch        pgtype.Bool `json:"on_default_branch"`
+	ConfigurationVersionID pgtype.Text `json:"configuration_version_id"`
 }
 
 // InsertIngressAttributes implements Querier.InsertIngressAttributes.
@@ -65,21 +67,7 @@ func (q *DBQuerier) InsertIngressAttributes(ctx context.Context, params InsertIn
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertIngressAttributes")
 	cmdTag, err := q.conn.Exec(ctx, insertIngressAttributesSQL, params.Branch, params.CommitSHA, params.CommitURL, params.PullRequestNumber, params.PullRequestURL, params.PullRequestTitle, params.SenderUsername, params.SenderAvatarURL, params.SenderHTMLURL, params.Identifier, params.Tag, params.IsPullRequest, params.OnDefaultBranch, params.ConfigurationVersionID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertIngressAttributes: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertIngressAttributesBatch implements Querier.InsertIngressAttributesBatch.
-func (q *DBQuerier) InsertIngressAttributesBatch(batch genericBatch, params InsertIngressAttributesParams) {
-	batch.Queue(insertIngressAttributesSQL, params.Branch, params.CommitSHA, params.CommitURL, params.PullRequestNumber, params.PullRequestURL, params.PullRequestTitle, params.SenderUsername, params.SenderAvatarURL, params.SenderHTMLURL, params.Identifier, params.Tag, params.IsPullRequest, params.OnDefaultBranch, params.ConfigurationVersionID)
-}
-
-// InsertIngressAttributesScan implements Querier.InsertIngressAttributesScan.
-func (q *DBQuerier) InsertIngressAttributesScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertIngressAttributesBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertIngressAttributes: %w", err)
 	}
 	return cmdTag, err
 }

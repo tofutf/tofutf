@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertStateVersionOutputSQL = `INSERT INTO state_version_outputs (
     state_version_output_id,
@@ -28,12 +30,12 @@ const insertStateVersionOutputSQL = `INSERT INTO state_version_outputs (
 );`
 
 type InsertStateVersionOutputParams struct {
-	ID             pgtype.Text
-	Name           pgtype.Text
-	Sensitive      pgtype.Bool
-	Type           pgtype.Text
-	Value          []byte
-	StateVersionID pgtype.Text
+	ID             pgtype.Text `json:"id"`
+	Name           pgtype.Text `json:"name"`
+	Sensitive      pgtype.Bool `json:"sensitive"`
+	Type           pgtype.Text `json:"type"`
+	Value          []byte      `json:"value"`
+	StateVersionID pgtype.Text `json:"state_version_id"`
 }
 
 // InsertStateVersionOutput implements Querier.InsertStateVersionOutput.
@@ -41,21 +43,7 @@ func (q *DBQuerier) InsertStateVersionOutput(ctx context.Context, params InsertS
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertStateVersionOutput")
 	cmdTag, err := q.conn.Exec(ctx, insertStateVersionOutputSQL, params.ID, params.Name, params.Sensitive, params.Type, params.Value, params.StateVersionID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertStateVersionOutput: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertStateVersionOutputBatch implements Querier.InsertStateVersionOutputBatch.
-func (q *DBQuerier) InsertStateVersionOutputBatch(batch genericBatch, params InsertStateVersionOutputParams) {
-	batch.Queue(insertStateVersionOutputSQL, params.ID, params.Name, params.Sensitive, params.Type, params.Value, params.StateVersionID)
-}
-
-// InsertStateVersionOutputScan implements Querier.InsertStateVersionOutputScan.
-func (q *DBQuerier) InsertStateVersionOutputScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertStateVersionOutputBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertStateVersionOutput: %w", err)
 	}
 	return cmdTag, err
 }
@@ -77,25 +65,22 @@ type FindStateVersionOutputByIDRow struct {
 // FindStateVersionOutputByID implements Querier.FindStateVersionOutputByID.
 func (q *DBQuerier) FindStateVersionOutputByID(ctx context.Context, id pgtype.Text) (FindStateVersionOutputByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindStateVersionOutputByID")
-	row := q.conn.QueryRow(ctx, findStateVersionOutputByIDSQL, id)
-	var item FindStateVersionOutputByIDRow
-	if err := row.Scan(&item.StateVersionOutputID, &item.Name, &item.Sensitive, &item.Type, &item.Value, &item.StateVersionID); err != nil {
-		return item, fmt.Errorf("query FindStateVersionOutputByID: %w", err)
+	rows, err := q.conn.Query(ctx, findStateVersionOutputByIDSQL, id)
+	if err != nil {
+		return FindStateVersionOutputByIDRow{}, fmt.Errorf("query FindStateVersionOutputByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindStateVersionOutputByIDBatch implements Querier.FindStateVersionOutputByIDBatch.
-func (q *DBQuerier) FindStateVersionOutputByIDBatch(batch genericBatch, id pgtype.Text) {
-	batch.Queue(findStateVersionOutputByIDSQL, id)
-}
-
-// FindStateVersionOutputByIDScan implements Querier.FindStateVersionOutputByIDScan.
-func (q *DBQuerier) FindStateVersionOutputByIDScan(results pgx.BatchResults) (FindStateVersionOutputByIDRow, error) {
-	row := results.QueryRow()
-	var item FindStateVersionOutputByIDRow
-	if err := row.Scan(&item.StateVersionOutputID, &item.Name, &item.Sensitive, &item.Type, &item.Value, &item.StateVersionID); err != nil {
-		return item, fmt.Errorf("scan FindStateVersionOutputByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionOutputByIDRow, error) {
+		var item FindStateVersionOutputByIDRow
+		if err := row.Scan(&item.StateVersionOutputID, // 'state_version_output_id', 'StateVersionOutputID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Name,           // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Sensitive,      // 'sensitive', 'Sensitive', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
+			&item.Type,           // 'type', 'Type', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Value,          // 'value', 'Value', '[]byte', '', '[]byte'
+			&item.StateVersionID, // 'state_version_id', 'StateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

@@ -64,7 +64,7 @@ vet:
 # Install sql code generator
 .PHONY: install-pggen
 install-pggen:
-	@sh -c "which pggen > /dev/null || go install github.com/leg100/pggen/cmd/pggen@latest"
+	@sh -c "which pggen > /dev/null || go install github.com/robbert229/pggen/cmd/pggen@latest"
 
 .PHONY: install-air
 install-air:
@@ -77,10 +77,11 @@ sql: install-pggen
 		--postgres-connection $(DBSTRING) \
 		--query-glob 'internal/sql/queries/*.sql' \
 		--output-dir ./internal/sql/pggen \
-		--go-type 'text=github.com/jackc/pgtype.Text' \
-		--go-type 'int4=github.com/jackc/pgtype.Int4' \
-		--go-type 'int8=github.com/jackc/pgtype.Int8' \
-		--go-type 'bool=github.com/jackc/pgtype.Bool' \
+		--go-type 'inet=net.IP' \
+		--go-type 'text=github.com/jackc/pgx/v5/pgtype.Text' \
+		--go-type 'int4=github.com/jackc/pgx/v5/pgtype.Int4' \
+		--go-type 'int8=github.com/jackc/pgx/v5/pgtype.Int8' \
+		--go-type 'bool=github.com/jackc/pgx/v5/pgtype.Bool' \
 		--go-type 'bytea=[]byte' \
 		--acronym url \
 		--acronym cli \

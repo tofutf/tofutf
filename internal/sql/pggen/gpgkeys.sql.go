@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertGPGKeySQL = `INSERT INTO registry_gpg_keys (
     id,
@@ -28,12 +30,12 @@ const insertGPGKeySQL = `INSERT INTO registry_gpg_keys (
 );`
 
 type InsertGPGKeyParams struct {
-	ID               pgtype.Text
-	OrganizationName pgtype.Text
-	AsciiArmor       pgtype.Text
-	KeyID            pgtype.Text
-	CreatedAt        pgtype.Timestamptz
-	UpdatedAt        pgtype.Timestamptz
+	ID               pgtype.Text        `json:"id"`
+	OrganizationName pgtype.Text        `json:"organization_name"`
+	AsciiArmor       pgtype.Text        `json:"ascii_armor"`
+	KeyID            pgtype.Text        `json:"key_id"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
 }
 
 // InsertGPGKey implements Querier.InsertGPGKey.
@@ -41,21 +43,7 @@ func (q *DBQuerier) InsertGPGKey(ctx context.Context, params InsertGPGKeyParams)
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertGPGKey")
 	cmdTag, err := q.conn.Exec(ctx, insertGPGKeySQL, params.ID, params.OrganizationName, params.AsciiArmor, params.KeyID, params.CreatedAt, params.UpdatedAt)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertGPGKey: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertGPGKeyBatch implements Querier.InsertGPGKeyBatch.
-func (q *DBQuerier) InsertGPGKeyBatch(batch genericBatch, params InsertGPGKeyParams) {
-	batch.Queue(insertGPGKeySQL, params.ID, params.OrganizationName, params.AsciiArmor, params.KeyID, params.CreatedAt, params.UpdatedAt)
-}
-
-// InsertGPGKeyScan implements Querier.InsertGPGKeyScan.
-func (q *DBQuerier) InsertGPGKeyScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertGPGKeyBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertGPGKey: %w", err)
 	}
 	return cmdTag, err
 }
@@ -67,10 +55,10 @@ WHERE key_id = $3 AND
     organization_name = $4;`
 
 type UpdateGPGKeyParams struct {
-	NewOrganizationName pgtype.Text
-	UpdatedAt           pgtype.Timestamptz
-	KeyID               pgtype.Text
-	OrganizationName    pgtype.Text
+	NewOrganizationName pgtype.Text        `json:"new_organization_name"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	KeyID               pgtype.Text        `json:"key_id"`
+	OrganizationName    pgtype.Text        `json:"organization_name"`
 }
 
 // UpdateGPGKey implements Querier.UpdateGPGKey.
@@ -78,21 +66,7 @@ func (q *DBQuerier) UpdateGPGKey(ctx context.Context, params UpdateGPGKeyParams)
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateGPGKey")
 	cmdTag, err := q.conn.Exec(ctx, updateGPGKeySQL, params.NewOrganizationName, params.UpdatedAt, params.KeyID, params.OrganizationName)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query UpdateGPGKey: %w", err)
-	}
-	return cmdTag, err
-}
-
-// UpdateGPGKeyBatch implements Querier.UpdateGPGKeyBatch.
-func (q *DBQuerier) UpdateGPGKeyBatch(batch genericBatch, params UpdateGPGKeyParams) {
-	batch.Queue(updateGPGKeySQL, params.NewOrganizationName, params.UpdatedAt, params.KeyID, params.OrganizationName)
-}
-
-// UpdateGPGKeyScan implements Querier.UpdateGPGKeyScan.
-func (q *DBQuerier) UpdateGPGKeyScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec UpdateGPGKeyBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query UpdateGPGKey: %w", err)
 	}
 	return cmdTag, err
 }
@@ -106,21 +80,7 @@ func (q *DBQuerier) DeleteGPGKey(ctx context.Context, keyID pgtype.Text, organiz
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteGPGKey")
 	cmdTag, err := q.conn.Exec(ctx, deleteGPGKeySQL, keyID, organizationName)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query DeleteGPGKey: %w", err)
-	}
-	return cmdTag, err
-}
-
-// DeleteGPGKeyBatch implements Querier.DeleteGPGKeyBatch.
-func (q *DBQuerier) DeleteGPGKeyBatch(batch genericBatch, keyID pgtype.Text, organizationName pgtype.Text) {
-	batch.Queue(deleteGPGKeySQL, keyID, organizationName)
-}
-
-// DeleteGPGKeyScan implements Querier.DeleteGPGKeyScan.
-func (q *DBQuerier) DeleteGPGKeyScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec DeleteGPGKeyBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query DeleteGPGKey: %w", err)
 	}
 	return cmdTag, err
 }
@@ -145,45 +105,20 @@ func (q *DBQuerier) ListGPGKeys(ctx context.Context, organizationNames []string)
 	if err != nil {
 		return nil, fmt.Errorf("query ListGPGKeys: %w", err)
 	}
-	defer rows.Close()
-	items := []ListGPGKeysRow{}
-	for rows.Next() {
-		var item ListGPGKeysRow
-		if err := rows.Scan(&item.ID, &item.OrganizationName, &item.AsciiArmor, &item.KeyID, &item.CreatedAt, &item.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("scan ListGPGKeys row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close ListGPGKeys rows: %w", err)
-	}
-	return items, err
-}
 
-// ListGPGKeysBatch implements Querier.ListGPGKeysBatch.
-func (q *DBQuerier) ListGPGKeysBatch(batch genericBatch, organizationNames []string) {
-	batch.Queue(listGPGKeysSQL, organizationNames)
-}
-
-// ListGPGKeysScan implements Querier.ListGPGKeysScan.
-func (q *DBQuerier) ListGPGKeysScan(results pgx.BatchResults) ([]ListGPGKeysRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query ListGPGKeysBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []ListGPGKeysRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (ListGPGKeysRow, error) {
 		var item ListGPGKeysRow
-		if err := rows.Scan(&item.ID, &item.OrganizationName, &item.AsciiArmor, &item.KeyID, &item.CreatedAt, &item.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("scan ListGPGKeysBatch row: %w", err)
+		if err := row.Scan(&item.ID, // 'id', 'ID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AsciiArmor,       // 'ascii_armor', 'AsciiArmor', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.KeyID,            // 'key_id', 'KeyID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,        // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close ListGPGKeysBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const getGPGKeySQL = `SELECT *
@@ -203,25 +138,22 @@ type GetGPGKeyRow struct {
 // GetGPGKey implements Querier.GetGPGKey.
 func (q *DBQuerier) GetGPGKey(ctx context.Context, keyID pgtype.Text, organizationName pgtype.Text) (GetGPGKeyRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "GetGPGKey")
-	row := q.conn.QueryRow(ctx, getGPGKeySQL, keyID, organizationName)
-	var item GetGPGKeyRow
-	if err := row.Scan(&item.ID, &item.OrganizationName, &item.AsciiArmor, &item.KeyID, &item.CreatedAt, &item.UpdatedAt); err != nil {
-		return item, fmt.Errorf("query GetGPGKey: %w", err)
+	rows, err := q.conn.Query(ctx, getGPGKeySQL, keyID, organizationName)
+	if err != nil {
+		return GetGPGKeyRow{}, fmt.Errorf("query GetGPGKey: %w", err)
 	}
-	return item, nil
-}
 
-// GetGPGKeyBatch implements Querier.GetGPGKeyBatch.
-func (q *DBQuerier) GetGPGKeyBatch(batch genericBatch, keyID pgtype.Text, organizationName pgtype.Text) {
-	batch.Queue(getGPGKeySQL, keyID, organizationName)
-}
-
-// GetGPGKeyScan implements Querier.GetGPGKeyScan.
-func (q *DBQuerier) GetGPGKeyScan(results pgx.BatchResults) (GetGPGKeyRow, error) {
-	row := results.QueryRow()
-	var item GetGPGKeyRow
-	if err := row.Scan(&item.ID, &item.OrganizationName, &item.AsciiArmor, &item.KeyID, &item.CreatedAt, &item.UpdatedAt); err != nil {
-		return item, fmt.Errorf("scan GetGPGKeyBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (GetGPGKeyRow, error) {
+		var item GetGPGKeyRow
+		if err := row.Scan(&item.ID, // 'id', 'ID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AsciiArmor,       // 'ascii_armor', 'AsciiArmor', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.KeyID,            // 'key_id', 'KeyID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.UpdatedAt,        // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

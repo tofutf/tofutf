@@ -77,7 +77,10 @@ func TestTx(t *testing.T) {
 		assert.NoError(t, err)
 
 		// this should succeed because it is using the same ctx from the same tx
-		_, err = db.Conn(txCtx).FindOrganizationByID(txCtx, sql.String(org.ID))
+		err = db.Func(txCtx, func(ctx context.Context, q pggen.Querier) error {
+			_, err = q.FindOrganizationByID(ctx, sql.String(org.ID))
+			return err
+		})
 		assert.NoError(t, err)
 
 		err = db.Tx(txCtx, func(ctx context.Context, q pggen.Querier) error {
@@ -88,7 +91,7 @@ func TestTx(t *testing.T) {
 
 			// this should succeed because it is using a child tx via the
 			// context
-			_, err = db.Conn(ctx).FindOrganizationByID(ctx, sql.String(org.ID))
+			_, err = q.FindOrganizationByID(ctx, sql.String(org.ID))
 			assert.NoError(t, err)
 
 			return nil
@@ -96,7 +99,7 @@ func TestTx(t *testing.T) {
 		require.NoError(t, err)
 
 		// this should fail because it is using a different ctx
-		_, err = db.Conn(ctx).FindOrganizationByID(txCtx, sql.String(org.ID))
+		_, err = q.FindOrganizationByID(txCtx, sql.String(org.ID))
 		assert.True(t, sql.NoRowsInResultError(err))
 
 		return nil

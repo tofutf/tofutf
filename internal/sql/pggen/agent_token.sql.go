@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertAgentTokenSQL = `INSERT INTO agent_tokens (
     agent_token_id,
@@ -24,10 +26,10 @@ const insertAgentTokenSQL = `INSERT INTO agent_tokens (
 );`
 
 type InsertAgentTokenParams struct {
-	AgentTokenID pgtype.Text
-	CreatedAt    pgtype.Timestamptz
-	Description  pgtype.Text
-	AgentPoolID  pgtype.Text
+	AgentTokenID pgtype.Text        `json:"agent_token_id"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Description  pgtype.Text        `json:"description"`
+	AgentPoolID  pgtype.Text        `json:"agent_pool_id"`
 }
 
 // InsertAgentToken implements Querier.InsertAgentToken.
@@ -35,21 +37,7 @@ func (q *DBQuerier) InsertAgentToken(ctx context.Context, params InsertAgentToke
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertAgentToken")
 	cmdTag, err := q.conn.Exec(ctx, insertAgentTokenSQL, params.AgentTokenID, params.CreatedAt, params.Description, params.AgentPoolID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertAgentToken: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertAgentTokenBatch implements Querier.InsertAgentTokenBatch.
-func (q *DBQuerier) InsertAgentTokenBatch(batch genericBatch, params InsertAgentTokenParams) {
-	batch.Queue(insertAgentTokenSQL, params.AgentTokenID, params.CreatedAt, params.Description, params.AgentPoolID)
-}
-
-// InsertAgentTokenScan implements Querier.InsertAgentTokenScan.
-func (q *DBQuerier) InsertAgentTokenScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertAgentTokenBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertAgentToken: %w", err)
 	}
 	return cmdTag, err
 }
@@ -69,27 +57,22 @@ type FindAgentTokenByIDRow struct {
 // FindAgentTokenByID implements Querier.FindAgentTokenByID.
 func (q *DBQuerier) FindAgentTokenByID(ctx context.Context, agentTokenID pgtype.Text) (FindAgentTokenByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindAgentTokenByID")
-	row := q.conn.QueryRow(ctx, findAgentTokenByIDSQL, agentTokenID)
-	var item FindAgentTokenByIDRow
-	if err := row.Scan(&item.AgentTokenID, &item.CreatedAt, &item.Description, &item.AgentPoolID); err != nil {
-		return item, fmt.Errorf("query FindAgentTokenByID: %w", err)
+	rows, err := q.conn.Query(ctx, findAgentTokenByIDSQL, agentTokenID)
+	if err != nil {
+		return FindAgentTokenByIDRow{}, fmt.Errorf("query FindAgentTokenByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindAgentTokenByIDBatch implements Querier.FindAgentTokenByIDBatch.
-func (q *DBQuerier) FindAgentTokenByIDBatch(batch genericBatch, agentTokenID pgtype.Text) {
-	batch.Queue(findAgentTokenByIDSQL, agentTokenID)
-}
-
-// FindAgentTokenByIDScan implements Querier.FindAgentTokenByIDScan.
-func (q *DBQuerier) FindAgentTokenByIDScan(results pgx.BatchResults) (FindAgentTokenByIDRow, error) {
-	row := results.QueryRow()
-	var item FindAgentTokenByIDRow
-	if err := row.Scan(&item.AgentTokenID, &item.CreatedAt, &item.Description, &item.AgentPoolID); err != nil {
-		return item, fmt.Errorf("scan FindAgentTokenByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindAgentTokenByIDRow, error) {
+		var item FindAgentTokenByIDRow
+		if err := row.Scan(&item.AgentTokenID, // 'agent_token_id', 'AgentTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,   // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Description, // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AgentPoolID, // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findAgentTokensByAgentPoolIDSQL = `SELECT *
@@ -112,45 +95,18 @@ func (q *DBQuerier) FindAgentTokensByAgentPoolID(ctx context.Context, agentPoolI
 	if err != nil {
 		return nil, fmt.Errorf("query FindAgentTokensByAgentPoolID: %w", err)
 	}
-	defer rows.Close()
-	items := []FindAgentTokensByAgentPoolIDRow{}
-	for rows.Next() {
-		var item FindAgentTokensByAgentPoolIDRow
-		if err := rows.Scan(&item.AgentTokenID, &item.CreatedAt, &item.Description, &item.AgentPoolID); err != nil {
-			return nil, fmt.Errorf("scan FindAgentTokensByAgentPoolID row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAgentTokensByAgentPoolID rows: %w", err)
-	}
-	return items, err
-}
 
-// FindAgentTokensByAgentPoolIDBatch implements Querier.FindAgentTokensByAgentPoolIDBatch.
-func (q *DBQuerier) FindAgentTokensByAgentPoolIDBatch(batch genericBatch, agentPoolID pgtype.Text) {
-	batch.Queue(findAgentTokensByAgentPoolIDSQL, agentPoolID)
-}
-
-// FindAgentTokensByAgentPoolIDScan implements Querier.FindAgentTokensByAgentPoolIDScan.
-func (q *DBQuerier) FindAgentTokensByAgentPoolIDScan(results pgx.BatchResults) ([]FindAgentTokensByAgentPoolIDRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindAgentTokensByAgentPoolIDBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindAgentTokensByAgentPoolIDRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindAgentTokensByAgentPoolIDRow, error) {
 		var item FindAgentTokensByAgentPoolIDRow
-		if err := rows.Scan(&item.AgentTokenID, &item.CreatedAt, &item.Description, &item.AgentPoolID); err != nil {
-			return nil, fmt.Errorf("scan FindAgentTokensByAgentPoolIDBatch row: %w", err)
+		if err := row.Scan(&item.AgentTokenID, // 'agent_token_id', 'AgentTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,   // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Description, // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.AgentPoolID, // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindAgentTokensByAgentPoolIDBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const deleteAgentTokenByIDSQL = `DELETE
@@ -162,25 +118,16 @@ RETURNING agent_token_id
 // DeleteAgentTokenByID implements Querier.DeleteAgentTokenByID.
 func (q *DBQuerier) DeleteAgentTokenByID(ctx context.Context, agentTokenID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteAgentTokenByID")
-	row := q.conn.QueryRow(ctx, deleteAgentTokenByIDSQL, agentTokenID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteAgentTokenByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteAgentTokenByIDSQL, agentTokenID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteAgentTokenByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteAgentTokenByIDBatch implements Querier.DeleteAgentTokenByIDBatch.
-func (q *DBQuerier) DeleteAgentTokenByIDBatch(batch genericBatch, agentTokenID pgtype.Text) {
-	batch.Queue(deleteAgentTokenByIDSQL, agentTokenID)
-}
-
-// DeleteAgentTokenByIDScan implements Querier.DeleteAgentTokenByIDScan.
-func (q *DBQuerier) DeleteAgentTokenByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteAgentTokenByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

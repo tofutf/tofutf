@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertPhaseStatusTimestampSQL = `INSERT INTO phase_status_timestamps (
     run_id,
@@ -24,10 +26,10 @@ const insertPhaseStatusTimestampSQL = `INSERT INTO phase_status_timestamps (
 );`
 
 type InsertPhaseStatusTimestampParams struct {
-	RunID     pgtype.Text
-	Phase     pgtype.Text
-	Status    pgtype.Text
-	Timestamp pgtype.Timestamptz
+	RunID     pgtype.Text        `json:"run_id"`
+	Phase     pgtype.Text        `json:"phase"`
+	Status    pgtype.Text        `json:"status"`
+	Timestamp pgtype.Timestamptz `json:"timestamp"`
 }
 
 // InsertPhaseStatusTimestamp implements Querier.InsertPhaseStatusTimestamp.
@@ -35,21 +37,7 @@ func (q *DBQuerier) InsertPhaseStatusTimestamp(ctx context.Context, params Inser
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertPhaseStatusTimestamp")
 	cmdTag, err := q.conn.Exec(ctx, insertPhaseStatusTimestampSQL, params.RunID, params.Phase, params.Status, params.Timestamp)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertPhaseStatusTimestamp: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertPhaseStatusTimestampBatch implements Querier.InsertPhaseStatusTimestampBatch.
-func (q *DBQuerier) InsertPhaseStatusTimestampBatch(batch genericBatch, params InsertPhaseStatusTimestampParams) {
-	batch.Queue(insertPhaseStatusTimestampSQL, params.RunID, params.Phase, params.Status, params.Timestamp)
-}
-
-// InsertPhaseStatusTimestampScan implements Querier.InsertPhaseStatusTimestampScan.
-func (q *DBQuerier) InsertPhaseStatusTimestampScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertPhaseStatusTimestampBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertPhaseStatusTimestamp: %w", err)
 	}
 	return cmdTag, err
 }
@@ -69,36 +57,27 @@ RETURNING chunk_id
 ;`
 
 type InsertLogChunkParams struct {
-	RunID  pgtype.Text
-	Phase  pgtype.Text
-	Chunk  []byte
-	Offset pgtype.Int4
+	RunID  pgtype.Text `json:"run_id"`
+	Phase  pgtype.Text `json:"phase"`
+	Chunk  []byte      `json:"chunk"`
+	Offset pgtype.Int4 `json:"offset"`
 }
 
 // InsertLogChunk implements Querier.InsertLogChunk.
 func (q *DBQuerier) InsertLogChunk(ctx context.Context, params InsertLogChunkParams) (pgtype.Int4, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertLogChunk")
-	row := q.conn.QueryRow(ctx, insertLogChunkSQL, params.RunID, params.Phase, params.Chunk, params.Offset)
-	var item pgtype.Int4
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query InsertLogChunk: %w", err)
+	rows, err := q.conn.Query(ctx, insertLogChunkSQL, params.RunID, params.Phase, params.Chunk, params.Offset)
+	if err != nil {
+		return pgtype.Int4{}, fmt.Errorf("query InsertLogChunk: %w", err)
 	}
-	return item, nil
-}
 
-// InsertLogChunkBatch implements Querier.InsertLogChunkBatch.
-func (q *DBQuerier) InsertLogChunkBatch(batch genericBatch, params InsertLogChunkParams) {
-	batch.Queue(insertLogChunkSQL, params.RunID, params.Phase, params.Chunk, params.Offset)
-}
-
-// InsertLogChunkScan implements Querier.InsertLogChunkScan.
-func (q *DBQuerier) InsertLogChunkScan(results pgx.BatchResults) (pgtype.Int4, error) {
-	row := results.QueryRow()
-	var item pgtype.Int4
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan InsertLogChunkBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int4, error) {
+		var item pgtype.Int4
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findLogsSQL = `SELECT
@@ -116,27 +95,18 @@ GROUP BY run_id, phase
 // FindLogs implements Querier.FindLogs.
 func (q *DBQuerier) FindLogs(ctx context.Context, runID pgtype.Text, phase pgtype.Text) ([]byte, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindLogs")
-	row := q.conn.QueryRow(ctx, findLogsSQL, runID, phase)
-	item := []byte{}
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query FindLogs: %w", err)
+	rows, err := q.conn.Query(ctx, findLogsSQL, runID, phase)
+	if err != nil {
+		return nil, fmt.Errorf("query FindLogs: %w", err)
 	}
-	return item, nil
-}
 
-// FindLogsBatch implements Querier.FindLogsBatch.
-func (q *DBQuerier) FindLogsBatch(batch genericBatch, runID pgtype.Text, phase pgtype.Text) {
-	batch.Queue(findLogsSQL, runID, phase)
-}
-
-// FindLogsScan implements Querier.FindLogsScan.
-func (q *DBQuerier) FindLogsScan(results pgx.BatchResults) ([]byte, error) {
-	row := results.QueryRow()
-	item := []byte{}
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan FindLogsBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+		var item []byte
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findLogChunkByIDSQL = `SELECT
@@ -160,25 +130,21 @@ type FindLogChunkByIDRow struct {
 // FindLogChunkByID implements Querier.FindLogChunkByID.
 func (q *DBQuerier) FindLogChunkByID(ctx context.Context, chunkID pgtype.Int4) (FindLogChunkByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindLogChunkByID")
-	row := q.conn.QueryRow(ctx, findLogChunkByIDSQL, chunkID)
-	var item FindLogChunkByIDRow
-	if err := row.Scan(&item.ChunkID, &item.RunID, &item.Phase, &item.Chunk, &item.Offset); err != nil {
-		return item, fmt.Errorf("query FindLogChunkByID: %w", err)
+	rows, err := q.conn.Query(ctx, findLogChunkByIDSQL, chunkID)
+	if err != nil {
+		return FindLogChunkByIDRow{}, fmt.Errorf("query FindLogChunkByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindLogChunkByIDBatch implements Querier.FindLogChunkByIDBatch.
-func (q *DBQuerier) FindLogChunkByIDBatch(batch genericBatch, chunkID pgtype.Int4) {
-	batch.Queue(findLogChunkByIDSQL, chunkID)
-}
-
-// FindLogChunkByIDScan implements Querier.FindLogChunkByIDScan.
-func (q *DBQuerier) FindLogChunkByIDScan(results pgx.BatchResults) (FindLogChunkByIDRow, error) {
-	row := results.QueryRow()
-	var item FindLogChunkByIDRow
-	if err := row.Scan(&item.ChunkID, &item.RunID, &item.Phase, &item.Chunk, &item.Offset); err != nil {
-		return item, fmt.Errorf("scan FindLogChunkByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindLogChunkByIDRow, error) {
+		var item FindLogChunkByIDRow
+		if err := row.Scan(&item.ChunkID, // 'chunk_id', 'ChunkID', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.RunID,  // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Phase,  // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Chunk,  // 'chunk', 'Chunk', '[]byte', '', '[]byte'
+			&item.Offset, // 'offset', 'Offset', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

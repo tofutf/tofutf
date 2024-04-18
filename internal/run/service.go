@@ -67,7 +67,7 @@ type (
 		Logger               *slog.Logger
 
 		internal.Cache
-		*sql.DB
+		*sql.Pool
 		*tfeapi.Responder
 		*surl.Signer
 		html.Renderer
@@ -76,7 +76,7 @@ type (
 )
 
 func NewService(opts Options) *Service {
-	db := &pgdb{opts.DB}
+	db := &pgdb{opts.Pool}
 	svc := Service{
 		logger:              opts.Logger,
 		workspaces:          opts.WorkspaceService,
@@ -590,16 +590,7 @@ func (s *Service) createApplyReport(ctx context.Context, runID string) (Report, 
 }
 
 func (s *Service) getLogs(ctx context.Context, runID string, phase internal.PhaseType) ([]byte, error) {
-	data, err := s.db.Conn(ctx).FindLogs(ctx, sql.String(runID), sql.String(string(phase)))
-	if err != nil {
-		// Don't consider no rows an error because logs may not have been
-		// uploaded yet.
-		if sql.NoRowsInResultError(err) {
-			return nil, nil
-		}
-		return nil, sql.Error(err)
-	}
-	return data, nil
+	return s.db.findLogs(ctx, runID, phase)
 }
 
 func (s *Service) autoQueueRun(ctx context.Context, ws *workspace.Workspace) error {

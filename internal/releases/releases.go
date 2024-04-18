@@ -28,7 +28,7 @@ type (
 	}
 
 	Options struct {
-		*sql.DB
+		*sql.Pool
 
 		Logger          *slog.Logger
 		TerraformBinDir string // destination directory for terraform binaries
@@ -38,7 +38,7 @@ type (
 func NewService(opts Options) *Service {
 	svc := &Service{
 		logger:        opts.Logger,
-		db:            &db{opts.DB},
+		db:            &db{opts.Pool},
 		latestChecker: latestChecker{latestEndpoint},
 		downloader:    NewDownloader(opts.TerraformBinDir),
 	}

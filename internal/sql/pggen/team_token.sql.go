@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertTeamTokenSQL = `INSERT INTO team_tokens (
     team_token_id,
@@ -27,10 +29,10 @@ const insertTeamTokenSQL = `INSERT INTO team_tokens (
       expiry        = $4;`
 
 type InsertTeamTokenParams struct {
-	TeamTokenID pgtype.Text
-	CreatedAt   pgtype.Timestamptz
-	TeamID      pgtype.Text
-	Expiry      pgtype.Timestamptz
+	TeamTokenID pgtype.Text        `json:"team_token_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	TeamID      pgtype.Text        `json:"team_id"`
+	Expiry      pgtype.Timestamptz `json:"expiry"`
 }
 
 // InsertTeamToken implements Querier.InsertTeamToken.
@@ -38,21 +40,7 @@ func (q *DBQuerier) InsertTeamToken(ctx context.Context, params InsertTeamTokenP
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertTeamToken")
 	cmdTag, err := q.conn.Exec(ctx, insertTeamTokenSQL, params.TeamTokenID, params.CreatedAt, params.TeamID, params.Expiry)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertTeamToken: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertTeamTokenBatch implements Querier.InsertTeamTokenBatch.
-func (q *DBQuerier) InsertTeamTokenBatch(batch genericBatch, params InsertTeamTokenParams) {
-	batch.Queue(insertTeamTokenSQL, params.TeamTokenID, params.CreatedAt, params.TeamID, params.Expiry)
-}
-
-// InsertTeamTokenScan implements Querier.InsertTeamTokenScan.
-func (q *DBQuerier) InsertTeamTokenScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertTeamTokenBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertTeamToken: %w", err)
 	}
 	return cmdTag, err
 }
@@ -77,45 +65,19 @@ func (q *DBQuerier) FindTeamTokensByID(ctx context.Context, teamID pgtype.Text) 
 	if err != nil {
 		return nil, fmt.Errorf("query FindTeamTokensByID: %w", err)
 	}
-	defer rows.Close()
-	items := []FindTeamTokensByIDRow{}
-	for rows.Next() {
-		var item FindTeamTokensByIDRow
-		if err := rows.Scan(&item.TeamTokenID, &item.Description, &item.CreatedAt, &item.TeamID, &item.Expiry); err != nil {
-			return nil, fmt.Errorf("scan FindTeamTokensByID row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindTeamTokensByID rows: %w", err)
-	}
-	return items, err
-}
 
-// FindTeamTokensByIDBatch implements Querier.FindTeamTokensByIDBatch.
-func (q *DBQuerier) FindTeamTokensByIDBatch(batch genericBatch, teamID pgtype.Text) {
-	batch.Queue(findTeamTokensByIDSQL, teamID)
-}
-
-// FindTeamTokensByIDScan implements Querier.FindTeamTokensByIDScan.
-func (q *DBQuerier) FindTeamTokensByIDScan(results pgx.BatchResults) ([]FindTeamTokensByIDRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindTeamTokensByIDBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindTeamTokensByIDRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindTeamTokensByIDRow, error) {
 		var item FindTeamTokensByIDRow
-		if err := rows.Scan(&item.TeamTokenID, &item.Description, &item.CreatedAt, &item.TeamID, &item.Expiry); err != nil {
-			return nil, fmt.Errorf("scan FindTeamTokensByIDBatch row: %w", err)
+		if err := row.Scan(&item.TeamTokenID, // 'team_token_id', 'TeamTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Description, // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,   // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.TeamID,      // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Expiry,      // 'expiry', 'Expiry', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindTeamTokensByIDBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const deleteTeamTokenByIDSQL = `DELETE
@@ -127,25 +89,16 @@ RETURNING team_token_id
 // DeleteTeamTokenByID implements Querier.DeleteTeamTokenByID.
 func (q *DBQuerier) DeleteTeamTokenByID(ctx context.Context, teamID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteTeamTokenByID")
-	row := q.conn.QueryRow(ctx, deleteTeamTokenByIDSQL, teamID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteTeamTokenByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteTeamTokenByIDSQL, teamID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteTeamTokenByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteTeamTokenByIDBatch implements Querier.DeleteTeamTokenByIDBatch.
-func (q *DBQuerier) DeleteTeamTokenByIDBatch(batch genericBatch, teamID pgtype.Text) {
-	batch.Queue(deleteTeamTokenByIDSQL, teamID)
-}
-
-// DeleteTeamTokenByIDScan implements Querier.DeleteTeamTokenByIDScan.
-func (q *DBQuerier) DeleteTeamTokenByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteTeamTokenByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertApplySQL = `INSERT INTO applies (
     run_id,
@@ -24,21 +26,7 @@ func (q *DBQuerier) InsertApply(ctx context.Context, runID pgtype.Text, status p
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertApply")
 	cmdTag, err := q.conn.Exec(ctx, insertApplySQL, runID, status)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertApply: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertApplyBatch implements Querier.InsertApplyBatch.
-func (q *DBQuerier) InsertApplyBatch(batch genericBatch, runID pgtype.Text, status pgtype.Text) {
-	batch.Queue(insertApplySQL, runID, status)
-}
-
-// InsertApplyScan implements Querier.InsertApplyScan.
-func (q *DBQuerier) InsertApplyScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertApplyBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertApply: %w", err)
 	}
 	return cmdTag, err
 }
@@ -54,36 +42,27 @@ RETURNING run_id
 ;`
 
 type UpdateAppliedChangesByIDParams struct {
-	Additions    pgtype.Int4
-	Changes      pgtype.Int4
-	Destructions pgtype.Int4
-	RunID        pgtype.Text
+	Additions    pgtype.Int4 `json:"additions"`
+	Changes      pgtype.Int4 `json:"changes"`
+	Destructions pgtype.Int4 `json:"destructions"`
+	RunID        pgtype.Text `json:"run_id"`
 }
 
 // UpdateAppliedChangesByID implements Querier.UpdateAppliedChangesByID.
 func (q *DBQuerier) UpdateAppliedChangesByID(ctx context.Context, params UpdateAppliedChangesByIDParams) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateAppliedChangesByID")
-	row := q.conn.QueryRow(ctx, updateAppliedChangesByIDSQL, params.Additions, params.Changes, params.Destructions, params.RunID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query UpdateAppliedChangesByID: %w", err)
+	rows, err := q.conn.Query(ctx, updateAppliedChangesByIDSQL, params.Additions, params.Changes, params.Destructions, params.RunID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query UpdateAppliedChangesByID: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateAppliedChangesByIDBatch implements Querier.UpdateAppliedChangesByIDBatch.
-func (q *DBQuerier) UpdateAppliedChangesByIDBatch(batch genericBatch, params UpdateAppliedChangesByIDParams) {
-	batch.Queue(updateAppliedChangesByIDSQL, params.Additions, params.Changes, params.Destructions, params.RunID)
-}
-
-// UpdateAppliedChangesByIDScan implements Querier.UpdateAppliedChangesByIDScan.
-func (q *DBQuerier) UpdateAppliedChangesByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan UpdateAppliedChangesByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const updateApplyStatusByIDSQL = `UPDATE applies
@@ -95,25 +74,16 @@ RETURNING run_id
 // UpdateApplyStatusByID implements Querier.UpdateApplyStatusByID.
 func (q *DBQuerier) UpdateApplyStatusByID(ctx context.Context, status pgtype.Text, runID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateApplyStatusByID")
-	row := q.conn.QueryRow(ctx, updateApplyStatusByIDSQL, status, runID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query UpdateApplyStatusByID: %w", err)
+	rows, err := q.conn.Query(ctx, updateApplyStatusByIDSQL, status, runID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query UpdateApplyStatusByID: %w", err)
 	}
-	return item, nil
-}
 
-// UpdateApplyStatusByIDBatch implements Querier.UpdateApplyStatusByIDBatch.
-func (q *DBQuerier) UpdateApplyStatusByIDBatch(batch genericBatch, status pgtype.Text, runID pgtype.Text) {
-	batch.Queue(updateApplyStatusByIDSQL, status, runID)
-}
-
-// UpdateApplyStatusByIDScan implements Querier.UpdateApplyStatusByIDScan.
-func (q *DBQuerier) UpdateApplyStatusByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan UpdateApplyStatusByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

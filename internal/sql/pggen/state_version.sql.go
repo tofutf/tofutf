@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertStateVersionSQL = `INSERT INTO state_versions (
     state_version_id,
@@ -28,12 +30,12 @@ const insertStateVersionSQL = `INSERT INTO state_versions (
 );`
 
 type InsertStateVersionParams struct {
-	ID          pgtype.Text
-	CreatedAt   pgtype.Timestamptz
-	Serial      pgtype.Int4
-	State       []byte
-	Status      pgtype.Text
-	WorkspaceID pgtype.Text
+	ID          pgtype.Text        `json:"id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Serial      pgtype.Int4        `json:"serial"`
+	State       []byte             `json:"state"`
+	Status      pgtype.Text        `json:"status"`
+	WorkspaceID pgtype.Text        `json:"workspace_id"`
 }
 
 // InsertStateVersion implements Querier.InsertStateVersion.
@@ -41,21 +43,7 @@ func (q *DBQuerier) InsertStateVersion(ctx context.Context, params InsertStateVe
 	ctx = context.WithValue(ctx, "pggen_query_name", "InsertStateVersion")
 	cmdTag, err := q.conn.Exec(ctx, insertStateVersionSQL, params.ID, params.CreatedAt, params.Serial, params.State, params.Status, params.WorkspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query InsertStateVersion: %w", err)
-	}
-	return cmdTag, err
-}
-
-// InsertStateVersionBatch implements Querier.InsertStateVersionBatch.
-func (q *DBQuerier) InsertStateVersionBatch(batch genericBatch, params InsertStateVersionParams) {
-	batch.Queue(insertStateVersionSQL, params.ID, params.CreatedAt, params.Serial, params.State, params.Status, params.WorkspaceID)
-}
-
-// InsertStateVersionScan implements Querier.InsertStateVersionScan.
-func (q *DBQuerier) InsertStateVersionScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec InsertStateVersionBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query InsertStateVersion: %w", err)
 	}
 	return cmdTag, err
 }
@@ -69,21 +57,7 @@ func (q *DBQuerier) UpdateState(ctx context.Context, state []byte, stateVersionI
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpdateState")
 	cmdTag, err := q.conn.Exec(ctx, updateStateSQL, state, stateVersionID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query UpdateState: %w", err)
-	}
-	return cmdTag, err
-}
-
-// UpdateStateBatch implements Querier.UpdateStateBatch.
-func (q *DBQuerier) UpdateStateBatch(batch genericBatch, state []byte, stateVersionID pgtype.Text) {
-	batch.Queue(updateStateSQL, state, stateVersionID)
-}
-
-// UpdateStateScan implements Querier.UpdateStateScan.
-func (q *DBQuerier) UpdateStateScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec UpdateStateBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query UpdateState: %w", err)
 	}
 	return cmdTag, err
 }
@@ -98,21 +72,7 @@ func (q *DBQuerier) DiscardPendingStateVersionsByWorkspaceID(ctx context.Context
 	ctx = context.WithValue(ctx, "pggen_query_name", "DiscardPendingStateVersionsByWorkspaceID")
 	cmdTag, err := q.conn.Exec(ctx, discardPendingStateVersionsByWorkspaceIDSQL, workspaceID)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query DiscardPendingStateVersionsByWorkspaceID: %w", err)
-	}
-	return cmdTag, err
-}
-
-// DiscardPendingStateVersionsByWorkspaceIDBatch implements Querier.DiscardPendingStateVersionsByWorkspaceIDBatch.
-func (q *DBQuerier) DiscardPendingStateVersionsByWorkspaceIDBatch(batch genericBatch, workspaceID pgtype.Text) {
-	batch.Queue(discardPendingStateVersionsByWorkspaceIDSQL, workspaceID)
-}
-
-// DiscardPendingStateVersionsByWorkspaceIDScan implements Querier.DiscardPendingStateVersionsByWorkspaceIDScan.
-func (q *DBQuerier) DiscardPendingStateVersionsByWorkspaceIDScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec DiscardPendingStateVersionsByWorkspaceIDBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query DiscardPendingStateVersionsByWorkspaceID: %w", err)
 	}
 	return cmdTag, err
 }
@@ -131,9 +91,9 @@ OFFSET $3
 ;`
 
 type FindStateVersionsByWorkspaceIDParams struct {
-	WorkspaceID pgtype.Text
-	Limit       pgtype.Int8
-	Offset      pgtype.Int8
+	WorkspaceID pgtype.Text `json:"workspace_id"`
+	Limit       pgtype.Int8 `json:"limit"`
+	Offset      pgtype.Int8 `json:"offset"`
 }
 
 type FindStateVersionsByWorkspaceIDRow struct {
@@ -153,53 +113,21 @@ func (q *DBQuerier) FindStateVersionsByWorkspaceID(ctx context.Context, params F
 	if err != nil {
 		return nil, fmt.Errorf("query FindStateVersionsByWorkspaceID: %w", err)
 	}
-	defer rows.Close()
-	items := []FindStateVersionsByWorkspaceIDRow{}
-	stateVersionOutputsArray := q.types.newStateVersionOutputsArray()
-	for rows.Next() {
-		var item FindStateVersionsByWorkspaceIDRow
-		if err := rows.Scan(&item.StateVersionID, &item.CreatedAt, &item.Serial, &item.State, &item.WorkspaceID, &item.Status, stateVersionOutputsArray); err != nil {
-			return nil, fmt.Errorf("scan FindStateVersionsByWorkspaceID row: %w", err)
-		}
-		if err := stateVersionOutputsArray.AssignTo(&item.StateVersionOutputs); err != nil {
-			return nil, fmt.Errorf("assign FindStateVersionsByWorkspaceID row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindStateVersionsByWorkspaceID rows: %w", err)
-	}
-	return items, err
-}
 
-// FindStateVersionsByWorkspaceIDBatch implements Querier.FindStateVersionsByWorkspaceIDBatch.
-func (q *DBQuerier) FindStateVersionsByWorkspaceIDBatch(batch genericBatch, params FindStateVersionsByWorkspaceIDParams) {
-	batch.Queue(findStateVersionsByWorkspaceIDSQL, params.WorkspaceID, params.Limit, params.Offset)
-}
-
-// FindStateVersionsByWorkspaceIDScan implements Querier.FindStateVersionsByWorkspaceIDScan.
-func (q *DBQuerier) FindStateVersionsByWorkspaceIDScan(results pgx.BatchResults) ([]FindStateVersionsByWorkspaceIDRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindStateVersionsByWorkspaceIDBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindStateVersionsByWorkspaceIDRow{}
-	stateVersionOutputsArray := q.types.newStateVersionOutputsArray()
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindStateVersionsByWorkspaceIDRow, error) {
 		var item FindStateVersionsByWorkspaceIDRow
-		if err := rows.Scan(&item.StateVersionID, &item.CreatedAt, &item.Serial, &item.State, &item.WorkspaceID, &item.Status, stateVersionOutputsArray); err != nil {
-			return nil, fmt.Errorf("scan FindStateVersionsByWorkspaceIDBatch row: %w", err)
+		if err := row.Scan(&item.StateVersionID, // 'state_version_id', 'StateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Serial,              // 'serial', 'Serial', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.State,               // 'state', 'State', '[]byte', '', '[]byte'
+			&item.WorkspaceID,         // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,              // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]StateVersionOutputs', 'github.com/tofutf/tofutf/internal/sql/queries', '[]StateVersionOutputs'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		if err := stateVersionOutputsArray.AssignTo(&item.StateVersionOutputs); err != nil {
-			return nil, fmt.Errorf("assign FindStateVersionsByWorkspaceID row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindStateVersionsByWorkspaceIDBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const countStateVersionsByWorkspaceIDSQL = `SELECT count(*)
@@ -211,27 +139,18 @@ AND status = 'finalized'
 // CountStateVersionsByWorkspaceID implements Querier.CountStateVersionsByWorkspaceID.
 func (q *DBQuerier) CountStateVersionsByWorkspaceID(ctx context.Context, workspaceID pgtype.Text) (pgtype.Int8, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "CountStateVersionsByWorkspaceID")
-	row := q.conn.QueryRow(ctx, countStateVersionsByWorkspaceIDSQL, workspaceID)
-	var item pgtype.Int8
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query CountStateVersionsByWorkspaceID: %w", err)
+	rows, err := q.conn.Query(ctx, countStateVersionsByWorkspaceIDSQL, workspaceID)
+	if err != nil {
+		return pgtype.Int8{}, fmt.Errorf("query CountStateVersionsByWorkspaceID: %w", err)
 	}
-	return item, nil
-}
 
-// CountStateVersionsByWorkspaceIDBatch implements Querier.CountStateVersionsByWorkspaceIDBatch.
-func (q *DBQuerier) CountStateVersionsByWorkspaceIDBatch(batch genericBatch, workspaceID pgtype.Text) {
-	batch.Queue(countStateVersionsByWorkspaceIDSQL, workspaceID)
-}
-
-// CountStateVersionsByWorkspaceIDScan implements Querier.CountStateVersionsByWorkspaceIDScan.
-func (q *DBQuerier) CountStateVersionsByWorkspaceIDScan(results pgx.BatchResults) (pgtype.Int8, error) {
-	row := results.QueryRow()
-	var item pgtype.Int8
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan CountStateVersionsByWorkspaceIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+		var item pgtype.Int8
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findStateVersionByIDSQL = `SELECT
@@ -256,35 +175,25 @@ type FindStateVersionByIDRow struct {
 // FindStateVersionByID implements Querier.FindStateVersionByID.
 func (q *DBQuerier) FindStateVersionByID(ctx context.Context, id pgtype.Text) (FindStateVersionByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindStateVersionByID")
-	row := q.conn.QueryRow(ctx, findStateVersionByIDSQL, id)
-	var item FindStateVersionByIDRow
-	stateVersionOutputsArray := q.types.newStateVersionOutputsArray()
-	if err := row.Scan(&item.StateVersionID, &item.CreatedAt, &item.Serial, &item.State, &item.WorkspaceID, &item.Status, stateVersionOutputsArray); err != nil {
-		return item, fmt.Errorf("query FindStateVersionByID: %w", err)
+	rows, err := q.conn.Query(ctx, findStateVersionByIDSQL, id)
+	if err != nil {
+		return FindStateVersionByIDRow{}, fmt.Errorf("query FindStateVersionByID: %w", err)
 	}
-	if err := stateVersionOutputsArray.AssignTo(&item.StateVersionOutputs); err != nil {
-		return item, fmt.Errorf("assign FindStateVersionByID row: %w", err)
-	}
-	return item, nil
-}
 
-// FindStateVersionByIDBatch implements Querier.FindStateVersionByIDBatch.
-func (q *DBQuerier) FindStateVersionByIDBatch(batch genericBatch, id pgtype.Text) {
-	batch.Queue(findStateVersionByIDSQL, id)
-}
-
-// FindStateVersionByIDScan implements Querier.FindStateVersionByIDScan.
-func (q *DBQuerier) FindStateVersionByIDScan(results pgx.BatchResults) (FindStateVersionByIDRow, error) {
-	row := results.QueryRow()
-	var item FindStateVersionByIDRow
-	stateVersionOutputsArray := q.types.newStateVersionOutputsArray()
-	if err := row.Scan(&item.StateVersionID, &item.CreatedAt, &item.Serial, &item.State, &item.WorkspaceID, &item.Status, stateVersionOutputsArray); err != nil {
-		return item, fmt.Errorf("scan FindStateVersionByIDBatch row: %w", err)
-	}
-	if err := stateVersionOutputsArray.AssignTo(&item.StateVersionOutputs); err != nil {
-		return item, fmt.Errorf("assign FindStateVersionByID row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionByIDRow, error) {
+		var item FindStateVersionByIDRow
+		if err := row.Scan(&item.StateVersionID, // 'state_version_id', 'StateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Serial,              // 'serial', 'Serial', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.State,               // 'state', 'State', '[]byte', '', '[]byte'
+			&item.WorkspaceID,         // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,              // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]StateVersionOutputs', 'github.com/tofutf/tofutf/internal/sql/queries', '[]StateVersionOutputs'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findStateVersionByIDForUpdateSQL = `SELECT
@@ -312,35 +221,25 @@ type FindStateVersionByIDForUpdateRow struct {
 // FindStateVersionByIDForUpdate implements Querier.FindStateVersionByIDForUpdate.
 func (q *DBQuerier) FindStateVersionByIDForUpdate(ctx context.Context, id pgtype.Text) (FindStateVersionByIDForUpdateRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindStateVersionByIDForUpdate")
-	row := q.conn.QueryRow(ctx, findStateVersionByIDForUpdateSQL, id)
-	var item FindStateVersionByIDForUpdateRow
-	stateVersionOutputsArray := q.types.newStateVersionOutputsArray()
-	if err := row.Scan(&item.StateVersionID, &item.CreatedAt, &item.Serial, &item.State, &item.WorkspaceID, &item.Status, stateVersionOutputsArray); err != nil {
-		return item, fmt.Errorf("query FindStateVersionByIDForUpdate: %w", err)
+	rows, err := q.conn.Query(ctx, findStateVersionByIDForUpdateSQL, id)
+	if err != nil {
+		return FindStateVersionByIDForUpdateRow{}, fmt.Errorf("query FindStateVersionByIDForUpdate: %w", err)
 	}
-	if err := stateVersionOutputsArray.AssignTo(&item.StateVersionOutputs); err != nil {
-		return item, fmt.Errorf("assign FindStateVersionByIDForUpdate row: %w", err)
-	}
-	return item, nil
-}
 
-// FindStateVersionByIDForUpdateBatch implements Querier.FindStateVersionByIDForUpdateBatch.
-func (q *DBQuerier) FindStateVersionByIDForUpdateBatch(batch genericBatch, id pgtype.Text) {
-	batch.Queue(findStateVersionByIDForUpdateSQL, id)
-}
-
-// FindStateVersionByIDForUpdateScan implements Querier.FindStateVersionByIDForUpdateScan.
-func (q *DBQuerier) FindStateVersionByIDForUpdateScan(results pgx.BatchResults) (FindStateVersionByIDForUpdateRow, error) {
-	row := results.QueryRow()
-	var item FindStateVersionByIDForUpdateRow
-	stateVersionOutputsArray := q.types.newStateVersionOutputsArray()
-	if err := row.Scan(&item.StateVersionID, &item.CreatedAt, &item.Serial, &item.State, &item.WorkspaceID, &item.Status, stateVersionOutputsArray); err != nil {
-		return item, fmt.Errorf("scan FindStateVersionByIDForUpdateBatch row: %w", err)
-	}
-	if err := stateVersionOutputsArray.AssignTo(&item.StateVersionOutputs); err != nil {
-		return item, fmt.Errorf("assign FindStateVersionByIDForUpdate row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionByIDForUpdateRow, error) {
+		var item FindStateVersionByIDForUpdateRow
+		if err := row.Scan(&item.StateVersionID, // 'state_version_id', 'StateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Serial,              // 'serial', 'Serial', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.State,               // 'state', 'State', '[]byte', '', '[]byte'
+			&item.WorkspaceID,         // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,              // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]StateVersionOutputs', 'github.com/tofutf/tofutf/internal/sql/queries', '[]StateVersionOutputs'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findCurrentStateVersionByWorkspaceIDSQL = `SELECT
@@ -366,35 +265,25 @@ type FindCurrentStateVersionByWorkspaceIDRow struct {
 // FindCurrentStateVersionByWorkspaceID implements Querier.FindCurrentStateVersionByWorkspaceID.
 func (q *DBQuerier) FindCurrentStateVersionByWorkspaceID(ctx context.Context, workspaceID pgtype.Text) (FindCurrentStateVersionByWorkspaceIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindCurrentStateVersionByWorkspaceID")
-	row := q.conn.QueryRow(ctx, findCurrentStateVersionByWorkspaceIDSQL, workspaceID)
-	var item FindCurrentStateVersionByWorkspaceIDRow
-	stateVersionOutputsArray := q.types.newStateVersionOutputsArray()
-	if err := row.Scan(&item.StateVersionID, &item.CreatedAt, &item.Serial, &item.State, &item.WorkspaceID, &item.Status, stateVersionOutputsArray); err != nil {
-		return item, fmt.Errorf("query FindCurrentStateVersionByWorkspaceID: %w", err)
+	rows, err := q.conn.Query(ctx, findCurrentStateVersionByWorkspaceIDSQL, workspaceID)
+	if err != nil {
+		return FindCurrentStateVersionByWorkspaceIDRow{}, fmt.Errorf("query FindCurrentStateVersionByWorkspaceID: %w", err)
 	}
-	if err := stateVersionOutputsArray.AssignTo(&item.StateVersionOutputs); err != nil {
-		return item, fmt.Errorf("assign FindCurrentStateVersionByWorkspaceID row: %w", err)
-	}
-	return item, nil
-}
 
-// FindCurrentStateVersionByWorkspaceIDBatch implements Querier.FindCurrentStateVersionByWorkspaceIDBatch.
-func (q *DBQuerier) FindCurrentStateVersionByWorkspaceIDBatch(batch genericBatch, workspaceID pgtype.Text) {
-	batch.Queue(findCurrentStateVersionByWorkspaceIDSQL, workspaceID)
-}
-
-// FindCurrentStateVersionByWorkspaceIDScan implements Querier.FindCurrentStateVersionByWorkspaceIDScan.
-func (q *DBQuerier) FindCurrentStateVersionByWorkspaceIDScan(results pgx.BatchResults) (FindCurrentStateVersionByWorkspaceIDRow, error) {
-	row := results.QueryRow()
-	var item FindCurrentStateVersionByWorkspaceIDRow
-	stateVersionOutputsArray := q.types.newStateVersionOutputsArray()
-	if err := row.Scan(&item.StateVersionID, &item.CreatedAt, &item.Serial, &item.State, &item.WorkspaceID, &item.Status, stateVersionOutputsArray); err != nil {
-		return item, fmt.Errorf("scan FindCurrentStateVersionByWorkspaceIDBatch row: %w", err)
-	}
-	if err := stateVersionOutputsArray.AssignTo(&item.StateVersionOutputs); err != nil {
-		return item, fmt.Errorf("assign FindCurrentStateVersionByWorkspaceID row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindCurrentStateVersionByWorkspaceIDRow, error) {
+		var item FindCurrentStateVersionByWorkspaceIDRow
+		if err := row.Scan(&item.StateVersionID, // 'state_version_id', 'StateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.Serial,              // 'serial', 'Serial', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
+			&item.State,               // 'state', 'State', '[]byte', '', '[]byte'
+			&item.WorkspaceID,         // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Status,              // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]StateVersionOutputs', 'github.com/tofutf/tofutf/internal/sql/queries', '[]StateVersionOutputs'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findStateVersionStateByIDSQL = `SELECT state
@@ -405,27 +294,18 @@ WHERE state_version_id = $1
 // FindStateVersionStateByID implements Querier.FindStateVersionStateByID.
 func (q *DBQuerier) FindStateVersionStateByID(ctx context.Context, id pgtype.Text) ([]byte, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindStateVersionStateByID")
-	row := q.conn.QueryRow(ctx, findStateVersionStateByIDSQL, id)
-	item := []byte{}
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query FindStateVersionStateByID: %w", err)
+	rows, err := q.conn.Query(ctx, findStateVersionStateByIDSQL, id)
+	if err != nil {
+		return nil, fmt.Errorf("query FindStateVersionStateByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindStateVersionStateByIDBatch implements Querier.FindStateVersionStateByIDBatch.
-func (q *DBQuerier) FindStateVersionStateByIDBatch(batch genericBatch, id pgtype.Text) {
-	batch.Queue(findStateVersionStateByIDSQL, id)
-}
-
-// FindStateVersionStateByIDScan implements Querier.FindStateVersionStateByIDScan.
-func (q *DBQuerier) FindStateVersionStateByIDScan(results pgx.BatchResults) ([]byte, error) {
-	row := results.QueryRow()
-	item := []byte{}
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan FindStateVersionStateByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+		var item []byte
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteStateVersionByIDSQL = `DELETE
@@ -437,25 +317,16 @@ RETURNING state_version_id
 // DeleteStateVersionByID implements Querier.DeleteStateVersionByID.
 func (q *DBQuerier) DeleteStateVersionByID(ctx context.Context, stateVersionID pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteStateVersionByID")
-	row := q.conn.QueryRow(ctx, deleteStateVersionByIDSQL, stateVersionID)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteStateVersionByID: %w", err)
+	rows, err := q.conn.Query(ctx, deleteStateVersionByIDSQL, stateVersionID)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteStateVersionByID: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteStateVersionByIDBatch implements Querier.DeleteStateVersionByIDBatch.
-func (q *DBQuerier) DeleteStateVersionByIDBatch(batch genericBatch, stateVersionID pgtype.Text) {
-	batch.Queue(deleteStateVersionByIDSQL, stateVersionID)
-}
-
-// DeleteStateVersionByIDScan implements Querier.DeleteStateVersionByIDScan.
-func (q *DBQuerier) DeleteStateVersionByIDScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteStateVersionByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

@@ -36,7 +36,7 @@ type (
 	Options struct {
 		Logger *slog.Logger
 
-		*sql.DB
+		*sql.Pool
 		*internal.HostnameService
 		*surl.Signer
 		html.Renderer
@@ -53,7 +53,7 @@ func NewService(opts Options) *Service {
 		logger:       opts.Logger,
 		connections:  opts.ConnectionsService,
 		organization: &organization.Authorizer{Logger: opts.Logger},
-		db:           &pgdb{opts.DB},
+		db:           &pgdb{opts.Pool},
 		vcsproviders: opts.VCSProviderService,
 	}
 	svc.api = &api{

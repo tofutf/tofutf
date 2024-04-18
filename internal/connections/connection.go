@@ -48,7 +48,7 @@ type (
 	}
 
 	Options struct {
-		*sql.DB
+		*sql.Pool
 
 		Logger             *slog.Logger
 		VCSProviderService *vcsprovider.Service
@@ -69,7 +69,7 @@ func NewService(ctx context.Context, opts Options) *Service {
 		logger:       opts.Logger,
 		vcsproviders: opts.VCSProviderService,
 		repohooks:    opts.RepoHooksService,
-		db:           &db{opts.DB},
+		db:           &db{opts.Pool},
 	}
 }
 

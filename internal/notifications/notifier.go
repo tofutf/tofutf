@@ -37,7 +37,7 @@ type (
 		Logger             *slog.Logger
 
 		*internal.HostnameService
-		*sql.DB
+		*sql.Pool
 	}
 
 	notifierWorkspaceClient interface {
@@ -64,7 +64,7 @@ func NewNotifier(opts NotifierOptions) *Notifier {
 		system:        opts.HostnameService,
 		runs:          opts.RunClient,
 		notifications: opts.NotificationClient,
-		db:            &pgdb{opts.DB},
+		db:            &pgdb{opts.Pool},
 	}
 }
 

@@ -41,7 +41,7 @@ type (
 		Logger *slog.Logger
 		html.Renderer
 		internal.Cache
-		*sql.DB
+		*sql.Pool
 		*tfeapi.Responder
 		*surl.Signer
 
@@ -57,7 +57,7 @@ type (
 )
 
 func NewService(opts Options) *Service {
-	db := &pgdb{opts.DB}
+	db := &pgdb{opts.Pool}
 	svc := Service{
 		logger:    opts.Logger,
 		cache:     opts.Cache,

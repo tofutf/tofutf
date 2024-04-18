@@ -6,10 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const upsertOrganizationTokenSQL = `INSERT INTO organization_tokens (
     organization_token_id,
@@ -27,10 +29,10 @@ const upsertOrganizationTokenSQL = `INSERT INTO organization_tokens (
       expiry                = $4;`
 
 type UpsertOrganizationTokenParams struct {
-	OrganizationTokenID pgtype.Text
-	CreatedAt           pgtype.Timestamptz
-	OrganizationName    pgtype.Text
-	Expiry              pgtype.Timestamptz
+	OrganizationTokenID pgtype.Text        `json:"organization_token_id"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	OrganizationName    pgtype.Text        `json:"organization_name"`
+	Expiry              pgtype.Timestamptz `json:"expiry"`
 }
 
 // UpsertOrganizationToken implements Querier.UpsertOrganizationToken.
@@ -38,21 +40,7 @@ func (q *DBQuerier) UpsertOrganizationToken(ctx context.Context, params UpsertOr
 	ctx = context.WithValue(ctx, "pggen_query_name", "UpsertOrganizationToken")
 	cmdTag, err := q.conn.Exec(ctx, upsertOrganizationTokenSQL, params.OrganizationTokenID, params.CreatedAt, params.OrganizationName, params.Expiry)
 	if err != nil {
-		return cmdTag, fmt.Errorf("exec query UpsertOrganizationToken: %w", err)
-	}
-	return cmdTag, err
-}
-
-// UpsertOrganizationTokenBatch implements Querier.UpsertOrganizationTokenBatch.
-func (q *DBQuerier) UpsertOrganizationTokenBatch(batch genericBatch, params UpsertOrganizationTokenParams) {
-	batch.Queue(upsertOrganizationTokenSQL, params.OrganizationTokenID, params.CreatedAt, params.OrganizationName, params.Expiry)
-}
-
-// UpsertOrganizationTokenScan implements Querier.UpsertOrganizationTokenScan.
-func (q *DBQuerier) UpsertOrganizationTokenScan(results pgx.BatchResults) (pgconn.CommandTag, error) {
-	cmdTag, err := results.Exec()
-	if err != nil {
-		return cmdTag, fmt.Errorf("exec UpsertOrganizationTokenBatch: %w", err)
+		return pgconn.CommandTag{}, fmt.Errorf("exec query UpsertOrganizationToken: %w", err)
 	}
 	return cmdTag, err
 }
@@ -75,45 +63,18 @@ func (q *DBQuerier) FindOrganizationTokens(ctx context.Context, organizationName
 	if err != nil {
 		return nil, fmt.Errorf("query FindOrganizationTokens: %w", err)
 	}
-	defer rows.Close()
-	items := []FindOrganizationTokensRow{}
-	for rows.Next() {
-		var item FindOrganizationTokensRow
-		if err := rows.Scan(&item.OrganizationTokenID, &item.CreatedAt, &item.OrganizationName, &item.Expiry); err != nil {
-			return nil, fmt.Errorf("scan FindOrganizationTokens row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindOrganizationTokens rows: %w", err)
-	}
-	return items, err
-}
 
-// FindOrganizationTokensBatch implements Querier.FindOrganizationTokensBatch.
-func (q *DBQuerier) FindOrganizationTokensBatch(batch genericBatch, organizationName pgtype.Text) {
-	batch.Queue(findOrganizationTokensSQL, organizationName)
-}
-
-// FindOrganizationTokensScan implements Querier.FindOrganizationTokensScan.
-func (q *DBQuerier) FindOrganizationTokensScan(results pgx.BatchResults) ([]FindOrganizationTokensRow, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query FindOrganizationTokensBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []FindOrganizationTokensRow{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (FindOrganizationTokensRow, error) {
 		var item FindOrganizationTokensRow
-		if err := rows.Scan(&item.OrganizationTokenID, &item.CreatedAt, &item.OrganizationName, &item.Expiry); err != nil {
-			return nil, fmt.Errorf("scan FindOrganizationTokensBatch row: %w", err)
+		if err := row.Scan(&item.OrganizationTokenID, // 'organization_token_id', 'OrganizationTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Expiry,           // 'expiry', 'Expiry', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close FindOrganizationTokensBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const findOrganizationTokensByNameSQL = `SELECT *
@@ -130,27 +91,22 @@ type FindOrganizationTokensByNameRow struct {
 // FindOrganizationTokensByName implements Querier.FindOrganizationTokensByName.
 func (q *DBQuerier) FindOrganizationTokensByName(ctx context.Context, organizationName pgtype.Text) (FindOrganizationTokensByNameRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindOrganizationTokensByName")
-	row := q.conn.QueryRow(ctx, findOrganizationTokensByNameSQL, organizationName)
-	var item FindOrganizationTokensByNameRow
-	if err := row.Scan(&item.OrganizationTokenID, &item.CreatedAt, &item.OrganizationName, &item.Expiry); err != nil {
-		return item, fmt.Errorf("query FindOrganizationTokensByName: %w", err)
+	rows, err := q.conn.Query(ctx, findOrganizationTokensByNameSQL, organizationName)
+	if err != nil {
+		return FindOrganizationTokensByNameRow{}, fmt.Errorf("query FindOrganizationTokensByName: %w", err)
 	}
-	return item, nil
-}
 
-// FindOrganizationTokensByNameBatch implements Querier.FindOrganizationTokensByNameBatch.
-func (q *DBQuerier) FindOrganizationTokensByNameBatch(batch genericBatch, organizationName pgtype.Text) {
-	batch.Queue(findOrganizationTokensByNameSQL, organizationName)
-}
-
-// FindOrganizationTokensByNameScan implements Querier.FindOrganizationTokensByNameScan.
-func (q *DBQuerier) FindOrganizationTokensByNameScan(results pgx.BatchResults) (FindOrganizationTokensByNameRow, error) {
-	row := results.QueryRow()
-	var item FindOrganizationTokensByNameRow
-	if err := row.Scan(&item.OrganizationTokenID, &item.CreatedAt, &item.OrganizationName, &item.Expiry); err != nil {
-		return item, fmt.Errorf("scan FindOrganizationTokensByNameBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationTokensByNameRow, error) {
+		var item FindOrganizationTokensByNameRow
+		if err := row.Scan(&item.OrganizationTokenID, // 'organization_token_id', 'OrganizationTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Expiry,           // 'expiry', 'Expiry', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const findOrganizationTokensByIDSQL = `SELECT *
@@ -167,27 +123,22 @@ type FindOrganizationTokensByIDRow struct {
 // FindOrganizationTokensByID implements Querier.FindOrganizationTokensByID.
 func (q *DBQuerier) FindOrganizationTokensByID(ctx context.Context, organizationTokenID pgtype.Text) (FindOrganizationTokensByIDRow, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "FindOrganizationTokensByID")
-	row := q.conn.QueryRow(ctx, findOrganizationTokensByIDSQL, organizationTokenID)
-	var item FindOrganizationTokensByIDRow
-	if err := row.Scan(&item.OrganizationTokenID, &item.CreatedAt, &item.OrganizationName, &item.Expiry); err != nil {
-		return item, fmt.Errorf("query FindOrganizationTokensByID: %w", err)
+	rows, err := q.conn.Query(ctx, findOrganizationTokensByIDSQL, organizationTokenID)
+	if err != nil {
+		return FindOrganizationTokensByIDRow{}, fmt.Errorf("query FindOrganizationTokensByID: %w", err)
 	}
-	return item, nil
-}
 
-// FindOrganizationTokensByIDBatch implements Querier.FindOrganizationTokensByIDBatch.
-func (q *DBQuerier) FindOrganizationTokensByIDBatch(batch genericBatch, organizationTokenID pgtype.Text) {
-	batch.Queue(findOrganizationTokensByIDSQL, organizationTokenID)
-}
-
-// FindOrganizationTokensByIDScan implements Querier.FindOrganizationTokensByIDScan.
-func (q *DBQuerier) FindOrganizationTokensByIDScan(results pgx.BatchResults) (FindOrganizationTokensByIDRow, error) {
-	row := results.QueryRow()
-	var item FindOrganizationTokensByIDRow
-	if err := row.Scan(&item.OrganizationTokenID, &item.CreatedAt, &item.OrganizationName, &item.Expiry); err != nil {
-		return item, fmt.Errorf("scan FindOrganizationTokensByIDBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationTokensByIDRow, error) {
+		var item FindOrganizationTokensByIDRow
+		if err := row.Scan(&item.OrganizationTokenID, // 'organization_token_id', 'OrganizationTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
+			&item.Expiry,           // 'expiry', 'Expiry', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
+		); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }
 
 const deleteOrganiationTokenByNameSQL = `DELETE
@@ -198,25 +149,16 @@ RETURNING organization_token_id;`
 // DeleteOrganiationTokenByName implements Querier.DeleteOrganiationTokenByName.
 func (q *DBQuerier) DeleteOrganiationTokenByName(ctx context.Context, organizationName pgtype.Text) (pgtype.Text, error) {
 	ctx = context.WithValue(ctx, "pggen_query_name", "DeleteOrganiationTokenByName")
-	row := q.conn.QueryRow(ctx, deleteOrganiationTokenByNameSQL, organizationName)
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("query DeleteOrganiationTokenByName: %w", err)
+	rows, err := q.conn.Query(ctx, deleteOrganiationTokenByNameSQL, organizationName)
+	if err != nil {
+		return pgtype.Text{}, fmt.Errorf("query DeleteOrganiationTokenByName: %w", err)
 	}
-	return item, nil
-}
 
-// DeleteOrganiationTokenByNameBatch implements Querier.DeleteOrganiationTokenByNameBatch.
-func (q *DBQuerier) DeleteOrganiationTokenByNameBatch(batch genericBatch, organizationName pgtype.Text) {
-	batch.Queue(deleteOrganiationTokenByNameSQL, organizationName)
-}
-
-// DeleteOrganiationTokenByNameScan implements Querier.DeleteOrganiationTokenByNameScan.
-func (q *DBQuerier) DeleteOrganiationTokenByNameScan(results pgx.BatchResults) (pgtype.Text, error) {
-	row := results.QueryRow()
-	var item pgtype.Text
-	if err := row.Scan(&item); err != nil {
-		return item, fmt.Errorf("scan DeleteOrganiationTokenByNameBatch row: %w", err)
-	}
-	return item, nil
+	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+		var item pgtype.Text
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
+		}
+		return item, nil
+	})
 }

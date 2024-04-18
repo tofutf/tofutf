@@ -6,9 +6,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+var _ genericConn = (*pgx.Conn)(nil)
 
 const insertTeamMembershipSQL = `WITH
     users AS (
@@ -28,45 +30,14 @@ func (q *DBQuerier) InsertTeamMembership(ctx context.Context, usernames []string
 	if err != nil {
 		return nil, fmt.Errorf("query InsertTeamMembership: %w", err)
 	}
-	defer rows.Close()
-	items := []pgtype.Text{}
-	for rows.Next() {
-		var item pgtype.Text
-		if err := rows.Scan(&item); err != nil {
-			return nil, fmt.Errorf("scan InsertTeamMembership row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close InsertTeamMembership rows: %w", err)
-	}
-	return items, err
-}
 
-// InsertTeamMembershipBatch implements Querier.InsertTeamMembershipBatch.
-func (q *DBQuerier) InsertTeamMembershipBatch(batch genericBatch, usernames []string, teamID pgtype.Text) {
-	batch.Queue(insertTeamMembershipSQL, usernames, teamID)
-}
-
-// InsertTeamMembershipScan implements Querier.InsertTeamMembershipScan.
-func (q *DBQuerier) InsertTeamMembershipScan(results pgx.BatchResults) ([]pgtype.Text, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query InsertTeamMembershipBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []pgtype.Text{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
-		if err := rows.Scan(&item); err != nil {
-			return nil, fmt.Errorf("scan InsertTeamMembershipBatch row: %w", err)
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close InsertTeamMembershipBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
 
 const deleteTeamMembershipSQL = `WITH
@@ -90,43 +61,12 @@ func (q *DBQuerier) DeleteTeamMembership(ctx context.Context, usernames []string
 	if err != nil {
 		return nil, fmt.Errorf("query DeleteTeamMembership: %w", err)
 	}
-	defer rows.Close()
-	items := []pgtype.Text{}
-	for rows.Next() {
-		var item pgtype.Text
-		if err := rows.Scan(&item); err != nil {
-			return nil, fmt.Errorf("scan DeleteTeamMembership row: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close DeleteTeamMembership rows: %w", err)
-	}
-	return items, err
-}
 
-// DeleteTeamMembershipBatch implements Querier.DeleteTeamMembershipBatch.
-func (q *DBQuerier) DeleteTeamMembershipBatch(batch genericBatch, usernames []string, teamID pgtype.Text) {
-	batch.Queue(deleteTeamMembershipSQL, usernames, teamID)
-}
-
-// DeleteTeamMembershipScan implements Querier.DeleteTeamMembershipScan.
-func (q *DBQuerier) DeleteTeamMembershipScan(results pgx.BatchResults) ([]pgtype.Text, error) {
-	rows, err := results.Query()
-	if err != nil {
-		return nil, fmt.Errorf("query DeleteTeamMembershipBatch: %w", err)
-	}
-	defer rows.Close()
-	items := []pgtype.Text{}
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
-		if err := rows.Scan(&item); err != nil {
-			return nil, fmt.Errorf("scan DeleteTeamMembershipBatch row: %w", err)
+		if err := row.Scan(&item); err != nil {
+			return item, fmt.Errorf("failed to scan: %w", err)
 		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close DeleteTeamMembershipBatch rows: %w", err)
-	}
-	return items, err
+		return item, nil
+	})
 }
