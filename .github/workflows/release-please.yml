@@ -17,6 +17,11 @@ jobs:
       tag_name: ${{ steps.release-please.outputs.tag_name }} # e.g. v1.0.0
       version: ${{ steps.release-please.outputs.version }} # e.g. 1.0.0
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - uses: google-github-actions/release-please-action@a37ac6e4f6449ce8b3f7607e4d97d0146028dc0b # v4.1.0
         id: release-please
         with:
