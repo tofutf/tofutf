@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -58,7 +59,12 @@ func (s *Subsystem) Start(ctx context.Context, g *errgroup.Group) error {
 		if s.Exclusive {
 			// block on getting an exclusive lock
 			err = s.DB.WaitAndLock(ctx, *s.LockID, func(ctx context.Context) error {
-				return s.System.Start(ctx)
+				err := s.System.Start(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to start subsystem: %w", err)
+				}
+
+				return nil
 			})
 		} else {
 			err = s.System.Start(ctx)
