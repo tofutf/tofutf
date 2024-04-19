@@ -23,8 +23,8 @@ type (
 	// Pool provides access to the postgres db as well as queries generated from
 	// SQL
 	Pool struct {
-		*pgxpool.Pool // db connection pool
-		logger        *slog.Logger
+		e      *pgxpool.Pool // db connection pool
+		logger *slog.Logger
 	}
 
 	// Options for constructing a DB
@@ -70,7 +70,7 @@ func New(ctx context.Context, opts Options) (*Pool, error) {
 	}
 
 	return &Pool{
-		Pool:   pool,
+		e:      pool,
 		logger: opts.Logger,
 	}, nil
 }
@@ -118,7 +118,7 @@ func Tx[T any](ctx context.Context, pool *Pool, fn func(context.Context, pggen.Q
 
 // Query obtains a connection for the pool, executes the given function, and
 // returns the connection to the pool.
-func (db *Pool) Query(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
+func (p *Pool) Query(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
 	if conn, ok := fromContext(ctx); ok {
 		querier, err := pggen.NewQuerier(ctx, conn)
 		if err != nil {
@@ -133,7 +133,7 @@ func (db *Pool) Query(ctx context.Context, callback func(context.Context, pggen.
 		return nil
 	}
 
-	err := db.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+	err := p.e.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
 		querier, err := pggen.NewQuerier(ctx, c.Conn())
 		if err != nil {
 			return fmt.Errorf("failed to consturct querier from pool: %w", err)
@@ -155,10 +155,19 @@ func (db *Pool) Query(ctx context.Context, callback func(context.Context, pggen.
 
 // Tx provides the caller with a callback in which all operations are conducted
 // within a transaction.
-func (db *Pool) Tx(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
+func (p *Pool) Tx(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
 	var conn interface {
 		Begin(ctx context.Context) (pgx.Tx, error)
-	} = db.Pool
+	} = p.e
+
+	if txConn, ok := txFromContext(ctx); ok {
+		querier, err := pggen.NewQuerier(ctx, txConn.Conn())
+		if err != nil {
+			return fmt.Errorf("failed to construct querier from tx conn: %w", err)
+		}
+
+		return callback(ctx, querier)
+	}
 
 	// Use connection from context if found
 	if ctxConn, ok := fromContext(ctx); ok {
@@ -171,32 +180,10 @@ func (db *Pool) Tx(ctx context.Context, callback func(context.Context, pggen.Que
 			return fmt.Errorf("failed to construct querier from tx conn: %w", err)
 		}
 
+		ctx = newTxContext(ctx, tx)
 		ctx = newContext(ctx, tx.Conn())
 		return callback(ctx, querier)
 	})
-}
-
-// Exec acquires a connection from the pool and executes the given SQL. If the
-// context contains a transaction then that is used.
-func (db *Pool) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
-	if conn, ok := fromContext(ctx); ok {
-		return conn.Exec(ctx, sql, args...)
-	}
-	return db.Pool.Exec(ctx, sql, args...)
-}
-
-func (db *Pool) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
-	if conn, ok := fromContext(ctx); ok {
-		return conn.QueryRow(ctx, sql, args...)
-	}
-	return db.Pool.QueryRow(ctx, sql, args...)
-}
-
-func (db *Pool) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
-	if conn, ok := fromContext(ctx); ok {
-		return conn.SendBatch(ctx, b)
-	}
-	return db.Pool.SendBatch(ctx, b)
 }
 
 // WaitAndLock obtains an exclusive session-level advisory lock. If another
@@ -207,7 +194,7 @@ func (db *Pool) WaitAndLock(ctx context.Context, id int64, fn func(context.Conte
 	// A dedicated connection is obtained. Using a connection pool would cause
 	// problems because a lock must be released on the same connection on which
 	// it was obtained.
-	return db.Pool.AcquireFunc(ctx, func(conn *pgxpool.Conn) error {
+	return db.e.AcquireFunc(ctx, func(conn *pgxpool.Conn) error {
 		if _, err = conn.Exec(ctx, "SELECT pg_advisory_lock($1)", id); err != nil {
 			return err
 		}
@@ -224,10 +211,10 @@ func (db *Pool) WaitAndLock(ctx context.Context, id int64, fn func(context.Conte
 	})
 }
 
-func (db *Pool) Lock(ctx context.Context, table string, fn func(context.Context, pggen.Querier) error) error {
+func (p *Pool) Lock(ctx context.Context, table string, fn func(context.Context, pggen.Querier) error) error {
 	var conn interface {
 		Begin(ctx context.Context) (pgx.Tx, error)
-	} = db.Pool
+	} = p.e
 
 	// Use connection from context if found
 	if ctxConn, ok := fromContext(ctx); ok {
@@ -269,4 +256,19 @@ func setDefaultMaxConnections(connString string, max int) (string, error) {
 		// presume non-empty DSN
 		return fmt.Sprintf("%s pool_max_conns=%d", connString, max), nil
 	}
+}
+
+// Close releases the pool.
+func (p *Pool) Close() {
+	p.e.Close()
+}
+
+// Acquire returns a new connection from the pool.
+func (p *Pool) Acquire(ctx context.Context) (*pgxpool.Conn, error) {
+	return p.e.Acquire(ctx)
+}
+
+// Exec executres the given sql.
+func (p *Pool) Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error) {
+	return p.e.Exec(ctx, sql, arguments...)
 }
