@@ -34,7 +34,7 @@ type managerClient interface {
 	deleteAgent(ctx context.Context, agentID string) error
 }
 
-func newManager(s *Service) *manager {
+func newManager(s *service) *manager {
 	return &manager{
 		client:   s,
 		interval: defaultManagerInterval,

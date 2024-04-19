@@ -137,7 +137,7 @@ type ServerDaemonOptions struct {
 	ConfigurationVersionService *configversion.Service
 	StateService                *state.Service
 	LogsService                 *logs.Service
-	AgentService                *Service
+	AgentService                Service
 	HostnameService             *internal.HostnameService
 }
 

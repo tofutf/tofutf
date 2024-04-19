@@ -16,6 +16,7 @@ import (
 	"github.com/tofutf/tofutf/internal/daemon"
 	"github.com/tofutf/tofutf/internal/github"
 	"github.com/tofutf/tofutf/internal/gitlab"
+	"github.com/tofutf/tofutf/internal/otel"
 	"github.com/tofutf/tofutf/internal/xslog"
 )
 
@@ -57,6 +58,18 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 			if err != nil {
 				return err
 			}
+
+			shutdown, err := otel.SetupOTelSDK(ctx)
+			if err != nil {
+				return err
+			}
+
+			defer func() {
+				err := shutdown(ctx)
+				if err != nil {
+					logger.Error("failed to shutdown cleanly", "err", err)
+				}
+			}()
 
 			// Confer superuser privileges on all calls to service endpoints
 			ctx := internal.AddSubjectToContext(cmd.Context(), &internal.Superuser{Username: "app-user"})

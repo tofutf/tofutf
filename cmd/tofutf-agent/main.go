@@ -13,6 +13,7 @@ import (
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/agent"
 	otfapi "github.com/tofutf/tofutf/internal/api"
+	"github.com/tofutf/tofutf/internal/otel"
 	"github.com/tofutf/tofutf/internal/xslog"
 )
 
@@ -48,6 +49,18 @@ func run(ctx context.Context, args []string) error {
 			if err != nil {
 				return err
 			}
+
+			shutdown, err := otel.SetupOTelSDK(ctx)
+			if err != nil {
+				return err
+			}
+
+			defer func() {
+				err := shutdown(ctx)
+				if err != nil {
+					logger.Error("failed to shutdown cleanly", "err", err)
+				}
+			}()
 
 			agent, err := agent.NewPoolDaemon(logger, *agentConfig, clientConfig)
 			if err != nil {

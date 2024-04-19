@@ -13,6 +13,7 @@ import (
 	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -76,7 +77,7 @@ func NewServer(logger *slog.Logger, cfg ServerConfig) (*Server, error) {
 	// Catch panics and return 500s
 	r.Use(gorillaHandlers.RecoveryHandler(gorillaHandlers.PrintRecoveryStack(true)))
 
-	r.Handle("/", http.RedirectHandler("/app/organizations", http.StatusFound))
+	r.Handle("/", otelhttp.WithRouteTag("/", http.RedirectHandler("/app/organizations", http.StatusFound)))
 
 	// Serve static files
 	if err := html.AddStaticHandler(logger, r, cfg.DevMode); err != nil {
@@ -84,16 +85,17 @@ func NewServer(logger *slog.Logger, cfg ServerConfig) (*Server, error) {
 	}
 
 	// Prometheus metrics
-	r.HandleFunc("/metrics", promhttp.Handler().ServeHTTP)
+	r.Handle("/metrics", otelhttp.WithRouteTag("/metrics", promhttp.Handler()))
 
-	r.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/version", otelhttp.WithRouteTag("/version", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json")
 		w.Write(healthzPayload) //nolint:errcheck
-	})
-	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	r.Handle("/healthz", otelhttp.WithRouteTag("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/json")
 		w.Write([]byte(`{"status":"OK"}`)) //nolint:errcheck
-	})
+	})))
 
 	// Subrouter for service routes
 	svcRouter := r.NewRoute().Subrouter()
@@ -132,7 +134,7 @@ func NewServer(logger *slog.Logger, cfg ServerConfig) (*Server, error) {
 	return &Server{
 		logger:       logger,
 		ServerConfig: cfg,
-		server:       &http.Server{Handler: r},
+		server:       &http.Server{Handler: otelhttp.NewHandler(r, "/")},
 	}, nil
 }
 

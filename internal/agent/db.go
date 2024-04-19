@@ -39,7 +39,7 @@ type agentresult struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -54,7 +54,7 @@ func (r agentresult) toAgent() *Agent {
 		Version:      r.Version.String,
 		MaxJobs:      int(r.MaxJobs.Int32),
 		CurrentJobs:  int(r.CurrentJobs.Int64),
-		IPAddress:    r.IPAddress,
+		IPAddress:    r.IPAddress.IP,
 		LastPingAt:   r.LastPingAt.Time.UTC(),
 		LastStatusAt: r.LastStatusAt.Time.UTC(),
 		Status:       AgentStatus(r.Status.String),
@@ -265,7 +265,7 @@ func (db *db) createAgent(ctx context.Context, agent *Agent) error {
 			Name:         sql.String(agent.Name),
 			Version:      sql.String(agent.Version),
 			MaxJobs:      sql.Int4(agent.MaxJobs),
-			IPAddress:    agent.IPAddress,
+			IPAddress:    sql.Inet(agent.IPAddress),
 			Status:       sql.String(string(agent.Status)),
 			LastPingAt:   sql.Timestamptz(agent.LastPingAt),
 			LastStatusAt: sql.Timestamptz(agent.LastStatusAt),

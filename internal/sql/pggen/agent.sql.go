@@ -2431,7 +2431,7 @@ type InsertAgentParams struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2467,7 +2467,7 @@ type UpdateAgentRow struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2488,7 +2488,7 @@ func (q *DBQuerier) UpdateAgent(ctx context.Context, params UpdateAgentParams) (
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,      // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.MaxJobs,      // 'max_jobs', 'MaxJobs', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
-			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IP', 'net', 'IP'
+			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IPNet', 'net', 'IPNet'
 			&item.LastPingAt,   // 'last_ping_at', 'LastPingAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.LastStatusAt, // 'last_status_at', 'LastStatusAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.Status,       // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2516,7 +2516,7 @@ type FindAgentsRow struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2538,7 +2538,7 @@ func (q *DBQuerier) FindAgents(ctx context.Context) ([]FindAgentsRow, error) {
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,      // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.MaxJobs,      // 'max_jobs', 'MaxJobs', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
-			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IP', 'net', 'IP'
+			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IPNet', 'net', 'IPNet'
 			&item.LastPingAt,   // 'last_ping_at', 'LastPingAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.LastStatusAt, // 'last_status_at', 'LastStatusAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.Status,       // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2569,7 +2569,7 @@ type FindAgentsByOrganizationRow struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2591,7 +2591,7 @@ func (q *DBQuerier) FindAgentsByOrganization(ctx context.Context, organizationNa
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,      // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.MaxJobs,      // 'max_jobs', 'MaxJobs', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
-			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IP', 'net', 'IP'
+			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IPNet', 'net', 'IPNet'
 			&item.LastPingAt,   // 'last_ping_at', 'LastPingAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.LastStatusAt, // 'last_status_at', 'LastStatusAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.Status,       // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2622,7 +2622,7 @@ type FindAgentsByPoolIDRow struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2644,7 +2644,7 @@ func (q *DBQuerier) FindAgentsByPoolID(ctx context.Context, agentPoolID pgtype.T
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,      // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.MaxJobs,      // 'max_jobs', 'MaxJobs', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
-			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IP', 'net', 'IP'
+			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IPNet', 'net', 'IPNet'
 			&item.LastPingAt,   // 'last_ping_at', 'LastPingAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.LastStatusAt, // 'last_status_at', 'LastStatusAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.Status,       // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2674,7 +2674,7 @@ type FindServerAgentsRow struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2696,7 +2696,7 @@ func (q *DBQuerier) FindServerAgents(ctx context.Context) ([]FindServerAgentsRow
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,      // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.MaxJobs,      // 'max_jobs', 'MaxJobs', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
-			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IP', 'net', 'IP'
+			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IPNet', 'net', 'IPNet'
 			&item.LastPingAt,   // 'last_ping_at', 'LastPingAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.LastStatusAt, // 'last_status_at', 'LastStatusAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.Status,       // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2726,7 +2726,7 @@ type FindAgentByIDRow struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2748,7 +2748,7 @@ func (q *DBQuerier) FindAgentByID(ctx context.Context, agentID pgtype.Text) (Fin
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,      // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.MaxJobs,      // 'max_jobs', 'MaxJobs', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
-			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IP', 'net', 'IP'
+			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IPNet', 'net', 'IPNet'
 			&item.LastPingAt,   // 'last_ping_at', 'LastPingAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.LastStatusAt, // 'last_status_at', 'LastStatusAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.Status,       // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2777,7 +2777,7 @@ type FindAgentByIDForUpdateRow struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2799,7 +2799,7 @@ func (q *DBQuerier) FindAgentByIDForUpdate(ctx context.Context, agentID pgtype.T
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,      // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.MaxJobs,      // 'max_jobs', 'MaxJobs', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
-			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IP', 'net', 'IP'
+			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IPNet', 'net', 'IPNet'
 			&item.LastPingAt,   // 'last_ping_at', 'LastPingAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.LastStatusAt, // 'last_status_at', 'LastStatusAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.Status,       // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2822,7 +2822,7 @@ type DeleteAgentRow struct {
 	Name         pgtype.Text        `json:"name"`
 	Version      pgtype.Text        `json:"version"`
 	MaxJobs      pgtype.Int4        `json:"max_jobs"`
-	IPAddress    net.IP             `json:"ip_address"`
+	IPAddress    net.IPNet          `json:"ip_address"`
 	LastPingAt   pgtype.Timestamptz `json:"last_ping_at"`
 	LastStatusAt pgtype.Timestamptz `json:"last_status_at"`
 	Status       pgtype.Text        `json:"status"`
@@ -2843,7 +2843,7 @@ func (q *DBQuerier) DeleteAgent(ctx context.Context, agentID pgtype.Text) (Delet
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,      // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.MaxJobs,      // 'max_jobs', 'MaxJobs', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
-			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IP', 'net', 'IP'
+			&item.IPAddress,    // 'ip_address', 'IPAddress', 'net.IPNet', 'net', 'IPNet'
 			&item.LastPingAt,   // 'last_ping_at', 'LastPingAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.LastStatusAt, // 'last_status_at', 'LastStatusAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.Status,       // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
