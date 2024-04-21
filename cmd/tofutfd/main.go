@@ -89,6 +89,7 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 	cmd.Flags().StringVar(&cfg.KeyFile, "key-file", "", "Path to SSL key (required if enabling SSL)")
 	cmd.Flags().BoolVar(&cfg.EnableRequestLogging, "log-http-requests", false, "Log HTTP requests")
 	cmd.Flags().BoolVar(&cfg.DevMode, "dev-mode", false, "Enable developer mode.")
+	cmd.Flags().BoolVar(&cfg.SkipTLSVerification, "skip-tls-verification", false, "Enable/Disable verification of client's SSL certificates.")
 
 	cmd.Flags().StringVar(&cfg.GithubHostname, "github-hostname", github.DefaultHostname, "github hostname")
 	cmd.Flags().StringVar(&cfg.GithubClientID, "github-client-id", "", "github client ID")
