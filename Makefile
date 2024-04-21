@@ -77,7 +77,7 @@ sql: install-pggen
 		--postgres-connection $(DBSTRING) \
 		--query-glob 'internal/sql/queries/*.sql' \
 		--output-dir ./internal/sql/pggen \
-		--go-type 'inet=net.IP' \
+		--go-type 'inet=net.IPNet' \
 		--go-type 'text=github.com/jackc/pgx/v5/pgtype.Text' \
 		--go-type 'int4=github.com/jackc/pgx/v5/pgtype.Int4' \
 		--go-type 'int8=github.com/jackc/pgx/v5/pgtype.Int8' \
@@ -102,6 +102,10 @@ sql: install-pggen
 .PHONY: install-goose
 install-goose:
 	@sh -c "which goose > /dev/null || go install github.com/pressly/goose/v3/cmd/goose@latest"
+
+.PHONY: install-gowrap
+install-gowrap:
+	@sh -c "which goose > /dev/null || go install github.com/hexdigest/gowrap/cmd/gowrap@latest"
 
 # Migrate SQL schema to latest version
 .PHONY: migrate

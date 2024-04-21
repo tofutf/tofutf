@@ -70,7 +70,7 @@ type (
 		Users         *user.Service
 		GithubApp     *github.Service
 		RepoHooks     *repohooks.Service
-		Agents        *agent.Service
+		Agents        agent.Service
 		Connections   *connections.Service
 		System        *internal.HostnameService
 

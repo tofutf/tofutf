@@ -72,7 +72,7 @@ type registerAgentOptions struct {
 
 // registrar registers new agents.
 type registrar struct {
-	*Service
+	*service
 }
 
 func (f *registrar) register(ctx context.Context, opts registerAgentOptions) (*Agent, error) {

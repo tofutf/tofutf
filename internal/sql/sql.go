@@ -4,6 +4,7 @@ Package sql implements persistent storage using the postgres database.
 package sql
 
 import (
+	"net"
 	"time"
 
 	"github.com/pkg/errors"
@@ -116,4 +117,9 @@ func NoRowsInResultError(err error) bool {
 			return true
 		}
 	}
+}
+
+// Inet is a shim that converts a net.IP into a new.IPNet.
+func Inet(address net.IP) net.IPNet {
+	return net.IPNet{IP: address, Mask: net.CIDRMask(32, 0)}
 }

@@ -11,7 +11,7 @@ type fakeService struct {
 	deletedAgentID         string
 	job                    *Job
 
-	Service
+	service
 }
 
 func (f *fakeService) CreateAgentPool(ctx context.Context, opts CreateAgentPoolOptions) (*Pool, error) {

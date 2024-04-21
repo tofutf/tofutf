@@ -8,10 +8,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/exaring/otelpgx"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tofutf/tofutf/internal/sql/pggen"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -25,6 +29,10 @@ type (
 	Pool struct {
 		e      *pgxpool.Pool // db connection pool
 		logger *slog.Logger
+		tracer trace.Tracer
+
+		// querierFn is the factory that produces querier given a connection.
+		querierFn func(ctx context.Context, conn genericConn) (pggen.Querier, error)
 	}
 
 	// Options for constructing a DB
@@ -32,11 +40,23 @@ type (
 		Logger     *slog.Logger
 		ConnString string
 	}
+
+	// genericConn is a connection like *pgx.Conn, pgx.Tx, or *pgxpool.Pool.
+	genericConn interface {
+		Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+		QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+		Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+
+		LoadType(ctx context.Context, typeName string) (*pgtype.Type, error)
+		TypeMap() *pgtype.Map
+	}
 )
 
 // New constructs a new DB connection pool, and migrates the schema to the
 // latest version.
 func New(ctx context.Context, opts Options) (*Pool, error) {
+	tracer := otel.GetTracerProvider().Tracer("sql.Pool")
+
 	// Bump max number of connections in a pool. By default pgx sets it to the
 	// greater of 4 or the num of CPUs. However, otfd acquires several dedicated
 	// connections for session-level advisory locks and can easily exhaust this.
@@ -49,6 +69,8 @@ func New(ctx context.Context, opts Options) (*Pool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse connection string: %w", err)
 	}
+
+	config.ConnConfig.Tracer = otelpgx.NewTracer()
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
@@ -69,15 +91,34 @@ func New(ctx context.Context, opts Options) (*Pool, error) {
 		return nil, err
 	}
 
+	// querierFn builds the querier using the given connection
+	querierFn := func(ctx context.Context, conn genericConn) (pggen.Querier, error) {
+		var querier pggen.Querier
+
+		querier, err := pggen.NewQuerier(ctx, conn)
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct new querier")
+		}
+
+		querier = pggen.NewQuerierWithTracing(querier, "querier")
+
+		return querier, nil
+	}
+
 	return &Pool{
-		e:      pool,
-		logger: opts.Logger,
+		e:         pool,
+		logger:    opts.Logger,
+		querierFn: querierFn,
+		tracer:    tracer,
 	}, nil
 }
 
 // Query obtains a connection for the pool, executes the given function, and
 // returns the connection to the pool.
 func Query[T any](ctx context.Context, pool *Pool, fn func(context.Context, pggen.Querier) (T, error)) (T, error) {
+	ctx, span := pool.tracer.Start(ctx, "sql.Query")
+	defer span.End()
+
 	var result T
 	err := pool.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		v, err := fn(ctx, q)
@@ -98,6 +139,9 @@ func Query[T any](ctx context.Context, pool *Pool, fn func(context.Context, pgge
 
 // Tx obtains a transaction from the pool, executes the given fn, and then commits the transaction.
 func Tx[T any](ctx context.Context, pool *Pool, fn func(context.Context, pggen.Querier) (T, error)) (T, error) {
+	ctx, span := pool.tracer.Start(ctx, "sql.Tx")
+	defer span.End()
+
 	var result T
 	err := pool.Tx(ctx, func(ctx context.Context, q pggen.Querier) error {
 		v, err := fn(ctx, q)
@@ -119,8 +163,11 @@ func Tx[T any](ctx context.Context, pool *Pool, fn func(context.Context, pggen.Q
 // Query obtains a connection for the pool, executes the given function, and
 // returns the connection to the pool.
 func (p *Pool) Query(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
+	ctx, span := p.tracer.Start(ctx, "Pool.Query")
+	defer span.End()
+
 	if conn, ok := fromContext(ctx); ok {
-		querier, err := pggen.NewQuerier(ctx, conn)
+		querier, err := p.querierFn(ctx, conn)
 		if err != nil {
 			return fmt.Errorf("failed to construct querier with ctx conn: %w", err)
 		}
@@ -134,7 +181,7 @@ func (p *Pool) Query(ctx context.Context, callback func(context.Context, pggen.Q
 	}
 
 	err := p.e.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
-		querier, err := pggen.NewQuerier(ctx, c.Conn())
+		querier, err := p.querierFn(ctx, c.Conn())
 		if err != nil {
 			return fmt.Errorf("failed to consturct querier from pool: %w", err)
 		}
@@ -156,12 +203,15 @@ func (p *Pool) Query(ctx context.Context, callback func(context.Context, pggen.Q
 // Tx provides the caller with a callback in which all operations are conducted
 // within a transaction.
 func (p *Pool) Tx(ctx context.Context, callback func(context.Context, pggen.Querier) error) error {
+	ctx, span := p.tracer.Start(ctx, "Pool.Tx")
+	defer span.End()
+
 	var conn interface {
 		Begin(ctx context.Context) (pgx.Tx, error)
 	} = p.e
 
 	if txConn, ok := txFromContext(ctx); ok {
-		querier, err := pggen.NewQuerier(ctx, txConn.Conn())
+		querier, err := p.querierFn(ctx, txConn.Conn())
 		if err != nil {
 			return fmt.Errorf("failed to construct querier from tx conn: %w", err)
 		}
@@ -175,7 +225,7 @@ func (p *Pool) Tx(ctx context.Context, callback func(context.Context, pggen.Quer
 	}
 
 	return pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
-		querier, err := pggen.NewQuerier(ctx, tx.Conn())
+		querier, err := p.querierFn(ctx, tx.Conn())
 		if err != nil {
 			return fmt.Errorf("failed to construct querier from tx conn: %w", err)
 		}
@@ -222,7 +272,7 @@ func (p *Pool) Lock(ctx context.Context, table string, fn func(context.Context, 
 	}
 
 	return pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
-		querier, err := pggen.NewQuerier(ctx, tx.Conn())
+		querier, err := p.querierFn(ctx, tx.Conn())
 		if err != nil {
 			return fmt.Errorf("failed to construct querier from tx conn: %w", err)
 		}
