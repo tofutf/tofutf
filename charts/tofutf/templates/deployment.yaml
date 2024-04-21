@@ -39,6 +39,8 @@ spec:
 {{- end }}
             - name: OTF_HOSTNAME
               value: "{{ .Values.hostname }}"
+            - name: OTF_SKIP_TLS_VERIFICATION
+              value: "{{ .Values.skipTLSVerification }}"
             {{- with .Values.logging }}
             - name: OTF_V
               value: "{{ .verbosity }}"
