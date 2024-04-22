@@ -7,13 +7,13 @@ on:
       - edited
       - synchronize
 
-permissions:
-  pull-requests: read
 
 jobs:
   main:
-    name: Validate PR title
+    name: Semantic Pull Request
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
