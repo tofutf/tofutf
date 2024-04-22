@@ -8,14 +8,15 @@ on:
     tags:
       - v*
 
-permissions:
-  contents: write
-  packages: write
-  issues: write
-  id-token: write
 
 jobs:
   publish:
+    name: Publish Artifacts
+    permissions:
+      contents: write
+      packages: write
+      issues: write
+      id-token: write
     runs-on: ubuntu-latest
     env:
       flags: ""
