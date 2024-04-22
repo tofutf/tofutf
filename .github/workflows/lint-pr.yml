@@ -8,6 +8,9 @@ on:
       - synchronize
 
 
+permissions:
+  contents: read
+
 jobs:
   main:
     name: Semantic Pull Request
@@ -19,6 +22,6 @@ jobs:
         uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
         with:
           egress-policy: audit
-      - uses: step-security/action-semantic-pull-request@v1
+      - uses: step-security/action-semantic-pull-request@b7cd9b10bdd0e92fedf4fda525ff9cf433ca3c1c # v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

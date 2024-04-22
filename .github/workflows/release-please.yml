@@ -6,6 +6,9 @@ on:
 
 name: release-please
 
+permissions:
+  contents: read
+
 jobs:
   release-please:
     name: release-please
