@@ -8,7 +8,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/ProtonMail/go-crypto v1.0.0
 	github.com/allegro/bigcache v1.2.1
-	github.com/antchfx/htmlquery v1.3.0
+	github.com/antchfx/htmlquery v1.3.1
 	github.com/bradleyfalzon/ghinstallation/v2 v2.7.0
 	github.com/buildkite/terminal-to-html v3.2.0+incompatible
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -76,7 +76,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.11.4 // indirect
 	github.com/agext/levenshtein v1.2.2 // indirect
-	github.com/antchfx/xpath v1.2.3 // indirect
+	github.com/antchfx/xpath v1.3.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
