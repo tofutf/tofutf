@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -44,5 +45,46 @@ func TestProxy_Get(t *testing.T) {
 
 		// cache should be populated now
 		assert.Equal(t, "hello world", string(cache.cache["run-123.plan.log"]))
+	})
+}
+
+func FuzzProxy_Get(f *testing.F) {
+	ctx := context.Background()
+
+	f.Add("run-1234", "hello world", 3, 4)
+
+	f.Fuzz(func(t *testing.T, runID, payload string, offset, limit int) {
+		if offset < 0 {
+			t.Skip()
+		}
+
+		if limit <= 0 {
+			t.Skip()
+		}
+
+		if offset+limit > len(payload) {
+			t.Skip()
+		}
+		opts := internal.GetChunkOptions{
+			RunID:  runID,
+			Phase:  internal.PlanPhase,
+			Offset: offset,
+			Limit:  limit,
+		}
+
+		cache := newFakeCache(fmt.Sprintf("%s.plan.log", runID), payload)
+		proxy := &proxy{cache: cache}
+
+		got, err := proxy.get(ctx, opts)
+		require.NoError(t, err)
+
+		want := internal.Chunk{
+			RunID:  runID,
+			Phase:  internal.PlanPhase,
+			Offset: offset,
+			Data:   []byte(payload[offset : offset+limit]),
+		}
+
+		assert.Equal(t, want, got)
 	})
 }
