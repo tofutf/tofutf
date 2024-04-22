@@ -100,14 +100,16 @@ func NewService(opts Options) *Service {
 	// Register with auth middleware the user token kind and a means of
 	// retrieving user corresponding to token.
 	opts.TokensService.RegisterKind(UserTokenKind, func(ctx context.Context, tokenID string) (internal.Subject, error) {
+		svc.logger.Debug("Register Kind")
 		return svc.GetUser(ctx, UserSpec{AuthenticationTokenID: internal.String(tokenID)})
 
 	})
 	// Register with auth middleware the ability to get or create a user given a
 	// username.
 	opts.TokensService.RegisterUISubjectGetterOrCreator(func(ctx context.Context, username string) (internal.Subject, error) {
+
 		user, err := svc.GetUser(ctx, UserSpec{Username: &username})
-		if err == internal.ErrResourceNotFound {
+		if errors.Is(err, internal.ErrResourceNotFound) {
 			user, err = svc.Create(ctx, username)
 		}
 		return user, err

@@ -122,6 +122,7 @@ func (db *pgdb) getUser(ctx context.Context, spec UserSpec) (*User, error) {
 			return dbresult(result).toUser(), nil
 		} else if spec.Username != nil {
 			result, err := q.FindUserByUsername(ctx, sql.String(*spec.Username))
+			db.Logger.Debug("Find by username: %s %s", *spec.Username, err)
 			if err != nil {
 				return nil, sql.Error(err)
 			}

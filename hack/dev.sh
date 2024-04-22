@@ -5,7 +5,7 @@ set -e
 PORT_FORWARD_TIMEOUT_SECONDS=10
 
 function start_caddy(){
-  coproc caddy reverse-proxy --from https://localhost:8081 --to http://localhost:8080 --internal-certs --disable-redirects 
+  coproc caddy reverse-proxy --from https://tofutf.pvotal.local:8081 --to http://tofutf.pvotal.local:8080 --internal-certs --disable-redirects 
   caddy_pid=$COPROC_PID
 }
 
@@ -67,25 +67,38 @@ function kill_caddy() {
 }
 
 
-trap kill_port_forward EXIT
 trap kill_caddy EXIT
 
-PGUSER=tofutf
-PGPASSWORD=$(kubectl get secrets postgres-postgresql -oyaml | yq '.data["password"]' -r | base64 -d)
-
-start_port_forward
 start_caddy
 
-echo "listening on $port_forward_local_port"
-
 # here we grab all of the configuration from the running tofutf instance.
-$(kubectl get deployments tofutf -oyaml | yq '.spec.template.spec.containers[0].env | filter(.value != null) | filter (.name == "OTF*") | map({"key": (.name), "value": (.value)}) | from_entries' | awk '{ print "export " substr($1, 1, length($1)-1) "=" $2}')
-export OTF_LOG_HTTP_REQUESTS=true
+#$(kubectl get deployments -n tofutf tofutf -oyaml | yq '.spec.template.spec.containers[0].env | select(.value != null) | select(.name == "OTF*") | map({"key": (.name), "value": (.value)}) | from_entries' | awk '{ print "export " substr($1, 1, length($1)-1) "=" $2}')
+
+export OTF_SKIP_TLS_VERIFICATION="true"
+export OTF_HOSTNAME=tofutf.pvotal.local
+export OTF_LOG_FORMAT=default
+export OTF_LOG_HTTP_REQUESTS="false"
+export OTF_DATABASE=postgres://tofutf:AtxcIOp3Ons83SKd@localhost:5432/tofutf?sslmode=disable
+export OTF_SECRET=2876cb147697052eec5b3cdb56211681
+export OTF_PROVIDER_PROXY_URL=https://registry.terraform.io/v1/providers/
+export OTF_GITHUB_CLIENT_ID
+export OTF_GITHUB_CLIENT_SECRET
+export OTF_GITHUB_HOSTNAME=github.com
+export OTF_GITLAB_CLIENT_ID
+export OTF_GITLAB_CLIENT_SECRET
+export OTF_GITLAB_HOSTNAME=gitlab.com
+export OTF_OIDC_NAME=internal-client
+export OTF_OIDC_ISSUER_URL=https://dex.pvotal.local
+export OTF_OIDC_CLIENT_ID=internal-client
+export OTF_SITE_TOKEN=site-token
+export OTF_SANDBOX="false"
+
+
 export OTF_SANDBOX=false
-export OTF_V=10
-export OTF_DATABASE="postgresql://$PGUSER:$PGPASSWORD@localhost:$port_forward_local_port/postgres"
-export OTF_OIDC_CLIENT_SECRET=$(kubectl get secrets tofutf-oidc-client-secret -oyaml | yq '.data.secret' -r | base64 -d)
+export OTF_V="100"
+export OTF_OIDC_CLIENT_SECRET=5GCVLQ7qAQcqfnmRlaFqWHas4RijCKH7
 export OTF_PROVIDER_PROXY_URL=https://registry.opentofu.org/v1/providers/
 export OTF_PROVIDER_PROXY_IS_ARTIFACTORY=false
+export OTF_SKIP_TLS_VERIFICATION=true
 
 air

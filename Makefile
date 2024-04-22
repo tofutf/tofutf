@@ -1,12 +1,12 @@
 VERSION ?= $(shell git describe --tags --dirty --always)
 
 GIT_COMMIT = $(shell git rev-parse HEAD)
-RANDOM_SUFFIX := $(shell cat /dev/urandom | tr -dc 'a-z0-9' | head -c5)
+RANDOM_SUFFIX := $(shell LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c5)
 
 # Provide some sane defaults for connecting to postgres.
 PGPASSWORD ?= $(shell kubectl get secrets postgres-postgresql -oyaml | yq '.data["password"]' -r | base64 -d)
 PGUSER ?= tofutf
-DBSTRING ?= postgres://$(PGUSER):$(PGPASSWORD)@localhost:5432/postgres
+DBSTRING ?= postgres://tofutf:AtxcIOp3Ons83SKd@172.20.0.10:5432/tofutf?sslmode=disable
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))

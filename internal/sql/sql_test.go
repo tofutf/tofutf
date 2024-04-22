@@ -35,6 +35,7 @@ func TestSqlErrorHandling(t *testing.T) {
 		{"Expect handling of PG 23505", samplePgErr2, internal.ErrResourceAlreadyExists},
 		{"Expect raw return of other PG codes", samplePgErr3, samplePgErr3},
 		{"Expect raw return for any other error", internal.ErrAccessNotPermitted, internal.ErrAccessNotPermitted},
+		{"Expect nil should return nil", nil, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

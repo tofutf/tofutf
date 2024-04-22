@@ -31,7 +31,7 @@ func (s *HostnameService) SetWebhookHostname(webhookHostname string) {
 func (s *HostnameService) URL(path string) string {
 	u := url.URL{
 		Scheme: "https",
-		Host:   s.Hostname(),
+		Host:   fmt.Sprintf("%s:8081", s.Hostname()),
 		Path:   path,
 	}
 	return u.String()
@@ -40,7 +40,7 @@ func (s *HostnameService) URL(path string) string {
 func (s *HostnameService) WebhookURL(path string) string {
 	u := url.URL{
 		Scheme: "https",
-		Host:   s.WebhookHostname(),
+		Host:   fmt.Sprintf("%s:8081", s.Hostname()),
 		Path:   path,
 	}
 	return u.String()

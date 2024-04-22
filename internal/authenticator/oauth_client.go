@@ -110,7 +110,8 @@ func (a *OAuthClient) requestHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   60, // 60 seconds
 		HttpOnly: true,
-		Secure:   true, // HTTPS only
+
+		Secure: false, // HTTPS only
 	})
 	redirectURL := a.config().AuthCodeURL(state)
 	http.Redirect(w, r, redirectURL, http.StatusFound)
