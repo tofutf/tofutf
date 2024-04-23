@@ -91,6 +91,7 @@ func TimestamptzPtr(t *time.Time) pgtype.Timestamptz {
 }
 
 func Error(err error) error {
+
 	var pgErr *pgconn.PgError
 	switch {
 	case NoRowsInResultError(err):
@@ -109,12 +110,16 @@ func Error(err error) error {
 }
 
 func NoRowsInResultError(err error) bool {
+	if err == nil {
+		return false
+	}
 	for {
+		if err.Error() == "no rows in result set" {
+			return true
+		}
 		err = errors.Unwrap(err)
 		if err == nil {
 			return false
-		} else if err.Error() == "no rows in result set" {
-			return true
 		}
 	}
 }
