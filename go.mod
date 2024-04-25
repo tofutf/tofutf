@@ -26,7 +26,7 @@ require (
 	github.com/google/go-github/v55 v55.0.0
 	github.com/google/goexpect v0.0.0-20210430020637-ab937bf7fd6f
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/handlers v1.5.1
+	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/schema v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
