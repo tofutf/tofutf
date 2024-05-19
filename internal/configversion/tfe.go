@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/leg100/surl"
 	"github.com/tofutf/tofutf/internal"
 	otfhttp "github.com/tofutf/tofutf/internal/http"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 )
 
 type tfe struct {
@@ -238,8 +238,8 @@ func (a *tfe) convert(from *ConfigurationVersion, uploadURL string) *types.Confi
 		ID:               from.ID,
 		AutoQueueRuns:    from.AutoQueueRuns,
 		Speculative:      from.Speculative,
-		Source:           string(from.Source),
-		Status:           string(from.Status),
+		Source:           types.ConfigurationSource(from.Source),
+		Status:           types.ConfigurationStatus(from.Status),
 		StatusTimestamps: &types.CVStatusTimestamps{},
 		UploadURL:        uploadURL,
 	}
@@ -251,11 +251,11 @@ func (a *tfe) convert(from *ConfigurationVersion, uploadURL string) *types.Confi
 	for _, ts := range from.StatusTimestamps {
 		switch ts.Status {
 		case ConfigurationPending:
-			to.StatusTimestamps.QueuedAt = &ts.Timestamp
+			to.StatusTimestamps.QueuedAt = ts.Timestamp
 		case ConfigurationErrored:
-			to.StatusTimestamps.FinishedAt = &ts.Timestamp
+			to.StatusTimestamps.FinishedAt = ts.Timestamp
 		case ConfigurationUploaded:
-			to.StatusTimestamps.StartedAt = &ts.Timestamp
+			to.StatusTimestamps.StartedAt = ts.Timestamp
 		}
 	}
 	return to

@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 )
 
 type tfe struct {
@@ -178,10 +178,9 @@ func (a *tfe) deleteTeam(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *tfe) convertTeam(from *Team) *types.Team {
-	return &types.Team{
+	team := &types.Team{
 		ID:         from.ID,
 		Name:       from.Name,
-		SSOTeamID:  from.SSOTeamID,
 		Visibility: from.Visibility,
 		OrganizationAccess: &types.OrganizationAccess{
 			ManageWorkspaces:      from.Access.ManageWorkspaces,
@@ -197,6 +196,10 @@ func (a *tfe) convertTeam(from *Team) *types.Team {
 			CanUpdateMembership: true,
 		},
 	}
+	if from.SSOTeamID != nil {
+		team.SSOTeamID = *from.SSOTeamID
+	}
+	return team
 }
 
 func (a *tfe) createTeamToken(w http.ResponseWriter, r *http.Request) {
@@ -223,7 +226,9 @@ func (a *tfe) createTeamToken(w http.ResponseWriter, r *http.Request) {
 		ID:        ot.ID,
 		CreatedAt: ot.CreatedAt,
 		Token:     string(token),
-		ExpiredAt: ot.Expiry,
+	}
+	if ot.Expiry != nil {
+		to.ExpiredAt = *ot.Expiry
 	}
 	a.Respond(w, r, to, http.StatusCreated)
 }
@@ -248,7 +253,9 @@ func (a *tfe) getTeamToken(w http.ResponseWriter, r *http.Request) {
 	to := &types.TeamToken{
 		ID:        ot.ID,
 		CreatedAt: ot.CreatedAt,
-		ExpiredAt: ot.Expiry,
+	}
+	if ot.Expiry != nil {
+		to.ExpiredAt = *ot.Expiry
 	}
 	a.Respond(w, r, to, http.StatusOK)
 }

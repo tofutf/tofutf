@@ -6,10 +6,10 @@ import (
 	"reflect"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 )
 
 type tfe struct {
@@ -154,7 +154,7 @@ func (a *tfe) getEntitlements(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.Respond(w, r, (*types.Entitlements)(&entitlements), http.StatusOK)
+	a.Respond(w, r, entitlements, http.StatusOK)
 }
 
 func (a *tfe) createOrganizationToken(w http.ResponseWriter, r *http.Request) {
@@ -182,7 +182,7 @@ func (a *tfe) createOrganizationToken(w http.ResponseWriter, r *http.Request) {
 		ID:        ot.ID,
 		CreatedAt: ot.CreatedAt,
 		Token:     string(token),
-		ExpiredAt: ot.Expiry,
+		ExpiredAt: *ot.Expiry,
 	}
 	a.Respond(w, r, to, http.StatusCreated)
 }
@@ -207,7 +207,9 @@ func (a *tfe) getOrganizationToken(w http.ResponseWriter, r *http.Request) {
 	to := &types.OrganizationToken{
 		ID:        ot.ID,
 		CreatedAt: ot.CreatedAt,
-		ExpiredAt: ot.Expiry,
+	}
+	if ot.Expiry != nil {
+		to.ExpiredAt = *ot.Expiry
 	}
 	a.Respond(w, r, to, http.StatusCreated)
 }
@@ -256,13 +258,17 @@ func (a *tfe) toOrganization(from *Organization) *types.Organization {
 		Name:                       from.Name,
 		CreatedAt:                  from.CreatedAt,
 		ExternalID:                 from.ID,
-		Permissions:                &types.DefaultOrganizationPermissions,
-		SessionRemember:            from.SessionRemember,
-		SessionTimeout:             from.SessionTimeout,
+		Permissions:                &types.OrganizationPermissions{},
 		AllowForceDeleteWorkspaces: from.AllowForceDeleteWorkspaces,
 		CostEstimationEnabled:      from.CostEstimationEnabled,
 		// go-tfe tests expect this attribute to be equal to 5
 		RemainingTestableCount: 5,
+	}
+	if from.SessionRemember != nil {
+		to.SessionRemember = *from.SessionRemember
+	}
+	if from.SessionTimeout != nil {
+		to.SessionTimeout = *from.SessionTimeout
 	}
 	if from.Email != nil {
 		to.Email = *from.Email

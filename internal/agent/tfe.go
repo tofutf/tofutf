@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 )
 
 type tfe struct {
@@ -156,8 +156,8 @@ func (a *tfe) listAgentPools(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pools, err := a.service.listAgentPoolsByOrganization(r.Context(), organization, listPoolOptions{
-		NameSubstring:        params.Query,
-		AllowedWorkspaceName: params.AllowedWorkspacesName,
+		NameSubstring:        &params.Query,
+		AllowedWorkspaceName: &params.AllowedWorkspacesName,
 	})
 	if err != nil {
 		tfeapi.Error(w, err)
@@ -230,7 +230,7 @@ func (a *tfe) createAgentToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	at, token, err := a.service.CreateAgentToken(r.Context(), poolID, CreateAgentTokenOptions{
-		Description: params.Description,
+		Description: *params.Description,
 	})
 	if err != nil {
 		tfeapi.Error(w, err)

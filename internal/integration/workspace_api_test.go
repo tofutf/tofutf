@@ -9,13 +9,13 @@ import (
 
 	"github.com/DataDog/jsonapi"
 	tfe "github.com/hashicorp/go-tfe"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/github"
 	"github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/testutils"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 	"github.com/tofutf/tofutf/internal/vcs"
 	"github.com/tofutf/tofutf/internal/vcsprovider"
 )

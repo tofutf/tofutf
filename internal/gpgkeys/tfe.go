@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 )
 
 type (
@@ -172,7 +172,7 @@ func (h *tfeHandlers) create(w http.ResponseWriter, r *http.Request) {
 	key, err := h.svc.Create(r.Context(), CreateOptions{
 		RegistryName: params.RegistryName,
 		Organization: opts.Namespace,
-		ASCIIArmor:   opts.ASCIIArmor,
+		ASCIIArmor:   opts.AsciiArmor,
 		Type:         opts.Type,
 	})
 	if err != nil {
@@ -186,13 +186,13 @@ func (h *tfeHandlers) create(w http.ResponseWriter, r *http.Request) {
 func (h *tfeHandlers) toGPGKey(key *GPGKey) *types.GPGKey {
 	return &types.GPGKey{
 		ID:             key.ID,
-		ASCIIArmor:     key.ASCIIArmor,
+		AsciiArmor:     string(key.ASCIIArmor),
 		Namespace:      key.OrganizationName,
 		KeyID:          key.KeyID,
 		TrustSignature: "",
 		Source:         "",
 		SourceURL:      nil,
-		CreatedAt:      key.CreatedAt.Format(types.ISO8601),
-		UpdatedAt:      key.UpdatedAt.Format(types.ISO8601),
+		CreatedAt:      key.CreatedAt,
+		UpdatedAt:      key.UpdatedAt,
 	}
 }

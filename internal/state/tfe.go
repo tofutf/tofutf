@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/leg100/surl"
 	"github.com/tofutf/tofutf/internal"
 	otfhttp "github.com/tofutf/tofutf/internal/http"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 	"github.com/tofutf/tofutf/internal/workspace"
 	"golang.org/x/exp/maps"
 )
@@ -70,7 +70,7 @@ func (a *tfe) createVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	opts := types.StateVersionCreateVersionOptions{}
+	opts := types.StateVersionCreateOptions{}
 	if err := tfeapi.Unmarshal(r.Body, &opts); err != nil {
 		tfeapi.Error(w, err)
 		return
@@ -208,13 +208,13 @@ func (a *tfe) deleteVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *tfe) rollbackVersion(w http.ResponseWriter, r *http.Request) {
-	opts := types.RollbackStateVersionOptions{}
+	opts := types.StateVersionCreateOptions{} //FIXME: how do we get the target state to rollback to
 	if err := tfeapi.Unmarshal(r.Body, &opts); err != nil {
 		tfeapi.Error(w, err)
 		return
 	}
 
-	sv, err := a.state.Rollback(r.Context(), opts.RollbackStateVersion.ID)
+	sv, err := a.state.Rollback(r.Context(), opts.Run.ID) //FIXME: this should be the rollback target ID but it's not available in current payload
 	if err != nil {
 		tfeapi.Error(w, err)
 		return
@@ -423,17 +423,17 @@ func (a *tfe) includeWorkspaceCurrentOutputs(ctx context.Context, v any) ([]any,
 	// that should be the responsibility of the workspace pkg. To avoid an
 	// import cycle, perhaps the workspace SQL queries could return a list of
 	// output IDs.
-	ws.Outputs = make([]*types.WorkspaceOutput, len(sv.Outputs))
+	ws.Outputs = make([]*types.WorkspaceOutputs, len(sv.Outputs))
 	var i int
 	for _, from := range sv.Outputs {
-		include[i] = &types.WorkspaceOutput{
+		include[i] = &types.WorkspaceOutputs{
 			ID:        from.ID,
 			Name:      from.Name,
 			Sensitive: from.Sensitive,
 			Type:      from.Type,
 			Value:     from.Value,
 		}
-		ws.Outputs[i] = &types.WorkspaceOutput{
+		ws.Outputs[i] = &types.WorkspaceOutputs{
 			ID: from.ID,
 		}
 		i++

@@ -8,17 +8,17 @@ import (
 	"testing"
 
 	"github.com/DataDog/jsonapi"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 )
 
 func TestClient_UnmarshalResponse(t *testing.T) {
 	want := types.WorkspaceList{
 		Items: []*types.Workspace{
-			{ID: "ws-1", Outputs: []*types.WorkspaceOutput{}},
-			{ID: "ws-2", Outputs: []*types.WorkspaceOutput{}},
+			{ID: "ws-1", Outputs: []*types.WorkspaceOutputs{}},
+			{ID: "ws-2", Outputs: []*types.WorkspaceOutputs{}},
 		},
 		Pagination: &types.Pagination{},
 	}

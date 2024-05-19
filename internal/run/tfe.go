@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	otfhttp "github.com/tofutf/tofutf/internal/http"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/rbac"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 	"github.com/tofutf/tofutf/internal/workspace"
 )
 
@@ -138,17 +138,18 @@ func (a *tfe) listRuns(w http.ResponseWriter, r *http.Request) {
 	if slices.Contains(operations, string(types.RunOperationPlanOnly)) {
 		planOnly = internal.Bool(true)
 	}
+	opts := ListOptions{
+		//FIXME: Organization: params.Organization,
+		//FIXME: WorkspaceID:  params.WorkspaceID,
+		PageOptions: resource.PageOptions(params.ListOptions),
+		Statuses:    statuses,
+		Sources:     sources,
+		PlanOnly:    planOnly,
+		CommitSHA:   &params.Commit,
+		VCSUsername: &params.User,
+	}
 
-	a.listRunsWithOptions(w, r, ListOptions{
-		Organization: params.Organization,
-		WorkspaceID:  params.WorkspaceID,
-		PageOptions:  resource.PageOptions(params.ListOptions),
-		Statuses:     statuses,
-		Sources:      sources,
-		PlanOnly:     planOnly,
-		CommitSHA:    params.Commit,
-		VCSUsername:  params.User,
-	})
+	a.listRunsWithOptions(w, r, opts)
 }
 
 func (a *tfe) getRunQueue(w http.ResponseWriter, r *http.Request) {
@@ -367,29 +368,29 @@ func (a *tfe) toRun(from *Run, ctx context.Context) (*types.Run, error) {
 	for _, rst := range from.StatusTimestamps {
 		switch rst.Status {
 		case RunPending:
-			timestamps.PlanQueueableAt = &rst.Timestamp
+			timestamps.PlanQueueableAt = rst.Timestamp
 		case RunPlanQueued:
-			timestamps.PlanQueuedAt = &rst.Timestamp
+			timestamps.PlanQueuedAt = rst.Timestamp
 		case RunPlanning:
-			timestamps.PlanningAt = &rst.Timestamp
+			timestamps.PlanningAt = rst.Timestamp
 		case RunPlanned:
-			timestamps.PlannedAt = &rst.Timestamp
+			timestamps.PlannedAt = rst.Timestamp
 		case RunPlannedAndFinished:
-			timestamps.PlannedAndFinishedAt = &rst.Timestamp
+			timestamps.PlannedAndFinishedAt = rst.Timestamp
 		case RunApplyQueued:
-			timestamps.ApplyQueuedAt = &rst.Timestamp
+			timestamps.ApplyQueuedAt = rst.Timestamp
 		case RunApplying:
-			timestamps.ApplyingAt = &rst.Timestamp
+			timestamps.ApplyingAt = rst.Timestamp
 		case RunApplied:
-			timestamps.AppliedAt = &rst.Timestamp
+			timestamps.AppliedAt = rst.Timestamp
 		case RunErrored:
-			timestamps.ErroredAt = &rst.Timestamp
+			timestamps.ErroredAt = rst.Timestamp
 		case RunCanceled:
-			timestamps.CanceledAt = &rst.Timestamp
+			timestamps.CanceledAt = rst.Timestamp
 		case RunForceCanceled:
-			timestamps.ForceCanceledAt = &rst.Timestamp
+			timestamps.ForceCanceledAt = rst.Timestamp
 		case RunDiscarded:
-			timestamps.DiscardedAt = &rst.Timestamp
+			timestamps.DiscardedAt = rst.Timestamp
 		}
 	}
 
@@ -401,21 +402,21 @@ func (a *tfe) toRun(from *Run, ctx context.Context) (*types.Run, error) {
 			IsForceCancelable: from.CancelSignaledAt != nil,
 			IsDiscardable:     from.Discardable(),
 		},
-		AllowEmptyApply:  from.AllowEmptyApply,
-		AutoApply:        from.AutoApply,
-		CreatedAt:        from.CreatedAt,
-		ExecutionMode:    string(from.ExecutionMode),
-		HasChanges:       from.Plan.HasChanges(),
-		IsDestroy:        from.IsDestroy,
-		Message:          from.Message,
-		Permissions:      perms,
-		PlanOnly:         from.PlanOnly,
-		PositionInQueue:  0,
-		Refresh:          from.Refresh,
-		RefreshOnly:      from.RefreshOnly,
-		ReplaceAddrs:     from.ReplaceAddrs,
-		Source:           string(from.Source),
-		Status:           string(from.Status),
+		AllowEmptyApply: from.AllowEmptyApply,
+		AutoApply:       from.AutoApply,
+		CreatedAt:       from.CreatedAt,
+		HasChanges:      from.Plan.HasChanges(),
+		IsDestroy:       from.IsDestroy,
+		Message:         from.Message,
+		Permissions:     perms,
+		PlanOnly:        from.PlanOnly,
+		PositionInQueue: 0,
+		Refresh:         from.Refresh,
+		RefreshOnly:     from.RefreshOnly,
+		ReplaceAddrs:    from.ReplaceAddrs,
+		//FIXME: ExecutionMode:    string(from.ExecutionMode),
+		Source:           types.RunSource(from.Source),
+		Status:           types.RunStatus(from.Status),
 		StatusTimestamps: &timestamps,
 		TargetAddrs:      from.TargetAddrs,
 		TerraformVersion: from.TerraformVersion,
@@ -432,9 +433,9 @@ func (a *tfe) toRun(from *Run, ctx context.Context) (*types.Run, error) {
 		},
 		Workspace: &types.Workspace{ID: from.WorkspaceID},
 	}
-	to.Variables = make([]types.RunVariable, len(from.Variables))
+	to.Variables = make([]*types.RunVariableAttr, len(from.Variables))
 	for i, from := range from.Variables {
-		to.Variables[i] = types.RunVariable{Key: from.Key, Value: from.Value}
+		to.Variables[i] = &types.RunVariableAttr{Key: from.Key, Value: from.Value}
 	}
 	if from.CostEstimationEnabled {
 		to.CostEstimate = &types.CostEstimate{ID: internal.ConvertID(from.ID, "ce")}
@@ -446,14 +447,14 @@ func (a *tfe) toRun(from *Run, ctx context.Context) (*types.Run, error) {
 	// if the run has not been successfully canceled and the run is yet to reach
 	// RunCanceled status. As a compromise, it is set in either of these
 	// circumstances.
-	if timestamps.CanceledAt != nil {
+	if !timestamps.CanceledAt.IsZero() {
 		// run successfully canceled
 		cooledOff := timestamps.CanceledAt.Add(forceCancelCoolOff)
-		to.ForceCancelAvailableAt = &cooledOff
+		to.ForceCancelAvailableAt = cooledOff
 	} else if from.CancelSignaledAt != nil {
 		// run not successfully canceled yet
 		cooledOff := from.CancelSignaledAt.Add(forceCancelCoolOff)
-		to.ForceCancelAvailableAt = &cooledOff
+		to.ForceCancelAvailableAt = cooledOff
 	}
 	return to, nil
 }
@@ -465,12 +466,15 @@ func (a *tfe) toPlan(plan Phase, r *http.Request) (*types.Plan, error) {
 	}
 
 	return &types.Plan{
-		ID:               internal.ConvertID(plan.RunID, "plan"),
-		HasChanges:       plan.HasChanges(),
-		LogReadURL:       logURL,
-		ResourceReport:   a.toResourceReport(plan.ResourceReport),
-		Status:           string(plan.Status),
-		StatusTimestamps: a.toPhaseTimestamps(plan.StatusTimestamps),
+		ID:                   internal.ConvertID(plan.RunID, "plan"),
+		HasChanges:           plan.HasChanges(),
+		LogReadURL:           logURL,
+		ResourceAdditions:    plan.ResourceReport.Additions,
+		ResourceChanges:      plan.ResourceReport.Changes,
+		ResourceDestructions: plan.ResourceReport.Destructions,
+		ResourceImports:      0, //FIXME
+		Status:               types.PlanStatus(plan.Status),
+		StatusTimestamps:     a.toPlanStatusTimestamps(plan.StatusTimestamps),
 	}, nil
 }
 
@@ -481,42 +485,49 @@ func (a *tfe) toApply(apply Phase, r *http.Request) (*types.Apply, error) {
 	}
 
 	return &types.Apply{
-		ID:               internal.ConvertID(apply.RunID, "apply"),
-		LogReadURL:       logURL,
-		ResourceReport:   a.toResourceReport(apply.ResourceReport),
-		Status:           string(apply.Status),
-		StatusTimestamps: a.toPhaseTimestamps(apply.StatusTimestamps),
+		ID:                   internal.ConvertID(apply.RunID, "apply"),
+		LogReadURL:           logURL,
+		ResourceAdditions:    apply.ResourceReport.Additions,
+		ResourceChanges:      apply.ResourceReport.Changes,
+		ResourceDestructions: apply.ResourceReport.Destructions,
+		Status:               types.ApplyStatus(apply.Status),
+		StatusTimestamps:     a.toApplyStatusTimestamps(apply.StatusTimestamps),
 	}, nil
 }
 
-func (a *tfe) toResourceReport(from *Report) types.ResourceReport {
-	var to types.ResourceReport
-	if from != nil {
-		to.Additions = &from.Additions
-		to.Changes = &from.Changes
-		to.Destructions = &from.Destructions
-	}
-	return to
-}
-
-func (a *tfe) toPhaseTimestamps(from []PhaseStatusTimestamp) *types.PhaseStatusTimestamps {
-	var timestamps types.PhaseStatusTimestamps
+func (a *tfe) toApplyStatusTimestamps(from []PhaseStatusTimestamp) *types.ApplyStatusTimestamps {
+	var timestamps types.ApplyStatusTimestamps
 	for _, ts := range from {
 		switch ts.Status {
-		case PhasePending:
-			timestamps.PendingAt = &ts.Timestamp
 		case PhaseCanceled:
-			timestamps.CanceledAt = &ts.Timestamp
+			timestamps.CanceledAt = ts.Timestamp
 		case PhaseErrored:
-			timestamps.ErroredAt = &ts.Timestamp
+			timestamps.ErroredAt = ts.Timestamp
 		case PhaseFinished:
-			timestamps.FinishedAt = &ts.Timestamp
+			timestamps.FinishedAt = ts.Timestamp
 		case PhaseQueued:
-			timestamps.QueuedAt = &ts.Timestamp
+			timestamps.QueuedAt = ts.Timestamp
 		case PhaseRunning:
-			timestamps.StartedAt = &ts.Timestamp
-		case PhaseUnreachable:
-			timestamps.UnreachableAt = &ts.Timestamp
+			timestamps.StartedAt = ts.Timestamp
+		}
+	}
+	return &timestamps
+}
+
+func (a *tfe) toPlanStatusTimestamps(from []PhaseStatusTimestamp) *types.PlanStatusTimestamps {
+	var timestamps types.PlanStatusTimestamps
+	for _, ts := range from {
+		switch ts.Status {
+		case PhaseCanceled:
+			timestamps.CanceledAt = ts.Timestamp
+		case PhaseErrored:
+			timestamps.ErroredAt = ts.Timestamp
+		case PhaseFinished:
+			timestamps.FinishedAt = ts.Timestamp
+		case PhaseQueued:
+			timestamps.QueuedAt = ts.Timestamp
+		case PhaseRunning:
+			timestamps.StartedAt = ts.Timestamp
 		}
 	}
 	return &timestamps

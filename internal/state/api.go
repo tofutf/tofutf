@@ -29,7 +29,7 @@ func (a *api) addHandlers(r *mux.Router) {
 	r.HandleFunc("/workspaces/{workspace_id}/state-versions", a.listVersions).Methods("GET")
 
 	r.HandleFunc("/state-versions/{id}/download", a.downloadState).Methods("GET")
-	r.HandleFunc("/state-versions/{id}/rollback", a.rollbackVersion).Methods("PATCH")
+	r.HandleFunc("/state-versions/{id}/state-versions", a.rollbackVersion).Methods("PATCH")
 	r.HandleFunc("/state-versions/{id}", a.deleteVersion).Methods("DELETE")
 }
 

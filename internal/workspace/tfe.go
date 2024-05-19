@@ -8,12 +8,17 @@ import (
 	"reflect"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/rbac"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
+)
+
+var (
+	ExecutionModeRemote = "remote"
+	ExecutionModeLocal  = "local"
 )
 
 type (
@@ -62,15 +67,15 @@ func (a *tfe) createWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	opts := CreateOptions{
-		AgentPoolID:                params.AgentPoolID,
-		AllowDestroyPlan:           params.AllowDestroyPlan,
-		AutoApply:                  params.AutoApply,
-		Description:                params.Description,
-		ExecutionMode:              (*ExecutionMode)(params.ExecutionMode),
-		GlobalRemoteState:          params.GlobalRemoteState,
-		MigrationEnvironment:       params.MigrationEnvironment,
-		Name:                       params.Name,
-		Organization:               params.Organization,
+		AgentPoolID:          params.AgentPoolID,
+		AllowDestroyPlan:     params.AllowDestroyPlan,
+		AutoApply:            params.AutoApply,
+		Description:          params.Description,
+		ExecutionMode:        (*ExecutionMode)(params.ExecutionMode),
+		GlobalRemoteState:    params.GlobalRemoteState,
+		MigrationEnvironment: params.MigrationEnvironment,
+		Name:                 params.Name,
+		//FIXME: Organization:               params.Organization,
 		QueueAllRuns:               params.QueueAllRuns,
 		SpeculativeEnabled:         params.SpeculativeEnabled,
 		SourceName:                 params.SourceName,
@@ -337,13 +342,27 @@ func (a *tfe) deleteWorkspaceByName(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (a *tfe) validateWorkspaceUpdateOptions(opts types.WorkspaceUpdateOptions) error {
+	if opts.Operations != nil && opts.ExecutionMode != nil {
+		return errors.New("operations is deprecated and cannot be specified when execution mode is used")
+	}
+	if opts.Operations != nil {
+		if *opts.Operations {
+			opts.ExecutionMode = &ExecutionModeRemote
+		} else {
+			opts.ExecutionMode = &ExecutionModeLocal
+		}
+	}
+	return nil
+}
+
 func (a *tfe) updateWorkspace(w http.ResponseWriter, r *http.Request, workspaceID string) {
 	params := types.WorkspaceUpdateOptions{}
 	if err := tfeapi.Unmarshal(r.Body, &params); err != nil {
 		tfeapi.Error(w, err)
 		return
 	}
-	if err := params.Validate(); err != nil {
+	if err := a.validateWorkspaceUpdateOptions(params); err != nil {
 		tfeapi.Error(w, err)
 		return
 	}
@@ -373,12 +392,12 @@ func (a *tfe) updateWorkspace(w http.ResponseWriter, r *http.Request, workspaceI
 	// (a) file-triggers-enabled=true and tags-regex=non-nil
 	// (b) file-triggers-enabled=true and trigger-prefixes=empty
 	// (b) trigger-prefixes=non-empty and tags-regex=non-nil
-	if (params.FileTriggersEnabled != nil && !*params.FileTriggersEnabled) && (!params.VCSRepo.Set || !params.VCSRepo.Valid || params.VCSRepo.TagsRegex == nil) {
+	if (params.FileTriggersEnabled != nil && !*params.FileTriggersEnabled) && (params.VCSRepo == nil || params.VCSRepo.TagsRegex == nil) {
 		opts.AlwaysTrigger = internal.Bool(true)
 	}
 
-	if params.VCSRepo.Set {
-		if params.VCSRepo.Valid {
+	if params.VCSRepo != nil {
+		if params.VCSRepo.Identifier != nil { //FIXME: probably wrong
 			// client has provided non-null vcs options, which means they either
 			// want to connect the workspace or modify the connection.
 			opts.ConnectOptions = &ConnectOptions{
@@ -464,7 +483,9 @@ func (a *tfe) convert(from *Workspace, r *http.Request) (*types.Workspace, error
 		Organization:               &types.Organization{Name: from.Organization},
 	}
 	if from.AgentPoolID != nil {
-		to.AgentPoolID = *from.AgentPoolID
+		to.AgentPool = &types.AgentPool{ //FIXME: we can probably get more than just an ID
+			ID: *from.AgentPoolID,
+		}
 	}
 	if len(from.TriggerPrefixes) > 0 || len(from.TriggerPatterns) > 0 {
 		to.FileTriggersEnabled = true

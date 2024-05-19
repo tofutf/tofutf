@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 
 	"github.com/gorilla/mux"
 	"github.com/tofutf/tofutf/internal/http/decode"
@@ -69,7 +69,7 @@ func (a *tfe) createWorkspaceVariable(w http.ResponseWriter, r *http.Request) {
 		variableError(w, err)
 		return
 	}
-	a.Respond(w, r, a.convertWorkspaceVariable(v, workspaceID), http.StatusCreated)
+	a.Respond(w, r, a.convertWorkspaceVariable(v, true, workspaceID), http.StatusCreated)
 }
 
 func (a *tfe) get(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +84,7 @@ func (a *tfe) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.Respond(w, r, a.convertWorkspaceVariable(wv.Variable, wv.WorkspaceID), http.StatusOK)
+	a.Respond(w, r, a.convertWorkspaceVariable(wv.Variable, true, wv.WorkspaceID), http.StatusOK)
 }
 
 func (a *tfe) list(w http.ResponseWriter, r *http.Request) {
@@ -99,9 +99,9 @@ func (a *tfe) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	to := make([]*types.WorkspaceVariable, len(variables))
+	to := make([]*types.Variable, len(variables))
 	for i, from := range variables {
-		to[i] = a.convertWorkspaceVariable(from, workspaceID)
+		to[i] = a.convertWorkspaceVariable(from, true, workspaceID)
 	}
 
 	a.Respond(w, r, to, http.StatusOK)
@@ -131,7 +131,7 @@ func (a *tfe) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.Respond(w, r, a.convertWorkspaceVariable(updated.Variable, updated.WorkspaceID), http.StatusOK)
+	a.Respond(w, r, a.convertWorkspaceVariable(updated.Variable, true, updated.WorkspaceID), http.StatusOK)
 }
 
 func (a *tfe) delete(w http.ResponseWriter, r *http.Request) {
@@ -158,11 +158,18 @@ func (a *tfe) createVariableSet(w http.ResponseWriter, r *http.Request) {
 		tfeapi.Error(w, err)
 		return
 	}
-	set, err := a.Service.createVariableSet(r.Context(), org, CreateVariableSetOptions{
-		Name:        params.Name,
-		Description: params.Description,
-		Global:      params.Global,
-	})
+	opts := CreateVariableSetOptions{}
+	if params.Name != nil {
+		opts.Name = *params.Name
+	}
+	if params.Description != nil {
+		opts.Description = *params.Description
+	}
+	if params.Global != nil {
+		opts.Global = *params.Global
+	}
+	set, err := a.Service.createVariableSet(r.Context(), org, opts)
+
 	if err != nil {
 		tfeapi.Error(w, err)
 		return
@@ -281,7 +288,7 @@ func (a *tfe) listVariableSetVariables(w http.ResponseWriter, r *http.Request) {
 
 	to := make([]*types.VariableSetVariable, len(set.Variables))
 	for i, from := range set.Variables {
-		to[i] = a.convertVariableSetVariable(from, setID)
+		to[i] = a.convertVariableSetVariable(from, true, setID)
 	}
 
 	a.Respond(w, r, to, http.StatusOK)
@@ -312,7 +319,7 @@ func (a *tfe) addVariableToSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.Respond(w, r, a.convertVariableSetVariable(v, setID), http.StatusOK)
+	a.Respond(w, r, a.convertVariableSetVariable(v, true, setID), http.StatusOK)
 }
 
 func (a *tfe) updateVariableSetVariable(w http.ResponseWriter, r *http.Request) {
@@ -341,7 +348,7 @@ func (a *tfe) updateVariableSetVariable(w http.ResponseWriter, r *http.Request) 
 	}
 
 	v := set.getVariable(variableID)
-	a.Respond(w, r, a.convertVariableSetVariable(v, set.ID), http.StatusOK)
+	a.Respond(w, r, a.convertVariableSetVariable(v, true, set.ID), http.StatusOK)
 }
 
 func (a *tfe) getVariableSetVariable(w http.ResponseWriter, r *http.Request) {
@@ -358,7 +365,7 @@ func (a *tfe) getVariableSetVariable(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v := set.getVariable(variableID)
-	a.Respond(w, r, a.convertVariableSetVariable(v, set.ID), http.StatusOK)
+	a.Respond(w, r, a.convertVariableSetVariable(v, true, set.ID), http.StatusOK)
 }
 
 func (a *tfe) deleteVariableFromSet(w http.ResponseWriter, r *http.Request) {
@@ -425,13 +432,26 @@ func (a *tfe) deleteSetFromWorkspaces(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (a *tfe) convertWorkspaceVariable(from *Variable, workspaceID string) *types.WorkspaceVariable {
-	return &types.WorkspaceVariable{
-		Variable: a.convertVariable(from, true),
+func (a *tfe) convertWorkspaceVariable(from *Variable, scrubSensitiveValue bool, workspaceID string) *types.Variable {
+
+	to := &types.Variable{
+		ID:          from.ID,
+		Key:         from.Key,
+		Value:       from.Value,
+		Description: from.Description,
+		Category:    types.CategoryType(from.Category),
+		Sensitive:   from.Sensitive,
+		HCL:         from.HCL,
+		VersionID:   from.VersionID,
 		Workspace: &types.Workspace{
 			ID: workspaceID,
 		},
 	}
+	if from.Sensitive && scrubSensitiveValue {
+		to.Value = "" // scrub sensitive values
+	}
+	return to
+
 }
 
 func (a *tfe) convertVariableSet(from *VariableSet) *types.VariableSet {
@@ -446,12 +466,7 @@ func (a *tfe) convertVariableSet(from *VariableSet) *types.VariableSet {
 	}
 	to.Variables = make([]*types.VariableSetVariable, len(from.Variables))
 	for i, v := range from.Variables {
-		to.Variables[i] = &types.VariableSetVariable{
-			Variable: a.convertVariable(v, true),
-			VariableSet: &types.VariableSet{
-				ID: v.ID,
-			},
-		}
+		to.Variables[i] = a.convertVariableSetVariable(v, true, v.ID)
 	}
 	to.Workspaces = make([]*types.Workspace, len(from.Workspaces))
 	for i, workspaceID := range from.Workspaces {
@@ -462,11 +477,22 @@ func (a *tfe) convertVariableSet(from *VariableSet) *types.VariableSet {
 	return to
 }
 
-func (a *tfe) convertVariableSetVariable(from *Variable, setID string) *types.VariableSetVariable {
-	return &types.VariableSetVariable{
-		Variable:    a.convertVariable(from, true),
+func (a *tfe) convertVariableSetVariable(from *Variable, scrubSensitiveValue bool, setID string) *types.VariableSetVariable {
+	to := &types.VariableSetVariable{
+		ID:          from.ID,
+		Key:         from.Key,
+		Value:       from.Value,
+		Description: from.Description,
+		Category:    types.CategoryType(from.Category),
+		Sensitive:   from.Sensitive,
+		HCL:         from.HCL,
+		VersionID:   from.VersionID,
 		VariableSet: &types.VariableSet{ID: setID},
 	}
+	if from.Sensitive && scrubSensitiveValue {
+		to.Value = "" // scrub sensitive values
+	}
+	return to
 }
 
 func (a *tfe) convertVariable(from *Variable, scrubSensitiveValue bool) *types.Variable {
@@ -475,7 +501,7 @@ func (a *tfe) convertVariable(from *Variable, scrubSensitiveValue bool) *types.V
 		Key:         from.Key,
 		Value:       from.Value,
 		Description: from.Description,
-		Category:    string(from.Category),
+		Category:    types.CategoryType(from.Category),
 		Sensitive:   from.Sensitive,
 		HCL:         from.HCL,
 		VersionID:   from.VersionID,

@@ -8,9 +8,9 @@ import (
 	"github.com/tofutf/tofutf/internal"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/tfeapi"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 	"github.com/tofutf/tofutf/internal/vcs"
 )
 

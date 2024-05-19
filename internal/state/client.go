@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"net/url"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	otfapi "github.com/tofutf/tofutf/internal/api"
 	"github.com/tofutf/tofutf/internal/resource"
-	"github.com/tofutf/tofutf/internal/tfeapi/types"
 )
 
 type Client struct {
@@ -20,7 +20,7 @@ type Client struct {
 
 func (c *Client) Create(ctx context.Context, opts CreateStateVersionOptions) (*Version, error) {
 	u := fmt.Sprintf("workspaces/%s/state-versions", url.QueryEscape(*opts.WorkspaceID))
-	req, err := c.NewRequest("POST", u, &types.StateVersionCreateVersionOptions{
+	req, err := c.NewRequest("POST", u, &types.StateVersionCreateOptions{
 		MD5:    internal.String(fmt.Sprintf("%x", md5.Sum(opts.State))),
 		Serial: opts.Serial,
 		State:  internal.String(base64.StdEncoding.EncodeToString(opts.State)),
