@@ -35,6 +35,7 @@ func (a *tfe) addHandlers(r *mux.Router) {
 	r.HandleFunc("/runs", a.listRuns).Methods("GET")
 	r.HandleFunc("/workspaces/{workspace_id}/runs", a.listRuns).Methods("GET")
 	r.HandleFunc("/runs/{id}", a.getRun).Methods("GET")
+	r.HandleFunc("/runs/{id}/task-stages", a.getRunTaskStages).Methods("GET")
 	r.HandleFunc("/runs/{id}/actions/discard", a.discardRun).Methods("POST")
 	r.HandleFunc("/runs/{id}/actions/cancel", a.cancelRun).Methods("POST")
 	r.HandleFunc("/runs/{id}/actions/force-cancel", a.forceCancelRun).Methods("POST")
@@ -119,6 +120,10 @@ func (a *tfe) getRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.Respond(w, r, converted, http.StatusOK)
+}
+
+func (a *tfe) getRunTaskStages(w http.ResponseWriter, r *http.Request) {
+	a.Respond(w, r, []*types.TaskStage{}, http.StatusOK)
 }
 
 func (a *tfe) listRuns(w http.ResponseWriter, r *http.Request) {
