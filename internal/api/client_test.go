@@ -3,12 +3,13 @@ package api
 import (
 	"bytes"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/DataDog/jsonapi"
 	types "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/jsonapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
@@ -22,11 +23,13 @@ func TestClient_UnmarshalResponse(t *testing.T) {
 		},
 		Pagination: &types.Pagination{},
 	}
-	b, err := jsonapi.Marshal(&want.Items, jsonapi.MarshalMeta(want.Pagination))
+	var b bytes.Buffer
+	bw := io.Writer(&b)
+	err := jsonapi.MarshalPayload(bw, want)
 	require.NoError(t, err)
 
 	var got types.WorkspaceList
-	err = unmarshalResponse(bytes.NewReader(b), &got)
+	err = unmarshalResponse(bytes.NewReader(b.Bytes()), &got)
 	require.NoError(t, err)
 
 	assert.Equal(t, want, got)

@@ -4,6 +4,8 @@ import (
 	"errors"
 
 	"log/slog"
+
+	types "github.com/hashicorp/go-tfe"
 )
 
 var ErrInvalidTagSpec = errors.New("invalid tag spec: must provide either an ID or a name")
@@ -28,14 +30,14 @@ type (
 	TagSpecs []TagSpec
 )
 
-func (s TagSpec) Valid() error {
-	if s.ID == "" && s.Name == "" {
+func Valid(s *types.Tag) error {
+	if s == nil && s.ID == "" && s.Name == "" {
 		return ErrInvalidTagSpec
 	}
 	return nil
 }
 
-func (specs TagSpecs) LogValue() slog.Value {
+func LogTagValue(specs []*types.Tag) slog.Value {
 	var (
 		ids   = make([]string, len(specs))
 		names = make([]string, len(specs))

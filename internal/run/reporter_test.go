@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
@@ -18,16 +19,16 @@ func TestReporter_HandleRun(t *testing.T) {
 	tests := []struct {
 		name string
 		run  *Run
-		ws   *workspace.Workspace
+		ws   *types.Workspace
 		cv   *configversion.ConfigurationVersion
 		want vcs.SetStatusOptions
 	}{
 		{
 			name: "pending run",
 			run:  &Run{ID: "run-123", Status: RunPending},
-			ws: &workspace.Workspace{
-				Name:       "dev",
-				Connection: &workspace.Connection{},
+			ws: &types.Workspace{
+				Name:    "dev",
+				VCSRepo: &types.VCSRepo{},
 			},
 			cv: &configversion.ConfigurationVersion{
 				IngressAttributes: &configversion.IngressAttributes{
@@ -92,10 +93,10 @@ func (f *fakeReporterConfigurationVersionService) Get(context.Context, string) (
 type fakeReporterWorkspaceService struct {
 	workspace.Service
 
-	ws *workspace.Workspace
+	ws *types.Workspace
 }
 
-func (f *fakeReporterWorkspaceService) Get(context.Context, string) (*workspace.Workspace, error) {
+func (f *fakeReporterWorkspaceService) Get(context.Context, string) (*types.Workspace, error) {
 	return f.ws, nil
 }
 

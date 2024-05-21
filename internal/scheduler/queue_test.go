@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	tofutfrun "github.com/tofutf/tofutf/internal/run"
@@ -17,7 +18,7 @@ func TestQueue(t *testing.T) {
 	defer cancel()
 
 	t.Run("handle several runs", func(t *testing.T) {
-		ws := &workspace.Workspace{ID: "ws-123"}
+		ws := &types.Workspace{ID: "ws-123"}
 		run1 := &tofutfrun.Run{ID: "run-1", WorkspaceID: "ws-123", Status: tofutfrun.RunPending}
 		run2 := &tofutfrun.Run{ID: "run-2", WorkspaceID: "ws-123", Status: tofutfrun.RunPending}
 		run3 := &tofutfrun.Run{ID: "run-3", WorkspaceID: "ws-123", Status: tofutfrun.RunPending}
@@ -29,7 +30,7 @@ func TestQueue(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 0, len(q.queue))
 		assert.Equal(t, run1.ID, q.current.ID)
-		assert.True(t, q.ws.Locked())
+		assert.True(t, q.ws.Locked)
 
 		// enqueue run2, check it is in queue
 		err = q.handleRun(ctx, run2)
@@ -37,7 +38,7 @@ func TestQueue(t *testing.T) {
 		if assert.Equal(t, 1, len(q.queue)) {
 			assert.Equal(t, run2.ID, q.queue[0].ID)
 		}
-		assert.True(t, q.ws.Locked())
+		assert.True(t, q.ws.Locked)
 
 		// enqueue run3, check it is in queue
 		err = q.handleRun(ctx, run3)
@@ -45,7 +46,7 @@ func TestQueue(t *testing.T) {
 		if assert.Equal(t, 2, len(q.queue)) {
 			assert.Equal(t, run3.ID, q.queue[1].ID)
 		}
-		assert.True(t, q.ws.Locked())
+		assert.True(t, q.ws.Locked)
 
 		// cancel run2, check it is removed from queue and run3 is shuffled forward
 		err = run2.Cancel(false, false)
@@ -55,7 +56,7 @@ func TestQueue(t *testing.T) {
 		if assert.Equal(t, 1, len(q.queue)) {
 			assert.Equal(t, run3.ID, q.queue[0].ID)
 		}
-		assert.True(t, q.ws.Locked())
+		assert.True(t, q.ws.Locked)
 
 		// cancel run1; check run3 takes its place as current run
 		err = run1.Cancel(false, false)
@@ -64,7 +65,7 @@ func TestQueue(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 0, len(q.queue))
 		assert.Equal(t, run3.ID, q.current.ID)
-		assert.True(t, q.ws.Locked())
+		assert.True(t, q.ws.Locked)
 
 		// cancel run3; check everything is empty and workspace is unlocked
 		err = run3.Cancel(false, false)
@@ -73,11 +74,11 @@ func TestQueue(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 0, len(q.queue))
 		assert.Nil(t, q.current)
-		assert.False(t, q.ws.Locked())
+		assert.False(t, q.ws.Locked)
 	})
 
 	t.Run("speculative run", func(t *testing.T) {
-		ws := &workspace.Workspace{ID: "ws-123"}
+		ws := &types.Workspace{ID: "ws-123"}
 		run := &tofutfrun.Run{Status: tofutfrun.RunPending, WorkspaceID: "ws-123", PlanOnly: true}
 		app := newFakeQueueApp(ws, run)
 		q := newTestQueue(app, ws)
@@ -90,7 +91,7 @@ func TestQueue(t *testing.T) {
 	})
 
 	t.Run("user locked", func(t *testing.T) {
-		ws := &workspace.Workspace{ID: "ws-123"}
+		ws := &types.Workspace{ID: "ws-123"}
 		run := &tofutfrun.Run{ID: "run-123", WorkspaceID: "ws-123", Status: tofutfrun.RunPending}
 		app := newFakeQueueApp(ws, run)
 		q := newTestQueue(app, ws)
@@ -115,7 +116,7 @@ func TestQueue(t *testing.T) {
 	})
 
 	t.Run("do not schedule non-pending run", func(t *testing.T) {
-		ws := &workspace.Workspace{ID: "ws-123"}
+		ws := &types.Workspace{ID: "ws-123"}
 		run := &tofutfrun.Run{WorkspaceID: "ws-123", Status: tofutfrun.RunPlanning}
 		app := newFakeQueueApp(ws, run)
 		q := newTestQueue(app, ws)
@@ -128,7 +129,7 @@ func TestQueue(t *testing.T) {
 
 	t.Run("do not set current run if already latest run on workspace", func(t *testing.T) {
 		run := &tofutfrun.Run{WorkspaceID: "ws-123"}
-		ws := &workspace.Workspace{ID: "ws-123", LatestRun: &workspace.LatestRun{ID: run.ID}}
+		ws := &types.Workspace{ID: "ws-123", LatestRun: &workspace.LatestRun{ID: run.ID}}
 		app := newFakeQueueApp(ws, run)
 		q := newTestQueue(app, ws)
 
@@ -139,7 +140,7 @@ func TestQueue(t *testing.T) {
 	})
 }
 
-func newTestQueue(services *fakeQueueServices, ws *workspace.Workspace) *queue {
+func newTestQueue(services *fakeQueueServices, ws *types.Workspace) *queue {
 	return &queue{
 		workspaceClient: &fakeWorkspaceService{
 			ws: ws,
@@ -151,14 +152,14 @@ func newTestQueue(services *fakeQueueServices, ws *workspace.Workspace) *queue {
 }
 
 type fakeQueueServices struct {
-	ws      *workspace.Workspace
+	ws      *types.Workspace
 	runs    map[string]*tofutfrun.Run // mock run db
 	current []string                  // list of IDs of runs that have been set as the current run
 
 	runClient
 }
 
-func newFakeQueueApp(ws *workspace.Workspace, runs ...*tofutfrun.Run) *fakeQueueServices {
+func newFakeQueueApp(ws *types.Workspace, runs ...*tofutfrun.Run) *fakeQueueServices {
 	db := make(map[string]*tofutfrun.Run, len(runs))
 	for _, r := range runs {
 		db[r.ID] = r
@@ -172,27 +173,27 @@ func (f *fakeQueueServices) EnqueuePlan(ctx context.Context, runID string) (*tof
 }
 
 type fakeWorkspaceService struct {
-	ws *workspace.Workspace
+	ws *types.Workspace
 
 	// fakeWorkspaceService does not implement all of workspaceClient
 	workspaceClient
 }
 
-func (f *fakeWorkspaceService) Lock(ctx context.Context, workspaceID string, runID *string) (*workspace.Workspace, error) {
+func (f *fakeWorkspaceService) Lock(ctx context.Context, workspaceID string, runID *string) (*types.Workspace, error) {
 	if err := f.ws.Enlock(*runID, workspace.RunLock); err != nil {
 		return nil, err
 	}
 	return f.ws, nil
 }
 
-func (f *fakeWorkspaceService) Unlock(ctx context.Context, workspaceID string, runID *string, force bool) (*workspace.Workspace, error) {
+func (f *fakeWorkspaceService) Unlock(ctx context.Context, workspaceID string, runID *string, force bool) (*types.Workspace, error) {
 	if err := f.ws.Unlock(*runID, workspace.RunLock, false); err != nil {
 		return nil, err
 	}
 	return f.ws, nil
 }
 
-func (f *fakeWorkspaceService) SetCurrentRun(ctx context.Context, workspaceID, runID string) (*workspace.Workspace, error) {
+func (f *fakeWorkspaceService) SetCurrentRun(ctx context.Context, workspaceID, runID string) (*types.Workspace, error) {
 	f.ws.LatestRun = &workspace.LatestRun{ID: runID}
 	return f.ws, nil
 }

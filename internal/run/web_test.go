@@ -5,12 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html/paths"
 	"github.com/tofutf/tofutf/internal/testutils"
 	"github.com/tofutf/tofutf/internal/user"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 func TestListRunsHandler(t *testing.T) {
@@ -19,7 +19,7 @@ func TestListRunsHandler(t *testing.T) {
 		runs[i-1] = &Run{ID: fmt.Sprintf("run-%d", i)}
 	}
 	h := newTestWebHandlers(t,
-		withWorkspace(&workspace.Workspace{ID: "ws-123"}),
+		withWorkspace(&types.Workspace{ID: "ws-123"}),
 		withRuns(runs...),
 	)
 
@@ -56,7 +56,7 @@ func TestListRunsHandler(t *testing.T) {
 
 func TestWeb_GetHandler(t *testing.T) {
 	h := newTestWebHandlers(t,
-		withWorkspace(&workspace.Workspace{ID: "ws-123"}),
+		withWorkspace(&types.Workspace{ID: "ws-123"}),
 		withRuns((&Run{ID: "run-123", WorkspaceID: "ws-1"}).updateStatus(RunPending, nil)),
 	)
 
@@ -78,7 +78,7 @@ func TestRuns_CancelHandler(t *testing.T) {
 func TestWebHandlers_CreateRun_Connected(t *testing.T) {
 	h := newTestWebHandlers(t,
 		withRuns(&Run{ID: "run-1"}),
-		withWorkspace(&workspace.Workspace{ID: "ws-123", Connection: &workspace.Connection{}}),
+		withWorkspace(&types.Workspace{ID: "ws-123", VCSRepo: &types.VCSRepo{}}),
 	)
 
 	q := "/?workspace_id=run-123&operation=plan-only&connected=true"

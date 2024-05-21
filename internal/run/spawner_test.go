@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal/configversion"
@@ -16,7 +17,7 @@ import (
 func TestSpawner(t *testing.T) {
 	tests := []struct {
 		name string
-		ws   *workspace.Workspace
+		ws   *types.Workspace
 		// incoming event
 		event vcs.Event
 		// file paths to return from stubbed client.ListPullRequestFiles
@@ -26,7 +27,7 @@ func TestSpawner(t *testing.T) {
 	}{
 		{
 			name: "spawn run for push to default branch",
-			ws:   &workspace.Workspace{Connection: &workspace.Connection{}},
+			ws:   &types.Workspace{VCSRepo: &types.VCSRepo{}},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
 					Type:          vcs.EventTypePush,
@@ -39,7 +40,7 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "skip run for push to non-default branch",
-			ws:   &workspace.Workspace{Connection: &workspace.Connection{}},
+			ws:   &types.Workspace{VCSRepo: &types.VCSRepo{}},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
 					Type:          vcs.EventTypePush,
@@ -52,7 +53,7 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "spawn run for push event for a workspace with user-specified branch",
-			ws:   &workspace.Workspace{Connection: &workspace.Connection{Branch: "dev"}},
+			ws:   &types.Workspace{VCSRepo: &types.VCSRepo{Branch: "dev"}},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
 					Type:   vcs.EventTypePush,
@@ -64,7 +65,7 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "skip run for push event for a workspace with non-matching, user-specified branch",
-			ws:   &workspace.Workspace{Connection: &workspace.Connection{Branch: "dev"}},
+			ws:   &types.Workspace{VCSRepo: &types.VCSRepo{Branch: "dev"}},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
 					Type:   vcs.EventTypePush,
@@ -76,7 +77,7 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "spawn run for opened pull request",
-			ws:   &workspace.Workspace{Connection: &workspace.Connection{}},
+			ws:   &types.Workspace{VCSRepo: &types.VCSRepo{}},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
 					Type: vcs.EventTypePull, Action: vcs.ActionCreated,
@@ -86,7 +87,7 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "spawn run for update to pull request",
-			ws:   &workspace.Workspace{Connection: &workspace.Connection{}},
+			ws:   &types.Workspace{VCSRepo: &types.VCSRepo{}},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
 					Type:   vcs.EventTypePull,
@@ -97,7 +98,7 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "skip run for push event for workspace with tags regex",
-			ws:   &workspace.Workspace{Connection: &workspace.Connection{TagsRegex: "0.1.2"}},
+			ws:   &types.Workspace{VCSRepo: &types.VCSRepo{TagsRegex: "0.1.2"}},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{Type: vcs.EventTypePush, Action: vcs.ActionCreated},
 			},
@@ -105,7 +106,7 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "spawn run for tag event for workspace with matching tags regex",
-			ws: &workspace.Workspace{Connection: &workspace.Connection{
+			ws: &types.Workspace{VCSRepo: &types.VCSRepo{
 				TagsRegex: `^\d+\.\d+\.\d+$`,
 			}},
 			event: vcs.Event{
@@ -119,7 +120,7 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "skip run for tag event for workspace with non-matching tags regex",
-			ws: &workspace.Workspace{Connection: &workspace.Connection{
+			ws: &types.Workspace{VCSRepo: &types.VCSRepo{
 				TagsRegex: `^\d+\.\d+\.\d+$`,
 			}},
 			event: vcs.Event{
@@ -133,9 +134,9 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "spawn run for push event for workspace with matching file trigger pattern",
-			ws: &workspace.Workspace{
+			ws: &types.Workspace{
 				TriggerPatterns: []string{"/foo/*.tf"},
-				Connection:      &workspace.Connection{},
+				VCSRepo:         &types.VCSRepo{},
 			},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
@@ -148,9 +149,9 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "skip run for push event for workspace with non-matching file trigger pattern",
-			ws: &workspace.Workspace{
+			ws: &types.Workspace{
 				TriggerPatterns: []string{"/foo/*.tf"},
-				Connection:      &workspace.Connection{},
+				VCSRepo:         &types.VCSRepo{},
 			},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
@@ -163,9 +164,9 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "spawn run for pull event for workspace with matching file trigger pattern",
-			ws: &workspace.Workspace{
+			ws: &types.Workspace{
 				TriggerPatterns: []string{"/foo/*.tf"},
-				Connection:      &workspace.Connection{},
+				VCSRepo:         &types.VCSRepo{},
 			},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
@@ -178,9 +179,9 @@ func TestSpawner(t *testing.T) {
 		},
 		{
 			name: "skip run for pull event for workspace with non-matching file trigger pattern",
-			ws: &workspace.Workspace{
+			ws: &types.Workspace{
 				TriggerPatterns: []string{"/foo/*.tf"},
-				Connection:      &workspace.Connection{},
+				VCSRepo:         &types.VCSRepo{},
 			},
 			event: vcs.Event{
 				EventPayload: vcs.EventPayload{
@@ -198,7 +199,7 @@ func TestSpawner(t *testing.T) {
 			spawner := Spawner{
 				configs: &configversion.FakeService{},
 				workspaces: &workspace.FakeService{
-					Workspaces: []*workspace.Workspace{tt.ws},
+					Workspaces: []*types.Workspace{tt.ws},
 				},
 				runs: runClient,
 				vcs: &fakeSpawnerVCSProviderClient{

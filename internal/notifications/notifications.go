@@ -7,15 +7,15 @@ import (
 
 	"log/slog"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal/http/html/paths"
 	"github.com/tofutf/tofutf/internal/run"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // notification furnishes information for sending a notification to a third
 // party.
 type notification struct {
-	workspace *workspace.Workspace
+	workspace *types.Workspace
 	run       *run.Run
 	trigger   Trigger
 	config    *Config
@@ -39,7 +39,7 @@ func (n *notification) genericPayload() (*GenericPayload, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &GenericPayload{
+	p := &GenericPayload{
 		PayloadVersion:              1,
 		NotificationConfigurationID: "",
 		RunURL:                      n.runURL(),
@@ -47,7 +47,6 @@ func (n *notification) genericPayload() (*GenericPayload, error) {
 		RunCreatedAt:                n.run.CreatedAt,
 		WorkspaceID:                 n.workspace.ID,
 		WorkspaceName:               n.workspace.Name,
-		OrganizationName:            n.workspace.Organization,
 		Notifications: []genericNotificationPayload{
 			{
 				Trigger:      n.trigger,
@@ -55,7 +54,12 @@ func (n *notification) genericPayload() (*GenericPayload, error) {
 				RunUpdatedAt: runUpdatedAt,
 			},
 		},
-	}, nil
+	}
+	if n.workspace.Project != nil && n.workspace.Project.Organization != nil {
+		p.OrganizationName = n.workspace.Organization.Name
+	}
+
+	return p, nil
 }
 
 func (n *notification) runURL() string {

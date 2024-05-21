@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	otfapi "github.com/tofutf/tofutf/internal/api"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/tfeapi"
@@ -75,7 +76,10 @@ func (a *api) listWorkspaces(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.RespondWithPage(w, r, page.Items, page.Pagination)
+	a.Respond(w, r, types.WorkspaceList{
+		Items:      page.Items,
+		Pagination: page.Pagination,
+	}, http.StatusOK)
 }
 
 func (a *api) updateWorkspace(w http.ResponseWriter, r *http.Request) {

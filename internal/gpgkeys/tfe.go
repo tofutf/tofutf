@@ -61,7 +61,10 @@ func (h *tfeHandlers) list(w http.ResponseWriter, r *http.Request) {
 		items[i] = h.toGPGKey(from)
 	}
 
-	h.RespondWithPage(w, r, items, page.Pagination)
+	h.Respond(w, r, types.GPGKeyList{
+		Items:      items,
+		Pagination: page.Pagination,
+	}, http.StatusOK)
 }
 
 type getRouteParams struct {

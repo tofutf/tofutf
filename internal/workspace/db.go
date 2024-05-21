@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/resource"
@@ -56,8 +57,8 @@ type (
 	}
 )
 
-func (r pgresult) toWorkspace() (*Workspace, error) {
-	ws := Workspace{
+func (r pgresult) toWorkspace() (*types.Workspace, error) {
+	ws := types.Workspace{
 		ID:                         r.WorkspaceID.String,
 		CreatedAt:                  r.CreatedAt.Time.UTC(),
 		UpdatedAt:                  r.UpdatedAt.Time.UTC(),
@@ -66,7 +67,7 @@ func (r pgresult) toWorkspace() (*Workspace, error) {
 		CanQueueDestroyPlan:        r.CanQueueDestroyPlan.Bool,
 		Description:                r.Description.String,
 		Environment:                r.Environment.String,
-		ExecutionMode:              ExecutionMode(r.ExecutionMode.String),
+		ExecutionMode:              string(r.ExecutionMode.String),
 		GlobalRemoteState:          r.GlobalRemoteState.Bool,
 		MigrationEnvironment:       r.MigrationEnvironment.String,
 		Name:                       r.Name.String,
@@ -120,7 +121,7 @@ func (r pgresult) toWorkspace() (*Workspace, error) {
 	return &ws, nil
 }
 
-func (db *pgdb) create(ctx context.Context, ws *Workspace) error {
+func (db *pgdb) create(ctx context.Context, ws *types.Workspace) error {
 	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		params := pggen.InsertWorkspaceParams{
 			ID:                         sql.String(ws.ID),
@@ -160,8 +161,8 @@ func (db *pgdb) create(ctx context.Context, ws *Workspace) error {
 	})
 }
 
-func (db *pgdb) update(ctx context.Context, workspaceID string, fn func(*Workspace) error) (*Workspace, error) {
-	return sql.Tx(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
+func (db *pgdb) update(ctx context.Context, workspaceID string, fn func(*types.Workspace) error) (*types.Workspace, error) {
+	return sql.Tx(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*types.Workspace, error) {
 		var err error
 		// retrieve workspace
 		result, err := q.FindWorkspaceByIDForUpdate(ctx, sql.String(workspaceID))
@@ -179,7 +180,6 @@ func (db *pgdb) update(ctx context.Context, workspaceID string, fn func(*Workspa
 		}
 		// persist update
 		params := pggen.UpdateWorkspaceByIDParams{
-			AgentPoolID:                sql.StringPtr(ws.AgentPoolID),
 			AllowDestroyPlan:           sql.Bool(ws.AllowDestroyPlan),
 			AllowCLIApply:              sql.Bool(false),
 			AutoApply:                  sql.Bool(ws.AutoApply),
@@ -199,10 +199,13 @@ func (db *pgdb) update(ctx context.Context, workspaceID string, fn func(*Workspa
 			UpdatedAt:                  sql.Timestamptz(ws.UpdatedAt),
 			ID:                         sql.String(ws.ID),
 		}
-		if ws.Connection != nil {
-			params.AllowCLIApply = sql.Bool(ws.Connection.AllowCLIApply)
-			params.Branch = sql.String(ws.Connection.Branch)
-			params.VCSTagsRegex = sql.String(ws.Connection.TagsRegex)
+		if ws.AgentPool != nil {
+			params.AgentPoolID = sql.StringPtr(&ws.AgentPool.ID)
+		}
+		if ws.VCSRepo != nil {
+			params.AllowCLIApply = sql.Bool(true) //FIXME
+			params.Branch = sql.String(ws.VCSRepo.Branch)
+			params.VCSTagsRegex = sql.String(ws.VCSRepo.TagsRegex)
 		}
 		_, err = q.UpdateWorkspaceByID(ctx, params)
 		return ws, err
@@ -210,8 +213,8 @@ func (db *pgdb) update(ctx context.Context, workspaceID string, fn func(*Workspa
 }
 
 // setCurrentRun sets the ID of the current run for the specified workspace.
-func (db *pgdb) setCurrentRun(ctx context.Context, workspaceID, runID string) (*Workspace, error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
+func (db *pgdb) setCurrentRun(ctx context.Context, workspaceID, runID string) (*types.Workspace, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*types.Workspace, error) {
 		_, err := q.UpdateWorkspaceLatestRun(ctx, sql.String(runID), sql.String(workspaceID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -221,8 +224,8 @@ func (db *pgdb) setCurrentRun(ctx context.Context, workspaceID, runID string) (*
 	})
 }
 
-func (db *pgdb) list(ctx context.Context, opts ListOptions) (*resource.Page[*Workspace], error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Workspace], error) {
+func (db *pgdb) list(ctx context.Context, opts ListOptions) (*resource.Page[*types.Workspace], error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*types.Workspace], error) {
 
 		// Organization name filter is optional - if not provided use a % which in
 		// SQL means match any organization.
@@ -254,7 +257,7 @@ func (db *pgdb) list(ctx context.Context, opts ListOptions) (*resource.Page[*Wor
 			return nil, err
 		}
 
-		items := make([]*Workspace, len(rows))
+		items := make([]*types.Workspace, len(rows))
 		for i, r := range rows {
 			ws, err := pgresult(r).toWorkspace()
 			if err != nil {
@@ -267,14 +270,14 @@ func (db *pgdb) list(ctx context.Context, opts ListOptions) (*resource.Page[*Wor
 	})
 }
 
-func (db *pgdb) listByConnection(ctx context.Context, vcsProviderID, repoPath string) ([]*Workspace, error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Workspace, error) {
+func (db *pgdb) listByConnection(ctx context.Context, vcsProviderID, repoPath string) ([]*types.Workspace, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*types.Workspace, error) {
 		rows, err := q.FindWorkspacesByConnection(ctx, sql.String(vcsProviderID), sql.String(repoPath))
 		if err != nil {
 			return nil, err
 		}
 
-		items := make([]*Workspace, len(rows))
+		items := make([]*types.Workspace, len(rows))
 		for i, r := range rows {
 			ws, err := pgresult(r).toWorkspace()
 			if err != nil {
@@ -287,8 +290,8 @@ func (db *pgdb) listByConnection(ctx context.Context, vcsProviderID, repoPath st
 	})
 }
 
-func (db *pgdb) listByUsername(ctx context.Context, username string, organization string, opts resource.PageOptions) (*resource.Page[*Workspace], error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Workspace], error) {
+func (db *pgdb) listByUsername(ctx context.Context, username string, organization string, opts resource.PageOptions) (*resource.Page[*types.Workspace], error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*types.Workspace], error) {
 		rows, err := q.FindWorkspacesByUsername(ctx, pggen.FindWorkspacesByUsernameParams{
 			OrganizationName: sql.String(organization),
 			Username:         sql.String(username),
@@ -304,7 +307,7 @@ func (db *pgdb) listByUsername(ctx context.Context, username string, organizatio
 			return nil, err
 		}
 
-		items := make([]*Workspace, len(rows))
+		items := make([]*types.Workspace, len(rows))
 		for i, r := range rows {
 			ws, err := pgresult(r).toWorkspace()
 			if err != nil {
@@ -318,8 +321,8 @@ func (db *pgdb) listByUsername(ctx context.Context, username string, organizatio
 
 }
 
-func (db *pgdb) get(ctx context.Context, workspaceID string) (*Workspace, error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
+func (db *pgdb) get(ctx context.Context, workspaceID string) (*types.Workspace, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*types.Workspace, error) {
 		result, err := q.FindWorkspaceByID(ctx, sql.String(workspaceID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -330,8 +333,8 @@ func (db *pgdb) get(ctx context.Context, workspaceID string) (*Workspace, error)
 
 }
 
-func (db *pgdb) getByName(ctx context.Context, organization, workspace string) (*Workspace, error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
+func (db *pgdb) getByName(ctx context.Context, organization, workspace string) (*types.Workspace, error) {
+	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*types.Workspace, error) {
 		result, err := q.FindWorkspaceByName(ctx, sql.String(workspace), sql.String(organization))
 		if err != nil {
 			return nil, sql.Error(err)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/rbac"
 	"github.com/tofutf/tofutf/internal/resource"
@@ -39,18 +40,18 @@ func (s *Service) ListTags(ctx context.Context, organization string, opts ListTa
 	return list, nil
 }
 
-func (s *Service) DeleteTags(ctx context.Context, organization string, tagIDs []string) error {
+func (s *Service) DeleteTags(ctx context.Context, organization string, tagIds []string) error {
 	subject, err := s.organization.CanAccess(ctx, rbac.DeleteTagsAction, organization)
 	if err != nil {
 		return err
 	}
 
-	if err := s.db.deleteTags(ctx, organization, tagIDs); err != nil {
-		s.logger.Error("deleting tags", "organization", organization, "tags_ids", tagIDs, "subject", subject, "err", err)
+	if err := s.db.deleteTags(ctx, organization, tagIds); err != nil {
+		s.logger.Error("deleting tags", "organization", organization, "tags_ids", tagIds, "subject", subject, "err", err)
 		return err
 	}
 
-	s.logger.Info("deleted tags", "organization", organization, "tag_ids", tagIDs, "subject", subject)
+	s.logger.Info("deleted tags", "organization", organization, "tag_ids", tagIds, "subject", subject)
 	return nil
 }
 
@@ -81,7 +82,7 @@ func (s *Service) TagWorkspaces(ctx context.Context, tagID string, workspaceIDs 
 	return nil
 }
 
-func (s *Service) AddTags(ctx context.Context, workspaceID string, tags []TagSpec) error {
+func (s *Service) AddTags(ctx context.Context, workspaceID string, tags []*types.Tag) error {
 	subject, err := s.CanAccess(ctx, rbac.AddTagsAction, workspaceID)
 	if err != nil {
 		return err
@@ -94,14 +95,14 @@ func (s *Service) AddTags(ctx context.Context, workspaceID string, tags []TagSpe
 
 	added, err := s.addTags(ctx, ws, tags)
 	if err != nil {
-		s.logger.Error("adding tags", "workspace", workspaceID, "tags", TagSpecs(tags), "subject", subject, "err", err)
+		s.logger.Error("adding tags", "workspace", workspaceID, "tags", LogTagValue(tags), "subject", subject, "err", err)
 		return err
 	}
 	s.logger.Info("added tags", "workspace", workspaceID, "tags", added, "subject", subject)
 	return nil
 }
 
-func (s *Service) RemoveTags(ctx context.Context, workspaceID string, tags []TagSpec) error {
+func (s *Service) RemoveTags(ctx context.Context, workspaceID string, tags []*types.Tag) error {
 	subject, err := s.CanAccess(ctx, rbac.RemoveTagsAction, workspaceID)
 	if err != nil {
 		return err
@@ -114,7 +115,7 @@ func (s *Service) RemoveTags(ctx context.Context, workspaceID string, tags []Tag
 
 	err = s.db.Lock(ctx, "tags", func(ctx context.Context, q pggen.Querier) (err error) {
 		for _, t := range tags {
-			if err := t.Valid(); err != nil {
+			if err := Valid(t); err != nil {
 				return err
 			}
 			var tag *Tag
@@ -166,14 +167,14 @@ func (s *Service) ListWorkspaceTags(ctx context.Context, workspaceID string, opt
 	return list, nil
 }
 
-func (s *Service) addTags(ctx context.Context, ws *Workspace, tags []TagSpec) ([]string, error) {
+func (s *Service) addTags(ctx context.Context, ws *types.Workspace, tags []*types.Tag) error {
 	// For each tag:
 	// (i) if specified by name, create new tag if it does not exist and get its ID.
 	// (ii) add tag to workspace
 	var added []string
 	err := s.db.Lock(ctx, "tags", func(ctx context.Context, q pggen.Querier) (err error) {
 		for _, t := range tags {
-			if err := t.Valid(); err != nil {
+			if err := Valid(t); err != nil {
 				return fmt.Errorf("invalid tag: %w", err)
 			}
 
@@ -181,10 +182,10 @@ func (s *Service) addTags(ctx context.Context, ws *Workspace, tags []TagSpec) ([
 			name := t.Name
 			switch {
 			case name != "":
-				existing, err := s.db.findTagByName(ctx, ws.Organization, name)
+				existing, err := s.db.findTagByName(ctx, ws.Organization.Name, name)
 				if errors.Is(err, internal.ErrResourceNotFound) {
 					id = internal.NewID("tag")
-					if err := s.db.addTag(ctx, ws.Organization, name, id); err != nil {
+					if err := s.db.addTag(ctx, ws.Organization.Name, name, id); err != nil {
 						return fmt.Errorf("adding tag: %s %w", name, err)
 					}
 				} else if err != nil {
@@ -193,7 +194,7 @@ func (s *Service) addTags(ctx context.Context, ws *Workspace, tags []TagSpec) ([
 					id = existing.ID
 				}
 			case id != "":
-				existing, err := s.db.findTagByID(ctx, ws.Organization, t.ID)
+				existing, err := s.db.findTagByID(ctx, ws.Organization.Name, t.ID)
 				if err != nil {
 					return err
 				}
@@ -209,5 +210,5 @@ func (s *Service) addTags(ctx context.Context, ws *Workspace, tags []TagSpec) ([
 		}
 		return nil
 	})
-	return added, err
+	return err
 }

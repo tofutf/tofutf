@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/http/html/paths"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/vcs"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // ReporterLockID is a unique ID guaranteeing only one reporter on a cluster is running at any time.
@@ -30,7 +30,7 @@ type (
 	}
 
 	reporterWorkspaceClient interface {
-		Get(ctx context.Context, workspaceID string) (*workspace.Workspace, error)
+		Get(ctx context.Context, workspaceID string) (*types.Workspace, error)
 	}
 
 	reporterConfigClient interface {
@@ -84,11 +84,11 @@ func (r *Reporter) handleRun(ctx context.Context, run *Run) error {
 	if err != nil {
 		return err
 	}
-	if ws.Connection == nil {
+	if ws.VCSRepo == nil {
 		return fmt.Errorf("workspace not connected to repo: %s", ws.ID)
 	}
 
-	client, err := r.VCS.GetVCSClient(ctx, ws.Connection.VCSProviderID)
+	client, err := r.VCS.GetVCSClient(ctx, ws.VCSRepo.Identifier)
 	if err != nil {
 		return err
 	}

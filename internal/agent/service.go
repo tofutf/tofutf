@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	tofutfhttp "github.com/tofutf/tofutf/internal/http"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -354,7 +355,7 @@ func (s *service) deleteAgentPool(ctx context.Context, poolID string) (*Pool, er
 // checkWorkspacePoolAccess checks if a workspace has been granted access to a pool. If the
 // pool is organization-scoped then the workspace automatically has access;
 // otherwise access must already have been granted explicity.
-func (s *service) checkWorkspacePoolAccess(ctx context.Context, ws *workspace.Workspace) error {
+func (s *service) checkWorkspacePoolAccess(ctx context.Context, ws *types.Workspace) error {
 	if ws.AgentPoolID == nil {
 		// workspace is not using any pool
 		return nil

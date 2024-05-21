@@ -180,7 +180,10 @@ func (a *tfe) listRunsWithOptions(w http.ResponseWriter, r *http.Request, opts L
 		}
 		items[i] = to
 	}
-	a.RespondWithPage(w, r, items, page.Pagination)
+	a.Respond(w, r, types.RunList{
+		Items:      items,
+		Pagination: page.Pagination,
+	}, http.StatusOK)
 }
 
 func (a *tfe) applyRun(w http.ResponseWriter, r *http.Request) {

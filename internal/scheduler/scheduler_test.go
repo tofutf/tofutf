@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/run"
-	"github.com/tofutf/tofutf/internal/workspace"
 	"github.com/tofutf/tofutf/internal/xslog"
 )
 
@@ -25,8 +24,8 @@ func TestScheduler(t *testing.T) {
 			queues:       make(map[string]eventHandler),
 			queueFactory: qf,
 		}
-		want := &workspace.Workspace{ID: "ws-123"}
-		err := scheduler.handleWorkspaceEvent(ctx, pubsub.Event[*workspace.Workspace]{
+		want := &types.Workspace{ID: "ws-123"}
+		err := scheduler.handleWorkspaceEvent(ctx, pubsub.Event[*types.Workspace]{
 			Payload: want,
 		})
 		require.NoError(t, err)
@@ -42,8 +41,8 @@ func TestScheduler(t *testing.T) {
 				"ws-123": &fakeQueue{},
 			},
 		}
-		err := scheduler.handleWorkspaceEvent(ctx, pubsub.Event[*workspace.Workspace]{
-			Payload: &workspace.Workspace{ID: "ws-123"},
+		err := scheduler.handleWorkspaceEvent(ctx, pubsub.Event[*types.Workspace]{
+			Payload: &types.Workspace{ID: "ws-123"},
 			Type:    pubsub.DeletedEvent,
 		})
 		require.NoError(t, err)

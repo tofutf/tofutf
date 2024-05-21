@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/hashicorp/go-retryablehttp"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	otfapi "github.com/tofutf/tofutf/internal/api"
 	"github.com/tofutf/tofutf/internal/configversion"
@@ -43,7 +44,7 @@ type (
 	}
 
 	workspaceClient interface {
-		Get(ctx context.Context, workspaceID string) (*workspace.Workspace, error)
+		Get(ctx context.Context, workspaceID string) (*types.Workspace, error)
 	}
 
 	variablesClient interface {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/organization"
@@ -150,18 +151,18 @@ type (
 )
 
 // newRun creates a new run with defaults.
-func newRun(ctx context.Context, org *organization.Organization, cv *configversion.ConfigurationVersion, ws *workspace.Workspace, opts CreateOptions) *Run {
+func newRun(ctx context.Context, org *organization.Organization, cv *configversion.ConfigurationVersion, ws *types.Workspace, opts CreateOptions) *Run {
 	run := Run{
 		ID:                     internal.NewID("run"),
 		CreatedAt:              internal.CurrentTimestamp(opts.now),
 		Refresh:                defaultRefresh,
-		Organization:           ws.Organization,
+		Organization:           ws.Organization.Name,
 		ConfigurationVersionID: cv.ID,
 		WorkspaceID:            ws.ID,
 		PlanOnly:               cv.Speculative,
 		ReplaceAddrs:           opts.ReplaceAddrs,
 		TargetAddrs:            opts.TargetAddrs,
-		ExecutionMode:          ws.ExecutionMode,
+		ExecutionMode:          workspace.ExecutionMode(ws.ExecutionMode),
 		AutoApply:              ws.AutoApply,
 		IngressAttributes:      cv.IngressAttributes,
 		CostEstimationEnabled:  org.CostEstimationEnabled,

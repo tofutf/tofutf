@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/connections"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -31,12 +32,12 @@ type (
 		web         *webHandlers
 		tfeapi      *tfe
 		api         *api
-		broker      *pubsub.Broker[*Workspace]
+		broker      *pubsub.Broker[*types.Workspace]
 		connections *connections.Service
 
-		beforeCreateHooks []func(context.Context, *Workspace) error
-		afterCreateHooks  []func(context.Context, *Workspace) error
-		beforeUpdateHooks []func(context.Context, *Workspace) error
+		beforeCreateHooks []func(context.Context, *types.Workspace) error
+		afterCreateHooks  []func(context.Context, *types.Workspace) error
+		beforeUpdateHooks []func(context.Context, *types.Workspace) error
 	}
 
 	Options struct {
@@ -85,17 +86,17 @@ func NewService(opts Options) *Service {
 		opts.Logger,
 		opts.Listener,
 		"workspaces",
-		func(ctx context.Context, id string, action sql.Action) (*Workspace, error) {
+		func(ctx context.Context, id string, action sql.Action) (*types.Workspace, error) {
 			if action == sql.DeleteAction {
-				return &Workspace{ID: id}, nil
+				return &types.Workspace{ID: id}, nil
 			}
 			return db.get(ctx, id)
 		},
 	)
 	// Fetch workspace when API calls request workspace be included in the
 	// response
-	opts.Responder.Register(tfeapi.IncludeWorkspace, svc.tfeapi.include)
-	opts.Responder.Register(tfeapi.IncludeWorkspaces, svc.tfeapi.includeMany)
+	opts.Responder.Register(tfeapi.IncludeWorkspace, svc.tfeapi.include)      //FIXME
+	opts.Responder.Register(tfeapi.IncludeWorkspaces, svc.tfeapi.includeMany) //FIXME
 	return &svc
 }
 
@@ -107,18 +108,18 @@ func (s *Service) AddHandlers(r *mux.Router) {
 	s.api.addHandlers(r)
 }
 
-func (s *Service) Watch(ctx context.Context) (<-chan pubsub.Event[*Workspace], func()) {
+func (s *Service) Watch(ctx context.Context) (<-chan pubsub.Event[*types.Workspace], func()) {
 	return s.broker.Subscribe(ctx)
 }
 
-func (s *Service) Create(ctx context.Context, opts CreateOptions) (*Workspace, error) {
+func (s *Service) Create(ctx context.Context, opts types.WorkspaceCreateOptions) (*types.Workspace, error) {
 	ws, err := NewWorkspace(opts)
 	if err != nil {
 		s.logger.Error("constructing workspace", "err", err)
 		return nil, err
 	}
 
-	subject, err := s.organization.CanAccess(ctx, rbac.CreateWorkspaceAction, ws.Organization)
+	subject, err := s.organization.CanAccess(ctx, rbac.CreateWorkspaceAction, ws.Organization.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -133,8 +134,8 @@ func (s *Service) Create(ctx context.Context, opts CreateOptions) (*Workspace, e
 			return err
 		}
 		// Optionally connect workspace to repo.
-		if ws.Connection != nil {
-			if err := s.connect(ctx, ws.ID, ws.Connection); err != nil {
+		if ws.VCSRepo != nil {
+			if err := s.connect(ctx, ws.ID, ws.VCSRepo); err != nil {
 				return err
 			}
 		}
@@ -205,7 +206,7 @@ func (s *Service) GetByName(ctx context.Context, organization, workspace string)
 	return ws, nil
 }
 
-func (s *Service) List(ctx context.Context, opts ListOptions) (*resource.Page[*Workspace], error) {
+func (s *Service) List(ctx context.Context, opts ListOptions) (*resource.Page[*types.Workspace], error) {
 	if opts.Organization == nil {
 		// subject needs perms on site to list workspaces across site
 		_, err := s.site.CanAccess(ctx, rbac.ListWorkspacesAction, "")

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -61,17 +62,17 @@ type (
 
 	// webClient provides web handlers with access to the workspace service
 	webClient interface {
-		Create(ctx context.Context, opts CreateOptions) (*Workspace, error)
-		Get(ctx context.Context, workspaceID string) (*Workspace, error)
-		GetByName(ctx context.Context, organization, workspace string) (*Workspace, error)
-		List(ctx context.Context, opts ListOptions) (*resource.Page[*Workspace], error)
-		Update(ctx context.Context, workspaceID string, opts UpdateOptions) (*Workspace, error)
-		Delete(ctx context.Context, workspaceID string) (*Workspace, error)
-		Lock(ctx context.Context, workspaceID string, runID *string) (*Workspace, error)
-		Unlock(ctx context.Context, workspaceID string, runID *string, force bool) (*Workspace, error)
+		Create(ctx context.Context, opts types.WorkspaceCreateOptions) (*types.Workspace, error)
+		Get(ctx context.Context, workspaceID string) (*types.Workspace, error)
+		GetByName(ctx context.Context, organization, workspace string) (*types.Workspace, error)
+		List(ctx context.Context, opts types.ListOptions) (*resource.Page[*types.Workspace], error)
+		Update(ctx context.Context, workspaceID string, opts UpdateOptions) (*types.Workspace, error)
+		Delete(ctx context.Context, workspaceID string) (*types.Workspace, error)
+		Lock(ctx context.Context, workspaceID string, runID *string) (*types.Workspace, error)
+		Unlock(ctx context.Context, workspaceID string, runID *string, force bool) (*types.Workspace, error)
 
-		AddTags(ctx context.Context, workspaceID string, tags []TagSpec) error
-		RemoveTags(ctx context.Context, workspaceID string, tags []TagSpec) error
+		AddTags(ctx context.Context, workspaceID string, tags []*types.Tag) error
+		RemoveTags(ctx context.Context, workspaceID string, tags []*types.Tag) error
 		ListTags(ctx context.Context, organization string, opts ListTagsOptions) (*resource.Page[*Tag], error)
 
 		GetPolicy(ctx context.Context, workspaceID string) (internal.WorkspacePolicy, error)
@@ -83,13 +84,13 @@ type (
 	WorkspacePage struct {
 		organization.OrganizationPage
 
-		Workspace *Workspace
+		Workspace *types.Workspace
 	}
 )
 
-func NewPage(r *http.Request, title string, workspace *Workspace) WorkspacePage {
+func NewPage(r *http.Request, title string, workspace *types.Workspace) WorkspacePage {
 	return WorkspacePage{
-		OrganizationPage: organization.NewPage(r, title, workspace.Organization),
+		OrganizationPage: organization.NewPage(r, title, workspace.Organization.Name),
 		Workspace:        workspace,
 	}
 }
@@ -129,11 +130,11 @@ func (h *webHandlers) listWorkspaces(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	workspaces, err := h.client.List(r.Context(), ListOptions{
+	workspaces, err := h.client.List(r.Context(), types.WorkspaceListOptions{
 		Search:       params.Search,
 		Tags:         params.Tags,
 		Organization: params.Organization,
-		PageOptions: resource.PageOptions{
+		PageOptions: types.ListOptions{
 			PageNumber: params.PageNumber,
 			PageSize:   html.PageSize,
 		},
@@ -176,7 +177,7 @@ func (h *webHandlers) listWorkspaces(w http.ResponseWriter, r *http.Request) {
 
 	response := struct {
 		organization.OrganizationPage
-		*resource.Page[*Workspace]
+		*resource.Page[*types.Workspace]
 		TagFilters         map[string]bool
 		Search             string
 		CanCreateWorkspace bool
@@ -263,8 +264,8 @@ func (h *webHandlers) getWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var provider *vcsprovider.VCSProvider
-	if ws.Connection != nil {
-		provider, err = h.vcsproviders.Get(r.Context(), ws.Connection.VCSProviderID)
+	if ws.VCSRepo != nil {
+		provider, err = h.vcsproviders.Get(r.Context(), ws.VCSRepo.Identifier)
 		if err != nil {
 			h.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -272,7 +273,7 @@ func (h *webHandlers) getWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tags, err := resource.ListAll(func(opts resource.PageOptions) (*resource.Page[*Tag], error) {
-		return h.client.ListTags(r.Context(), ws.Organization, ListTagsOptions{
+		return h.client.ListTags(r.Context(), ws.Organization.Name, ListTagsOptions{
 			PageOptions: opts,
 		})
 	})
@@ -285,6 +286,11 @@ func (h *webHandlers) getWorkspace(w http.ResponseWriter, r *http.Request) {
 			names = append(names, t.Name)
 		}
 		return
+	}
+
+	tagsStrings := make([]string, 0)
+	for _, tag := range ws.Tags {
+		tagsStrings = append(tagsStrings, tag.Name)
 	}
 
 	h.Render("workspace_get.tmpl", w, struct {
@@ -313,8 +319,8 @@ func (h *webHandlers) getWorkspace(w http.ResponseWriter, r *http.Request) {
 		CanUpdateWorkspace: user.CanAccessWorkspace(rbac.UpdateWorkspaceAction, policy),
 		TagsDropdown: html.DropdownUI{
 			Name:        "tag_name",
-			Available:   internal.DiffStrings(getTagNames(), ws.Tags),
-			Existing:    ws.Tags,
+			Available:   internal.DiffStrings(getTagNames(), tagsStrings),
+			Existing:    tagsStrings,
 			Action:      paths.CreateTagWorkspace(ws.ID),
 			Placeholder: "Add tags",
 			Width:       html.NarrowDropDown,
@@ -366,7 +372,7 @@ func (h *webHandlers) editWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get teams for populating team permissions
-	teams, err := h.teams.List(r.Context(), workspace.Organization)
+	teams, err := h.teams.List(r.Context(), workspace.Organization.Name)
 	if err != nil {
 		h.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -393,8 +399,8 @@ func (h *webHandlers) editWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var provider *vcsprovider.VCSProvider
-	if workspace.Connection != nil {
-		provider, err = h.vcsproviders.Get(r.Context(), workspace.Connection.VCSProviderID)
+	if workspace.VCSRepo != nil {
+		provider, err = h.vcsproviders.Get(r.Context(), workspace.VCSRepo.Identifier)
 		if err != nil {
 			h.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -402,7 +408,7 @@ func (h *webHandlers) editWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tags, err := resource.ListAll(func(opts resource.PageOptions) (*resource.Page[*Tag], error) {
-		return h.client.ListTags(r.Context(), workspace.Organization, ListTagsOptions{
+		return h.client.ListTags(r.Context(), workspace.Organization.Name, ListTagsOptions{
 			PageOptions: opts,
 		})
 	})
@@ -415,6 +421,11 @@ func (h *webHandlers) editWorkspace(w http.ResponseWriter, r *http.Request) {
 			names = append(names, t.Name)
 		}
 		return
+	}
+
+	tagsStrings := make([]string, 0)
+	for _, tag := range workspace.Tags {
+		tagsStrings = append(tagsStrings, tag.Name)
 	}
 
 	h.Render("workspace_edit.tmpl", w, struct {
@@ -444,7 +455,7 @@ func (h *webHandlers) editWorkspace(w http.ResponseWriter, r *http.Request) {
 			rbac.WorkspaceAdminRole,
 		},
 		VCSProvider:        provider,
-		UnassignedTags:     internal.DiffStrings(getTagNames(), workspace.Tags),
+		UnassignedTags:     internal.DiffStrings(getTagNames(), tagsStrings),
 		VCSTagRegexDefault: vcsTagRegexDefault,
 		VCSTagRegexPrefix:  vcsTagRegexPrefix,
 		VCSTagRegexSuffix:  vcsTagRegexSuffix,
@@ -498,7 +509,7 @@ func (h *webHandlers) updateWorkspace(w http.ResponseWriter, r *http.Request) {
 		WorkingDirectory:  &params.WorkingDirectory,
 		GlobalRemoteState: &params.GlobalRemoteState,
 	}
-	if ws.Connection != nil {
+	if ws.VCSRepo != nil {
 		// workspace is connected, so set connection fields
 		opts.ConnectOptions = &ConnectOptions{
 			AllowCLIApply: &params.AllowCLIApply,
@@ -550,7 +561,7 @@ func (h *webHandlers) deleteWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	html.FlashSuccess(w, "deleted workspace: "+ws.Name)
-	http.Redirect(w, r, paths.Workspaces(ws.Organization), http.StatusFound)
+	http.Redirect(w, r, paths.Workspaces(ws.Organization.Name), http.StatusFound)
 }
 
 func (h *webHandlers) lockWorkspace(w http.ResponseWriter, r *http.Request) {
@@ -612,7 +623,7 @@ func (h *webHandlers) listWorkspaceVCSProviders(w http.ResponseWriter, r *http.R
 		h.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	providers, err := h.vcsproviders.List(r.Context(), ws.Organization)
+	providers, err := h.vcsproviders.List(r.Context(), ws.Organization.Name)
 	if err != nil {
 		h.Error(w, err.Error(), http.StatusInternalServerError)
 		return

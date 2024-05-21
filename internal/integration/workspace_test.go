@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
@@ -26,16 +27,24 @@ func TestWorkspace(t *testing.T) {
 		sub, unsub := daemon.Workspaces.Watch(ctx)
 		defer unsub()
 
-		ws, err := daemon.Workspaces.Create(ctx, workspace.CreateOptions{
-			Name:         internal.String(uuid.NewString()),
-			Organization: internal.String(org.Name),
+		ws, err := daemon.Workspaces.Create(ctx, types.WorkspaceCreateOptions{
+			Name: internal.String(uuid.NewString()),
+			Project: &types.Project{
+				Organization: &types.Organization{
+					Name: org.Name,
+				},
+			},
 		})
 		require.NoError(t, err)
 
 		t.Run("duplicate error", func(t *testing.T) {
-			_, err := daemon.Workspaces.Create(ctx, workspace.CreateOptions{
-				Name:         internal.String(ws.Name),
-				Organization: internal.String(org.Name),
+			_, err := daemon.Workspaces.Create(ctx, types.WorkspaceCreateOptions{
+				Name: internal.String(ws.Name),
+				Project: &types.Project{
+					Organization: &types.Organization{
+						Name: org.Name,
+					},
+				},
 			})
 			require.Equal(t, internal.ErrResourceAlreadyExists, err)
 		})
@@ -49,10 +58,14 @@ func TestWorkspace(t *testing.T) {
 		daemon, org, ctx := setup(t, nil, github.WithRepo("test/dummy"))
 
 		vcsprov := daemon.createVCSProvider(t, ctx, org)
-		ws, err := daemon.Workspaces.Create(ctx, workspace.CreateOptions{
-			Name:         internal.String(uuid.NewString()),
-			Organization: &org.Name,
-			ConnectOptions: &workspace.ConnectOptions{
+		ws, err := daemon.Workspaces.Create(ctx, types.WorkspaceCreateOptions{
+			Name: internal.String(uuid.NewString()),
+			Project: &types.Project{
+				Organization: &types.Organization{
+					Name: org.Name,
+				},
+			},
+			VCSRepo: &types.VCSRepoOptions{
 				RepoPath:      internal.String("test/dummy"),
 				VCSProviderID: &vcsprov.ID,
 			},
@@ -80,10 +93,14 @@ func TestWorkspace(t *testing.T) {
 		svc, org, ctx := setup(t, nil, github.WithRepo("test/dummy"))
 
 		vcsprov := svc.createVCSProvider(t, ctx, org)
-		ws, err := svc.Workspaces.Create(ctx, workspace.CreateOptions{
-			Name:         internal.String(uuid.NewString()),
-			Organization: &org.Name,
-			ConnectOptions: &workspace.ConnectOptions{
+		ws, err := svc.Workspaces.Create(ctx, types.WorkspaceCreateOptions{
+			Name: internal.String(uuid.NewString()),
+			Project: &types.Project{
+				Organization: &types.Organization{
+					Name: org.Name,
+				},
+			},
+			VCSRepo: &types.VCSRepoOptions{
 				RepoPath:      internal.String("test/dummy"),
 				VCSProviderID: &vcsprov.ID,
 			},
@@ -164,7 +181,7 @@ func TestWorkspace(t *testing.T) {
 		svc, _, ctx := setup(t, nil)
 		want := svc.createWorkspace(t, ctx, nil)
 
-		got, err := svc.Workspaces.GetByName(ctx, want.Organization, want.Name)
+		got, err := svc.Workspaces.GetByName(ctx, want.Organization.Name, want.Name)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
@@ -173,22 +190,26 @@ func TestWorkspace(t *testing.T) {
 		svc, org, ctx := setup(t, nil)
 		ws1 := svc.createWorkspace(t, ctx, org)
 		ws2 := svc.createWorkspace(t, ctx, org)
-		wsTagged, err := svc.Workspaces.Create(ctx, workspace.CreateOptions{
-			Organization: internal.String(org.Name),
-			Name:         internal.String("ws-tagged"),
-			Tags:         []workspace.TagSpec{{Name: "foo"}, {Name: "bar"}},
+		wsTagged, err := svc.Workspaces.Create(ctx, types.WorkspaceCreateOptions{
+			Project: &types.Project{
+				Organization: &types.Organization{
+					Name: org.Name,
+				},
+			},
+			Name: internal.String("ws-tagged"),
+			Tags: []*types.Tag{{Name: "foo"}, {Name: "bar"}},
 		})
 		require.NoError(t, err)
 
 		tests := []struct {
 			name string
 			opts workspace.ListOptions
-			want func(*testing.T, *resource.Page[*workspace.Workspace])
+			want func(*testing.T, *resource.Page[*types.Workspace])
 		}{
 			{
 				name: "filter by org",
 				opts: workspace.ListOptions{Organization: internal.String(org.Name)},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 3, len(l.Items))
 					assert.Contains(t, l.Items, ws1)
 					assert.Contains(t, l.Items, ws2)
@@ -199,7 +220,7 @@ func TestWorkspace(t *testing.T) {
 				// test workspaces are named `workspace-<random 6 alphanumerals>`, so prefix with 14
 				// characters to be pretty damn sure only ws1 is selected.
 				opts: workspace.ListOptions{Organization: internal.String(org.Name), Search: ws1.Name[:14]},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 1, len(l.Items))
 					assert.Equal(t, ws1, l.Items[0])
 				},
@@ -207,7 +228,7 @@ func TestWorkspace(t *testing.T) {
 			{
 				name: "filter by tag",
 				opts: workspace.ListOptions{Tags: []string{"foo", "bar"}},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 1, len(l.Items))
 					assert.Equal(t, wsTagged, l.Items[0])
 				},
@@ -215,21 +236,21 @@ func TestWorkspace(t *testing.T) {
 			{
 				name: "filter by non-existent org",
 				opts: workspace.ListOptions{Organization: internal.String("non-existent")},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 0, len(l.Items))
 				},
 			},
 			{
 				name: "filter by non-existent name regex",
 				opts: workspace.ListOptions{Organization: internal.String(org.Name), Search: "xyz"},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 0, len(l.Items))
 				},
 			},
 			{
 				name: "paginated results ordered by updated_at",
 				opts: workspace.ListOptions{Organization: internal.String(org.Name), PageOptions: resource.PageOptions{PageNumber: 1, PageSize: 1}},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 1, len(l.Items))
 					// results are in descending order so we expect wsTagged to be listed
 					// first...unless - and this happens very occasionally - the
@@ -243,7 +264,7 @@ func TestWorkspace(t *testing.T) {
 			{
 				name: "stray pagination",
 				opts: workspace.ListOptions{Organization: internal.String(org.Name), PageOptions: resource.PageOptions{PageNumber: 999, PageSize: 10}},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					// zero results but count should ignore pagination
 					assert.Equal(t, 0, len(l.Items))
 					assert.Equal(t, 3, l.TotalCount)
@@ -264,28 +285,36 @@ func TestWorkspace(t *testing.T) {
 
 	t.Run("list by tag", func(t *testing.T) {
 		svc, org, ctx := setup(t, nil)
-		ws1, err := svc.Workspaces.Create(ctx, workspace.CreateOptions{
-			Name:         internal.String(uuid.NewString()),
-			Organization: &org.Name,
-			Tags:         []workspace.TagSpec{{Name: "foo"}},
+		ws1, err := svc.Workspaces.Create(ctx, types.WorkspaceCreateOptions{
+			Name: internal.String(uuid.NewString()),
+			Project: &types.Project{
+				Organization: &types.Organization{
+					Name: org.Name,
+				},
+			},
+			Tags: []*types.Tag{{Name: "foo"}},
 		})
 		require.NoError(t, err)
-		ws2, err := svc.Workspaces.Create(ctx, workspace.CreateOptions{
-			Name:         internal.String(uuid.NewString()),
-			Organization: &org.Name,
-			Tags:         []workspace.TagSpec{{Name: "foo"}, {Name: "bar"}},
+		ws2, err := svc.Workspaces.Create(ctx, types.WorkspaceCreateOptions{
+			Name: internal.String(uuid.NewString()),
+			Project: &types.Project{
+				Organization: &types.Organization{
+					Name: org.Name,
+				},
+			},
+			Tags: []*types.Tag{{Name: "foo"}, {Name: "bar"}},
 		})
 		require.NoError(t, err)
 
 		tests := []struct {
 			name string
 			tags []string
-			want func(*testing.T, *resource.Page[*workspace.Workspace])
+			want func(*testing.T, *resource.Page[*types.Workspace])
 		}{
 			{
 				name: "foo",
 				tags: []string{"foo"},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 2, len(l.Items))
 					assert.Contains(t, l.Items, ws1)
 					assert.Contains(t, l.Items, ws2)
@@ -297,7 +326,7 @@ func TestWorkspace(t *testing.T) {
 			{
 				name: "foo and bar",
 				tags: []string{"foo", "bar"},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 1, len(l.Items))
 					assert.Contains(t, l.Items, ws2)
 
@@ -336,13 +365,13 @@ func TestWorkspace(t *testing.T) {
 			name string
 			user *user.User
 			opts workspace.ListOptions
-			want func(*testing.T, *resource.Page[*workspace.Workspace])
+			want func(*testing.T, *resource.Page[*types.Workspace])
 		}{
 			{
 				name: "show both workspaces",
 				user: user1,
 				opts: workspace.ListOptions{Organization: internal.String(org.Name)},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 2, len(l.Items))
 					assert.Contains(t, l.Items, ws1)
 					assert.Contains(t, l.Items, ws2)
@@ -352,7 +381,7 @@ func TestWorkspace(t *testing.T) {
 				name: "query non-existent org",
 				user: user1,
 				opts: workspace.ListOptions{Organization: internal.String("acme-corp")},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 0, len(l.Items))
 				},
 			},
@@ -360,7 +389,7 @@ func TestWorkspace(t *testing.T) {
 				name: "user with no perms",
 				user: user2,
 				opts: workspace.ListOptions{Organization: internal.String(org.Name)},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 0, len(l.Items))
 				},
 			},
@@ -371,7 +400,7 @@ func TestWorkspace(t *testing.T) {
 					Organization: internal.String(org.Name),
 					PageOptions:  resource.PageOptions{PageNumber: 1, PageSize: 1},
 				},
-				want: func(t *testing.T, l *resource.Page[*workspace.Workspace]) {
+				want: func(t *testing.T, l *resource.Page[*types.Workspace]) {
 					assert.Equal(t, 1, len(l.Items))
 					// results are in descending order so we expect ws2 to be listed
 					// first...unless - and this happens very occasionally - the
@@ -422,9 +451,9 @@ func TestWorkspace(t *testing.T) {
 
 		_, err := daemon.Workspaces.Delete(ctx, ws.ID)
 		require.NoError(t, err)
-		assert.Equal(t, pubsub.NewDeletedEvent(&workspace.Workspace{ID: ws.ID}), <-sub)
+		assert.Equal(t, pubsub.NewDeletedEvent(&types.Workspace{ID: ws.ID}), <-sub)
 
-		results, err := daemon.Workspaces.List(ctx, workspace.ListOptions{Organization: internal.String(ws.Organization)})
+		results, err := daemon.Workspaces.List(ctx, workspace.ListOptions{Organization: internal.String(ws.Organization.Name)})
 		require.NoError(t, err)
 		assert.Equal(t, 0, len(results.Items))
 	})

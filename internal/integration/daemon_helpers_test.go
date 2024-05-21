@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/agent"
@@ -168,7 +169,7 @@ func (s *testDaemon) createOrganization(t *testing.T, ctx context.Context) *orga
 	return org
 }
 
-func (s *testDaemon) createWorkspace(t *testing.T, ctx context.Context, org *organization.Organization) *workspace.Workspace {
+func (s *testDaemon) createWorkspace(t *testing.T, ctx context.Context, org *organization.Organization) *types.Workspace {
 	t.Helper()
 
 	if org == nil {
@@ -183,7 +184,7 @@ func (s *testDaemon) createWorkspace(t *testing.T, ctx context.Context, org *org
 	return ws
 }
 
-func (s *testDaemon) getWorkspace(t *testing.T, ctx context.Context, workspaceID string) *workspace.Workspace {
+func (s *testDaemon) getWorkspace(t *testing.T, ctx context.Context, workspaceID string) *types.Workspace {
 	t.Helper()
 
 	ws, err := s.Workspaces.Get(ctx, workspaceID)
@@ -282,7 +283,7 @@ func (s *testDaemon) getTeam(t *testing.T, ctx context.Context, org, name string
 	return team
 }
 
-func (s *testDaemon) createConfigurationVersion(t *testing.T, ctx context.Context, ws *workspace.Workspace, opts *configversion.CreateOptions) *configversion.ConfigurationVersion {
+func (s *testDaemon) createConfigurationVersion(t *testing.T, ctx context.Context, ws *types.Workspace, opts *configversion.CreateOptions) *configversion.ConfigurationVersion {
 	t.Helper()
 
 	if ws == nil {
@@ -297,7 +298,7 @@ func (s *testDaemon) createConfigurationVersion(t *testing.T, ctx context.Contex
 	return cv
 }
 
-func (s *testDaemon) createAndUploadConfigurationVersion(t *testing.T, ctx context.Context, ws *workspace.Workspace, opts *configversion.CreateOptions) *configversion.ConfigurationVersion {
+func (s *testDaemon) createAndUploadConfigurationVersion(t *testing.T, ctx context.Context, ws *types.Workspace, opts *configversion.CreateOptions) *configversion.ConfigurationVersion {
 	cv := s.createConfigurationVersion(t, ctx, ws, opts)
 	tarball, err := os.ReadFile("./testdata/root.tar.gz")
 	require.NoError(t, err)
@@ -306,7 +307,7 @@ func (s *testDaemon) createAndUploadConfigurationVersion(t *testing.T, ctx conte
 	return cv
 }
 
-func (s *testDaemon) createRun(t *testing.T, ctx context.Context, ws *workspace.Workspace, cv *configversion.ConfigurationVersion) *run.Run {
+func (s *testDaemon) createRun(t *testing.T, ctx context.Context, ws *types.Workspace, cv *configversion.ConfigurationVersion) *run.Run {
 	t.Helper()
 
 	if ws == nil {
@@ -323,7 +324,7 @@ func (s *testDaemon) createRun(t *testing.T, ctx context.Context, ws *workspace.
 	return run
 }
 
-func (s *testDaemon) createVariable(t *testing.T, ctx context.Context, ws *workspace.Workspace) *variable.Variable {
+func (s *testDaemon) createVariable(t *testing.T, ctx context.Context, ws *types.Workspace) *variable.Variable {
 	t.Helper()
 
 	if ws == nil {
@@ -339,7 +340,7 @@ func (s *testDaemon) createVariable(t *testing.T, ctx context.Context, ws *works
 	return v
 }
 
-func (s *testDaemon) createStateVersion(t *testing.T, ctx context.Context, ws *workspace.Workspace) *state.Version {
+func (s *testDaemon) createStateVersion(t *testing.T, ctx context.Context, ws *types.Workspace) *state.Version {
 	t.Helper()
 
 	if ws == nil {
@@ -383,7 +384,7 @@ func (s *testDaemon) createToken(t *testing.T, ctx context.Context, user *otfuse
 	return ut, token
 }
 
-func (s *testDaemon) createNotificationConfig(t *testing.T, ctx context.Context, ws *workspace.Workspace) *notifications.Config {
+func (s *testDaemon) createNotificationConfig(t *testing.T, ctx context.Context, ws *types.Workspace) *notifications.Config {
 	t.Helper()
 
 	if ws == nil {

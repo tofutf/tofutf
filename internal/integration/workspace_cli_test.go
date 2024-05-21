@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal/agent"
@@ -31,7 +32,7 @@ func TestIntegration_WorkspaceCLI(t *testing.T) {
 
 	// show workspace via CLI (outputs as JSON)
 	out = daemon.otfcli(t, ctx, "workspaces", "show", "--organization", org.Name, ws1.Name)
-	var got workspace.Workspace
+	var got types.Workspace
 	err := json.Unmarshal([]byte(out), &got)
 	require.NoError(t, err)
 
@@ -50,14 +51,14 @@ func TestIntegration_WorkspaceCLI(t *testing.T) {
 
 	// lock/unlock/force-unlock workspace
 	daemon.otfcli(t, ctx, "workspaces", "lock", ws1.Name, "--organization", org.Name)
-	assert.True(t, daemon.getWorkspace(t, ctx, ws1.ID).Locked())
+	assert.True(t, daemon.getWorkspace(t, ctx, ws1.ID).Locked)
 
 	daemon.otfcli(t, ctx, "workspaces", "unlock", ws1.Name, "--organization", org.Name)
-	assert.False(t, daemon.getWorkspace(t, ctx, ws1.ID).Locked())
+	assert.False(t, daemon.getWorkspace(t, ctx, ws1.ID).Locked)
 
 	daemon.otfcli(t, ctx, "workspaces", "lock", ws1.Name, "--organization", org.Name)
-	assert.True(t, daemon.getWorkspace(t, ctx, ws1.ID).Locked())
+	assert.True(t, daemon.getWorkspace(t, ctx, ws1.ID).Locked)
 
 	daemon.otfcli(t, ctx, "workspaces", "unlock", ws1.Name, "--organization", org.Name, "--force")
-	assert.False(t, daemon.getWorkspace(t, ctx, ws1.ID).Locked())
+	assert.False(t, daemon.getWorkspace(t, ctx, ws1.ID).Locked)
 }

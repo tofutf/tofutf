@@ -3,8 +3,8 @@ package scheduler
 import (
 	"context"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal/run"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type fakeQueueFactory struct {
@@ -17,11 +17,11 @@ func (f *fakeQueueFactory) newQueue(queueOptions) eventHandler {
 }
 
 type fakeQueue struct {
-	gotWorkspace *workspace.Workspace
+	gotWorkspace *types.Workspace
 	gotRun       *run.Run
 }
 
-func (q *fakeQueue) handleWorkspace(ctx context.Context, ws *workspace.Workspace) error {
+func (q *fakeQueue) handleWorkspace(ctx context.Context, ws *types.Workspace) error {
 	q.gotWorkspace = ws
 	return nil
 }

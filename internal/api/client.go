@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -12,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DataDog/jsonapi"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/jsonapi"
 	"github.com/tofutf/tofutf/internal"
 	otfhttp "github.com/tofutf/tofutf/internal/http"
 )
@@ -215,7 +216,7 @@ func serializeRequestBody(v interface{}) (interface{}, error) {
 	// If there is at least one field tagged with jsonapi then use the jsonapi
 	// marshaler.
 	if jsonAPIFields > 0 {
-		return jsonapi.Marshal(v, jsonapi.MarshalClientMode())
+		return jsonapi.Marshal(v)
 	} else {
 		return json.Marshal(v)
 	}
@@ -277,7 +278,7 @@ func unmarshalResponse(r io.Reader, v any) error {
 	dst := reflect.Indirect(reflect.ValueOf(v))
 
 	if dst.Kind() == reflect.Slice {
-		return jsonapi.Unmarshal(b, v)
+		return jsonapi.UnmarshalPayload(bytes.NewReader(b), v)
 	}
 
 	// Return an error if model is not a struct, slice or an io.Writer.
@@ -292,7 +293,7 @@ func unmarshalResponse(r io.Reader, v any) error {
 	// Unmarshal a single value if v does not contain the
 	// Items and Pagination struct fields.
 	if !items.IsValid() || !pagination.IsValid() {
-		return jsonapi.Unmarshal(b, v)
+		return jsonapi.UnmarshalPayload(bytes.NewReader(b), v)
 	}
 
 	// Return an error if v.Items is not a slice.
@@ -300,7 +301,7 @@ func unmarshalResponse(r io.Reader, v any) error {
 		return fmt.Errorf("v.Items must be a slice")
 	}
 
-	err = jsonapi.Unmarshal(b, items.Addr().Interface(), jsonapi.UnmarshalMeta(pagination.Addr().Interface()))
+	err = jsonapi.UnmarshalPayload(bytes.NewReader(b), items.Addr().Interface())
 	if err != nil {
 		return err
 	}
@@ -331,9 +332,9 @@ func checkResponseCode(r *http.Response) error {
 		return err
 	}
 	// Decode the error payload.
-	var payload struct {
-		Errors []*jsonapi.Error `json:"errors"`
-	}
+
+	payload := jsonapi.ErrorsPayload{}
+
 	if err := json.Unmarshal(contents, &payload); err != nil {
 		return fmt.Errorf("unable to decode errors payload: %s: %w", string(contents), err)
 	}

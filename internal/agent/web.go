@@ -51,7 +51,7 @@ type webClient interface {
 
 type (
 	// templates may serialize hundreds of workspaces to JSON, so a struct with
-	// only the fields needed is used rather than the full *workspace.Workspace
+	// only the fields needed is used rather than the full *types.Workspace
 	// with its dozens of fields
 	poolWorkspace struct {
 		ID   string `json:"id"`

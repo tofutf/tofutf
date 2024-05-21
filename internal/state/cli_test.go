@@ -5,12 +5,12 @@ import (
 	"context"
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/testutils"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 func TestCLI_State(t *testing.T) {
@@ -25,7 +25,7 @@ func TestCLI_State(t *testing.T) {
 			{
 				"three state versions",
 				newFakeCLI(
-					&workspace.Workspace{ID: "ws-123"},
+					&types.Workspace{ID: "ws-123"},
 					withStateVersion(&Version{ID: "sv-3", WorkspaceID: "ws-123"}),
 					withStateVersionList(resource.NewPage(
 						[]*Version{
@@ -41,7 +41,7 @@ func TestCLI_State(t *testing.T) {
 			},
 			{
 				"zero state versions",
-				newFakeCLI(&workspace.Workspace{ID: "ws-123"}),
+				newFakeCLI(&types.Workspace{ID: "ws-123"}),
 				"No state versions found\n",
 			},
 		}
@@ -101,13 +101,13 @@ type (
 		stateVersion     *Version
 		stateVersionList *resource.Page[*Version]
 		state            []byte
-		workspace        *workspace.Workspace
+		workspace        *types.Workspace
 	}
 
 	fakeCLIOption func(*fakeCLIService)
 )
 
-func newFakeCLI(ws *workspace.Workspace, opts ...fakeCLIOption) *CLI {
+func newFakeCLI(ws *types.Workspace, opts ...fakeCLIOption) *CLI {
 	svc := fakeCLIService{workspace: ws}
 	for _, fn := range opts {
 		fn(&svc)
@@ -156,6 +156,6 @@ func (f *fakeCLIService) Download(ctx context.Context, svID string) ([]byte, err
 	return f.state, nil
 }
 
-func (f *fakeCLIService) GetByName(context.Context, string, string) (*workspace.Workspace, error) {
+func (f *fakeCLIService) GetByName(context.Context, string, string) (*types.Workspace, error) {
 	return f.workspace, nil
 }

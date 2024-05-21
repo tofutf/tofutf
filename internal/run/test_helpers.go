@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -23,7 +24,7 @@ func (f *fakeSubService) Subscribe(context.Context) (<-chan pubsub.Event[*Run], 
 type (
 	fakeWebServices struct {
 		runs []*Run
-		ws   *workspace.Workspace
+		ws   *types.Workspace
 
 		// fakeWebServices does not implement all of webRunClient
 		webRunClient
@@ -32,7 +33,7 @@ type (
 	fakeWebServiceOption func(*fakeWebServices)
 )
 
-func withWorkspace(workspace *workspace.Workspace) fakeWebServiceOption {
+func withWorkspace(workspace *types.Workspace) fakeWebServiceOption {
 	return func(svc *fakeWebServices) {
 		svc.ws = workspace
 	}
@@ -56,7 +57,7 @@ func newTestWebHandlers(t *testing.T, opts ...fakeWebServiceOption) *webHandlers
 	return &webHandlers{
 		Renderer: renderer,
 		workspaces: &workspace.FakeService{
-			Workspaces: []*workspace.Workspace{svc.ws},
+			Workspaces: []*types.Workspace{svc.ws},
 		},
 		runs: &svc,
 	}

@@ -138,7 +138,10 @@ func (a *tfe) listConfigurationVersions(w http.ResponseWriter, r *http.Request) 
 	for i, from := range page.Items {
 		items[i] = a.convert(from, "")
 	}
-	a.RespondWithPage(w, r, items, page.Pagination)
+	a.Respond(w, r, types.ConfigurationVersionList{
+		Items:      items,
+		Pagination: page.Pagination,
+	}, http.StatusOK)
 }
 
 func (a *tfe) uploadConfigurationVersion() http.HandlerFunc {

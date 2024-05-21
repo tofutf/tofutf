@@ -47,7 +47,7 @@ func (a *api) listVersions(w http.ResponseWriter, r *http.Request) {
 		tfeapi.Error(w, err)
 		return
 	}
-	a.RespondWithPage(w, r, page.Items, page.Pagination)
+	a.Respond(w, r, page.Items, page.Pagination)
 }
 
 func (a *api) getCurrentVersion(w http.ResponseWriter, r *http.Request) {

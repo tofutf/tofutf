@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/rbac"
 	"github.com/tofutf/tofutf/internal/resource"
@@ -12,44 +13,45 @@ import (
 )
 
 type FakeService struct {
-	Workspaces []*Workspace
+	Workspaces []*types.Workspace
 	Policy     internal.WorkspacePolicy
 }
 
-func (f *FakeService) ListConnectedWorkspaces(ctx context.Context, vcsProviderID, repoPath string) ([]*Workspace, error) {
+func (f *FakeService) ListConnectedWorkspaces(ctx context.Context, vcsProviderID, repoPath string) ([]*types.Workspace, error) {
 	return f.Workspaces, nil
 }
 
-func (f *FakeService) Create(context.Context, CreateOptions) (*Workspace, error) {
+func (f *FakeService) Create(context.Context, CreateOptions) (*types.Workspace, error) {
 	return f.Workspaces[0], nil
 }
 
-func (f *FakeService) Update(_ context.Context, _ string, opts UpdateOptions) (*Workspace, error) {
-	f.Workspaces[0].Update(opts) //nolint:errcheck
-	return f.Workspaces[0], nil
+func (f *FakeService) Update(_ context.Context, _ string, opts types.WorkspaceUpdateOptions) (*types.Workspace, error) {
+	ref := f.Workspaces[0]
+	Update(ref, opts) //nolint:errcheck
+	return ref, nil
 }
 
-func (f *FakeService) List(ctx context.Context, opts ListOptions) (*resource.Page[*Workspace], error) {
+func (f *FakeService) List(ctx context.Context, opts ListOptions) (*resource.Page[*types.Workspace], error) {
 	return resource.NewPage(f.Workspaces, opts.PageOptions, nil), nil
 }
 
-func (f *FakeService) Get(context.Context, string) (*Workspace, error) {
+func (f *FakeService) Get(context.Context, string) (*types.Workspace, error) {
 	return f.Workspaces[0], nil
 }
 
-func (f *FakeService) GetByName(context.Context, string, string) (*Workspace, error) {
+func (f *FakeService) GetByName(context.Context, string, string) (*types.Workspace, error) {
 	return f.Workspaces[0], nil
 }
 
-func (f *FakeService) Delete(context.Context, string) (*Workspace, error) {
+func (f *FakeService) Delete(context.Context, string) (*types.Workspace, error) {
 	return f.Workspaces[0], nil
 }
 
-func (f *FakeService) Lock(context.Context, string, *string) (*Workspace, error) {
+func (f *FakeService) Lock(context.Context, string, *string) (*types.Workspace, error) {
 	return f.Workspaces[0], nil
 }
 
-func (f *FakeService) Unlock(context.Context, string, *string, bool) (*Workspace, error) {
+func (f *FakeService) Unlock(context.Context, string, *string, bool) (*types.Workspace, error) {
 	return f.Workspaces[0], nil
 }
 

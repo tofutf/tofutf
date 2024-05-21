@@ -52,7 +52,10 @@ func (a *tfe) listTags(w http.ResponseWriter, r *http.Request) {
 	for i, from := range page.Items {
 		to[i] = a.toTag(from)
 	}
-	a.RespondWithPage(w, r, to, page.Pagination)
+	a.Respond(w, r, types.OrganizationTagsList{
+		Items:      to,
+		Pagination: page.Pagination,
+	}, http.StatusOK)
 }
 
 func (a *tfe) deleteTags(w http.ResponseWriter, r *http.Request) {
@@ -124,14 +127,12 @@ func (a *tfe) alterWorkspaceTags(w http.ResponseWriter, r *http.Request, op tagO
 		tfeapi.Error(w, err)
 		return
 	}
-	// convert from json:api structs to tag specs
-	specs := toTagSpecs(params)
 
 	switch op {
 	case addTags:
-		err = a.AddTags(r.Context(), workspaceID, specs)
+		err = a.AddTags(r.Context(), workspaceID, params)
 	case removeTags:
-		err = a.RemoveTags(r.Context(), workspaceID, specs)
+		err = a.RemoveTags(r.Context(), workspaceID, params)
 	default:
 		err = errors.New("unknown tag operation")
 	}
@@ -166,7 +167,10 @@ func (a *tfe) getTags(w http.ResponseWriter, r *http.Request) {
 	for i, from := range page.Items {
 		to[i] = a.toTag(from)
 	}
-	a.RespondWithPage(w, r, to, page.Pagination)
+	a.Respond(w, r, types.OrganizationTagsList{
+		Items:      to,
+		Pagination: page.Pagination,
+	})
 }
 
 func (a *tfe) toTag(from *Tag) *types.OrganizationTag {

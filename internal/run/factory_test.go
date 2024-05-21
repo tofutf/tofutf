@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
@@ -12,7 +13,6 @@ import (
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/releases"
 	"github.com/tofutf/tofutf/internal/vcs"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 func TestFactory(t *testing.T) {
@@ -21,7 +21,7 @@ func TestFactory(t *testing.T) {
 	t.Run("defaults", func(t *testing.T) {
 		f := newTestFactory(
 			&organization.Organization{},
-			&workspace.Workspace{},
+			&types.Workspace{},
 			&configversion.ConfigurationVersion{},
 			"",
 		)
@@ -39,7 +39,7 @@ func TestFactory(t *testing.T) {
 	t.Run("speculative run", func(t *testing.T) {
 		f := newTestFactory(
 			&organization.Organization{},
-			&workspace.Workspace{},
+			&types.Workspace{},
 			&configversion.ConfigurationVersion{Speculative: true},
 			"",
 		)
@@ -53,7 +53,7 @@ func TestFactory(t *testing.T) {
 	t.Run("plan-only run", func(t *testing.T) {
 		f := newTestFactory(
 			&organization.Organization{},
-			&workspace.Workspace{},
+			&types.Workspace{},
 			&configversion.ConfigurationVersion{},
 			"",
 		)
@@ -67,7 +67,7 @@ func TestFactory(t *testing.T) {
 	t.Run("workspace auto-apply", func(t *testing.T) {
 		f := newTestFactory(
 			&organization.Organization{},
-			&workspace.Workspace{AutoApply: true},
+			&types.Workspace{AutoApply: true},
 			&configversion.ConfigurationVersion{},
 			"",
 		)
@@ -81,7 +81,7 @@ func TestFactory(t *testing.T) {
 	t.Run("run auto-apply", func(t *testing.T) {
 		f := newTestFactory(
 			&organization.Organization{},
-			&workspace.Workspace{},
+			&types.Workspace{},
 			&configversion.ConfigurationVersion{},
 			"",
 		)
@@ -97,7 +97,7 @@ func TestFactory(t *testing.T) {
 	t.Run("enable cost estimation", func(t *testing.T) {
 		f := newTestFactory(
 			&organization.Organization{CostEstimationEnabled: true},
-			&workspace.Workspace{},
+			&types.Workspace{},
 			&configversion.ConfigurationVersion{},
 			"",
 		)
@@ -111,8 +111,8 @@ func TestFactory(t *testing.T) {
 	t.Run("pull from vcs", func(t *testing.T) {
 		f := newTestFactory(
 			&organization.Organization{},
-			&workspace.Workspace{
-				Connection: &workspace.Connection{},
+			&types.Workspace{
+				VCSRepo: &types.VCSRepo{},
 			},
 			&configversion.ConfigurationVersion{},
 			"",
@@ -129,7 +129,7 @@ func TestFactory(t *testing.T) {
 	t.Run("get latest version", func(t *testing.T) {
 		f := newTestFactory(
 			&organization.Organization{},
-			&workspace.Workspace{TerraformVersion: releases.LatestVersionString},
+			&types.Workspace{TerraformVersion: releases.LatestVersionString},
 			&configversion.ConfigurationVersion{},
 			"1.2.3",
 		)
@@ -146,7 +146,7 @@ type (
 		org *organization.Organization
 	}
 	fakeFactoryWorkspaceService struct {
-		ws *workspace.Workspace
+		ws *types.Workspace
 	}
 	fakeFactoryConfigurationVersionService struct {
 		cv *configversion.ConfigurationVersion
@@ -160,7 +160,7 @@ type (
 	}
 )
 
-func newTestFactory(org *organization.Organization, ws *workspace.Workspace, cv *configversion.ConfigurationVersion, latestVersion string) *factory {
+func newTestFactory(org *organization.Organization, ws *types.Workspace, cv *configversion.ConfigurationVersion, latestVersion string) *factory {
 	return &factory{
 		organizations: &fakeFactoryOrganizationService{org: org},
 		workspaces:    &fakeFactoryWorkspaceService{ws: ws},
@@ -174,7 +174,7 @@ func (f *fakeFactoryOrganizationService) Get(context.Context, string) (*organiza
 	return f.org, nil
 }
 
-func (f *fakeFactoryWorkspaceService) Get(context.Context, string) (*workspace.Workspace, error) {
+func (f *fakeFactoryWorkspaceService) Get(context.Context, string) (*types.Workspace, error) {
 	return f.ws, nil
 }
 

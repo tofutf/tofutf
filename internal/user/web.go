@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/http/html"
 	"github.com/tofutf/tofutf/internal/http/html/paths"
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/rbac"
-	"github.com/tofutf/tofutf/internal/resource"
 	otfteam "github.com/tofutf/tofutf/internal/team"
 	"github.com/tofutf/tofutf/internal/tokens"
 )
@@ -330,11 +330,11 @@ func (h *webHandlers) userTokens(w http.ResponseWriter, r *http.Request) {
 	h.Render("user_token_list.tmpl", w, struct {
 		html.SitePage
 		// list template expects pagination object
-		*resource.Pagination
+		*types.Pagination
 		Items []*UserToken
 	}{
 		SitePage:   html.NewSitePage(r, "user tokens"),
-		Pagination: &resource.Pagination{},
+		Pagination: &types.Pagination{},
 		Items:      tokens,
 	})
 }

@@ -7,9 +7,9 @@ import (
 
 	"log/slog"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/connections"
-	"github.com/tofutf/tofutf/internal/resource"
 	"github.com/tofutf/tofutf/internal/vcs"
 )
 
@@ -92,7 +92,7 @@ type (
 		Organization string `schema:"organization_name,required"` // filter by organization name
 	}
 	ModuleList struct {
-		*resource.Pagination
+		*types.Pagination
 		Items []*Module
 	}
 )

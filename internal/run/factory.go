@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/organization"
 	"github.com/tofutf/tofutf/internal/releases"
 	"github.com/tofutf/tofutf/internal/vcs"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type (
@@ -27,7 +27,7 @@ type (
 	}
 
 	factoryWorkspaceClient interface {
-		Get(ctx context.Context, workspaceID string) (*workspace.Workspace, error)
+		Get(ctx context.Context, workspaceID string) (*types.Workspace, error)
 	}
 
 	factoryConfigClient interface {
@@ -52,7 +52,7 @@ func (f *factory) NewRun(ctx context.Context, workspaceID string, opts CreateOpt
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve workspace: %w", err)
 	}
-	org, err := f.organizations.Get(ctx, ws.Organization)
+	org, err := f.organizations.Get(ctx, ws.Organization.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve organization: %w", err)
 	}
@@ -91,7 +91,7 @@ func (f *factory) NewRun(ctx context.Context, workspaceID string, opts CreateOpt
 
 // createConfigVersionFromVCS creates a config version from the vcs repo
 // connected to the workspace using the contents of the vcs repo.
-func (f *factory) createConfigVersionFromVCS(ctx context.Context, ws *workspace.Workspace) (*configversion.ConfigurationVersion, error) {
+func (f *factory) createConfigVersionFromVCS(ctx context.Context, ws *types.Workspace) (*configversion.ConfigurationVersion, error) {
 	client, err := f.vcs.GetVCSClient(ctx, ws.Connection.VCSProviderID)
 	if err != nil {
 		return nil, err

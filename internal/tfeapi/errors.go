@@ -1,10 +1,13 @@
 package tfeapi
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 
-	"github.com/DataDog/jsonapi"
+	"github.com/hashicorp/jsonapi"
 	"github.com/tofutf/tofutf/internal"
 )
 
@@ -39,8 +42,10 @@ func Error(w http.ResponseWriter, err error) {
 	} else {
 		code = lookupHTTPCode(err)
 	}
-	b, err := jsonapi.Marshal(&jsonapi.Error{
-		Status: &code,
+	var b bytes.Buffer
+	bw := io.Writer(&b)
+	err = jsonapi.MarshalPayload(bw, &jsonapi.ErrorObject{
+		Code:   fmt.Sprintf("%d", code),
 		Title:  http.StatusText(code),
 		Detail: err.Error(),
 	})
@@ -49,5 +54,5 @@ func Error(w http.ResponseWriter, err error) {
 	}
 	w.Header().Set("Content-type", mediaType)
 	w.WriteHeader(code)
-	w.Write(b) //nolint:errcheck
+	w.Write(b.Bytes()) //nolint:errcheck
 }

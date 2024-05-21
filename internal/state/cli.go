@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/spf13/cobra"
 	"github.com/tofutf/tofutf/internal"
 	otfapi "github.com/tofutf/tofutf/internal/api"
@@ -28,7 +29,7 @@ type cliStateService interface {
 }
 
 type cliWorkspaceService interface {
-	GetByName(ctx context.Context, organization, workspace string) (*workspace.Workspace, error)
+	GetByName(ctx context.Context, organization, workspace string) (*types.Workspace, error)
 }
 
 func NewCommand(client *otfapi.Client) *cobra.Command {

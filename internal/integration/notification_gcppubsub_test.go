@@ -14,7 +14,7 @@ import (
 	"github.com/tofutf/tofutf/internal/notifications"
 	otfrun "github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/testutils"
-	"github.com/tofutf/tofutf/internal/workspace"
+	"github.com/vmware/govmomi/vim25/types"
 )
 
 // TestIntegration_NotificationGCPPubSub demonstrates run events triggering the
@@ -54,7 +54,7 @@ func TestIntegration_NotificationGCPPubSub(t *testing.T) {
 
 	// add some tags to the workspace so we can check below that they are added
 	// to the pubsub message.
-	err = daemon.Workspaces.AddTags(ctx, ws.ID, []workspace.TagSpec{{Name: "foo"}, {Name: "bar"}})
+	err = daemon.Workspaces.AddTags(ctx, ws.ID, []*types.Tag{{Name: "foo"}, {Name: "bar"}})
 	require.NoError(t, err)
 
 	_, err = daemon.Notifications.Create(ctx, ws.ID, notifications.CreateConfigOptions{

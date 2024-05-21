@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	types "github.com/hashicorp/go-tfe"
 	otfapi "github.com/tofutf/tofutf/internal/api"
 
 	"github.com/spf13/cobra"
@@ -16,11 +17,11 @@ type CLI struct {
 }
 
 type cliClient interface {
-	List(ctx context.Context, opts ListOptions) (*resource.Page[*Workspace], error)
-	GetByName(ctx context.Context, organization, workspace string) (*Workspace, error)
-	Update(ctx context.Context, workspaceID string, opts UpdateOptions) (*Workspace, error)
-	Lock(ctx context.Context, workspaceID string, runID *string) (*Workspace, error)
-	Unlock(ctx context.Context, workspaceID string, runID *string, force bool) (*Workspace, error)
+	List(ctx context.Context, opts ListOptions) (*resource.Page[*types.Workspace], error)
+	GetByName(ctx context.Context, organization, workspace string) (*types.Workspace, error)
+	Update(ctx context.Context, workspaceID string, opts UpdateOptions) (*types.Workspace, error)
+	Lock(ctx context.Context, workspaceID string, runID *string) (*types.Workspace, error)
+	Unlock(ctx context.Context, workspaceID string, runID *string, force bool) (*types.Workspace, error)
 }
 
 func NewCommand(apiClient *otfapi.Client) *cobra.Command {
@@ -55,7 +56,7 @@ func (a *CLI) workspaceListCommand() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			list, err := resource.ListAll(func(opts resource.PageOptions) (*resource.Page[*Workspace], error) {
+			list, err := resource.ListAll(func(opts resource.PageOptions) (*resource.Page[*types.Workspace], error) {
 				return a.client.List(cmd.Context(), ListOptions{
 					PageOptions:  opts,
 					Organization: &org,

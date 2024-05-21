@@ -3,6 +3,7 @@ package resource
 import (
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/tofutf/tofutf/internal"
 )
@@ -12,16 +13,16 @@ func TestPagination(t *testing.T) {
 		name  string
 		opts  PageOptions
 		count int64
-		want  *Pagination
+		want  *types.Pagination
 	}{
 		{
 			name:  "one page",
 			opts:  PageOptions{PageNumber: 1, PageSize: 20},
 			count: 5,
-			want: &Pagination{
+			want: &types.Pagination{
 				CurrentPage:  1,
-				PreviousPage: nil,
-				NextPage:     nil,
+				PreviousPage: 1,
+				NextPage:     1,
 				TotalCount:   5,
 				TotalPages:   1,
 			},
@@ -30,10 +31,10 @@ func TestPagination(t *testing.T) {
 			name:  "multiple pages",
 			opts:  PageOptions{PageNumber: 3, PageSize: 20},
 			count: 101,
-			want: &Pagination{
+			want: &types.Pagination{
 				CurrentPage:  3,
-				PreviousPage: internal.Int(2),
-				NextPage:     internal.Int(4),
+				PreviousPage: 2,
+				NextPage:     4,
 				TotalCount:   101,
 				TotalPages:   6,
 			},
@@ -42,10 +43,10 @@ func TestPagination(t *testing.T) {
 			name:  "no results",
 			opts:  PageOptions{PageNumber: 1, PageSize: 20},
 			count: 0,
-			want: &Pagination{
+			want: &types.Pagination{
 				CurrentPage:  1,
-				PreviousPage: nil,
-				NextPage:     nil,
+				PreviousPage: 1,
+				NextPage:     1,
 				TotalCount:   0,
 				TotalPages:   1,
 			},
@@ -79,11 +80,11 @@ func TestNewPage(t *testing.T) {
 			nil,
 			Page[int]{
 				Items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
-				Pagination: &Pagination{
+				Pagination: &types.Pagination{
 					CurrentPage: 1,
 					TotalCount:  101,
 					TotalPages:  6,
-					NextPage:    internal.Int(2),
+					NextPage:    2,
 				},
 			},
 		},
@@ -93,12 +94,12 @@ func TestNewPage(t *testing.T) {
 			nil,
 			Page[int]{
 				Items: []int{11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
-				Pagination: &Pagination{
+				Pagination: &types.Pagination{
 					CurrentPage:  2,
 					TotalCount:   101,
 					TotalPages:   11,
-					PreviousPage: internal.Int(1),
-					NextPage:     internal.Int(3),
+					PreviousPage: 1,
+					NextPage:     3,
 				},
 			},
 		},
@@ -108,11 +109,11 @@ func TestNewPage(t *testing.T) {
 			nil,
 			Page[int]{
 				Items: []int{101},
-				Pagination: &Pagination{
+				Pagination: &types.Pagination{
 					CurrentPage:  11,
 					TotalCount:   101,
 					TotalPages:   11,
-					PreviousPage: internal.Int(10),
+					PreviousPage: 10,
 				},
 			},
 		},
@@ -122,11 +123,11 @@ func TestNewPage(t *testing.T) {
 			nil,
 			Page[int]{
 				Items: []int{},
-				Pagination: &Pagination{
+				Pagination: &types.Pagination{
 					CurrentPage:  99,
 					TotalCount:   101,
 					TotalPages:   11,
-					PreviousPage: internal.Int(98),
+					PreviousPage: 98,
 				},
 			},
 		},
@@ -138,11 +139,11 @@ func TestNewPage(t *testing.T) {
 				// note s is now a segment within a larger result set of 201
 				// items.
 				Items: s,
-				Pagination: &Pagination{
+				Pagination: &types.Pagination{
 					CurrentPage: 1,
 					TotalCount:  201,
 					TotalPages:  3,
-					NextPage:    internal.Int(2),
+					NextPage:    2,
 				},
 			},
 		},

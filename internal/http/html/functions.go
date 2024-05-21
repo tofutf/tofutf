@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"reflect"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
-	"github.com/tofutf/tofutf/internal/resource"
 )
 
 // mergeQuery merges the query string into the given url, replacing any existing
@@ -29,18 +29,18 @@ func mergeQuery(u string, q string) (string, error) {
 	return parsedURL.String(), nil
 }
 
-func prevPageQuery(p resource.Pagination) *string {
-	if p.PreviousPage == nil {
+func prevPageQuery(p types.Pagination) *string {
+	if p.PreviousPage == 0 {
 		return nil
 	}
-	return internal.String(fmt.Sprintf("page[number]=%d", *p.PreviousPage))
+	return internal.String(fmt.Sprintf("page[number]=%d", p.PreviousPage))
 }
 
-func nextPageQuery(p resource.Pagination) *string {
-	if p.NextPage == nil {
+func nextPageQuery(p types.Pagination) *string {
+	if p.NextPage == 0 {
 		return nil
 	}
-	return internal.String(fmt.Sprintf("page[number]=%d", *p.NextPage))
+	return internal.String(fmt.Sprintf("page[number]=%d", p.NextPage))
 }
 
 func disabled(arg any, args ...any) (template.HTMLAttr, error) {

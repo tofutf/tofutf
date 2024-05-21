@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	types "github.com/hashicorp/go-tfe"
 	otfrun "github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/workspace"
 )
@@ -18,7 +19,7 @@ type (
 		workspaceClient
 		runClient
 
-		ws      *workspace.Workspace
+		ws      *types.Workspace
 		current *otfrun.Run
 		queue   []*otfrun.Run
 	}
@@ -29,7 +30,7 @@ type (
 		workspaceClient
 		runClient
 
-		*workspace.Workspace
+		*types.Workspace
 	}
 
 	queueMaker struct{}
@@ -44,7 +45,7 @@ func (queueMaker) newQueue(opts queueOptions) eventHandler {
 	}
 }
 
-func (q *queue) handleWorkspace(ctx context.Context, workspace *workspace.Workspace) error {
+func (q *queue) handleWorkspace(ctx context.Context, workspace *types.Workspace) error {
 	q.ws = workspace
 	// workspace state has changed; pessimistically schedule the current run
 	// in case the workspace has been unlocked.

@@ -2,16 +2,15 @@
 package workspace
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
-	"time"
 
 	"log/slog"
 
 	"slices"
 
 	"github.com/gobwas/glob"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/releases"
 	"github.com/tofutf/tofutf/internal/resource"
@@ -33,65 +32,28 @@ var (
 
 type (
 	// Workspace is a terraform workspace.
-	Workspace struct {
-		ID                         string        `jsonapi:"primary,workspaces"`
-		CreatedAt                  time.Time     `jsonapi:"attribute" json:"created_at"`
-		UpdatedAt                  time.Time     `jsonapi:"attribute" json:"updated_at"`
-		AgentPoolID                *string       `jsonapi:"attribute" json:"agent-pool-id"`
-		AllowDestroyPlan           bool          `jsonapi:"attribute" json:"allow_destroy_plan"`
-		AutoApply                  bool          `jsonapi:"attribute" json:"auto_apply"`
-		CanQueueDestroyPlan        bool          `jsonapi:"attribute" json:"can_queue_destroy_plan"`
-		Description                string        `jsonapi:"attribute" json:"description"`
-		Environment                string        `jsonapi:"attribute" json:"environment"`
-		ExecutionMode              ExecutionMode `jsonapi:"attribute" json:"execution_mode"`
-		GlobalRemoteState          bool          `jsonapi:"attribute" json:"global_remote_state"`
-		MigrationEnvironment       string        `jsonapi:"attribute" json:"migration_environment"`
-		Name                       string        `jsonapi:"attribute" json:"name"`
-		QueueAllRuns               bool          `jsonapi:"attribute" json:"queue_all_runs"`
-		SpeculativeEnabled         bool          `jsonapi:"attribute" json:"speculative_enabled"`
-		StructuredRunOutputEnabled bool          `jsonapi:"attribute" json:"structured_run_output_enabled"`
-		SourceName                 string        `jsonapi:"attribute" json:"source_name"`
-		SourceURL                  string        `jsonapi:"attribute" json:"source_url"`
-		TerraformVersion           string        `jsonapi:"attribute" json:"terraform_version"`
-		WorkingDirectory           string        `jsonapi:"attribute" json:"working_directory"`
-		Organization               string        `jsonapi:"attribute" json:"organization"`
-		LatestRun                  *LatestRun    `jsonapi:"attribute" json:"latest_run"`
-		Tags                       []string      `jsonapi:"attribute" json:"tags"`
-		Lock                       *Lock         `jsonapi:"attribute" json:"lock"`
+	/*
+		Workspace struct {
 
-		// VCS Connection; nil means the workspace is not connected.
-		Connection *Connection
+		}
+		/*
+			Connection struct {
+				// Pushes to this VCS branch trigger runs. Empty string means the default
+				// branch is used. Ignored if TagsRegex is non-empty.
+				Branch string
+				// Pushed tags matching this regular expression trigger runs. Mutually
+				// exclusive with TriggerPatterns.
+				TagsRegex string
 
-		// TriggerPatterns is mutually exclusive with Connection.TagsRegex.
-		//
-		// Note: TriggerPatterns ought to belong in Connection but it is included at
-		// the root of Workspace because the go-tfe integration tests set
-		// this field without setting the connection!
-		TriggerPatterns []string
+				VCSProviderID string
+				Repo          string
 
-		// TriggerPrefixes exists only to pass the go-tfe integration tests and
-		// is not used when determining whether to trigger runs. Use
-		// TriggerPatterns instead.
-		TriggerPrefixes []string
-	}
-
-	Connection struct {
-		// Pushes to this VCS branch trigger runs. Empty string means the default
-		// branch is used. Ignored if TagsRegex is non-empty.
-		Branch string
-		// Pushed tags matching this regular expression trigger runs. Mutually
-		// exclusive with TriggerPatterns.
-		TagsRegex string
-
-		VCSProviderID string
-		Repo          string
-
-		// By default, once a workspace is connected to a repo it is not
-		// possible to run a terraform apply via the CLI. Setting this to true
-		// overrides this behaviour.
-		AllowCLIApply bool
-	}
-
+				// By default, once a workspace is connected to a repo it is not
+				// possible to run a terraform apply via the CLI. Setting this to true
+				// overrides this behaviour.
+				AllowCLIApply bool
+			}
+	*/
 	ConnectOptions struct {
 		RepoPath      *string
 		VCSProviderID *string
@@ -177,29 +139,37 @@ type (
 	VCSTriggerStrategy string
 )
 
-func NewWorkspace(opts CreateOptions) (*Workspace, error) {
+func NewWorkspace(opts types.WorkspaceCreateOptions) (*types.Workspace, error) {
 	// required options
 	if err := resource.ValidateName(opts.Name); err != nil {
 		return nil, err
 	}
-	if opts.Organization == nil {
+
+	if opts.Project == nil {
+		return nil, internal.ErrRequiredOrg
+	}
+	if opts.Project.Organization == nil {
 		return nil, internal.ErrRequiredOrg
 	}
 
-	ws := Workspace{
+	ws := &types.Workspace{
 		ID:                 internal.NewID("ws"),
 		CreatedAt:          internal.CurrentTimestamp(nil),
 		UpdatedAt:          internal.CurrentTimestamp(nil),
 		AllowDestroyPlan:   DefaultAllowDestroyPlan,
-		ExecutionMode:      RemoteExecutionMode,
+		ExecutionMode:      string(RemoteExecutionMode),
 		TerraformVersion:   releases.DefaultTerraformVersion,
 		SpeculativeEnabled: true,
-		Organization:       *opts.Organization,
 	}
-	if err := ws.setName(*opts.Name); err != nil {
+	if opts.Project.Organization != nil {
+		ws.Organization = &types.Organization{
+			Name: opts.Project.Organization.Name,
+		}
+	}
+	if err := setName(ws, *opts.Name); err != nil {
 		return nil, err
 	}
-	if _, err := ws.setExecutionModeAndAgentPoolID(opts.ExecutionMode, opts.AgentPoolID); err != nil {
+	if _, err := setExecutionModeAndAgentPoolID(ws, opts.ExecutionMode, opts.AgentPoolID); err != nil {
 		return nil, err
 	}
 	if opts.AllowDestroyPlan != nil {
@@ -230,7 +200,7 @@ func NewWorkspace(opts CreateOptions) (*Workspace, error) {
 		ws.StructuredRunOutputEnabled = *opts.StructuredRunOutputEnabled
 	}
 	if opts.TerraformVersion != nil {
-		if err := ws.setTerraformVersion(*opts.TerraformVersion); err != nil {
+		if err := setTerraformVersion(ws, *opts.TerraformVersion); err != nil {
 			return nil, err
 		}
 	}
@@ -246,26 +216,26 @@ func NewWorkspace(opts CreateOptions) (*Workspace, error) {
 	// (a) tags-regex
 	// (b) trigger-patterns
 	// (c) always-trigger=true
-	if (opts.ConnectOptions != nil && (opts.ConnectOptions.TagsRegex != nil && *opts.ConnectOptions.TagsRegex != "")) && opts.TriggerPatterns != nil {
+	if (opts.VCSRepo != nil && (opts.VCSRepo.TagsRegex != nil && *opts.VCSRepo.TagsRegex != "")) && opts.TriggerPatterns != nil {
 		return nil, ErrTagsRegexAndTriggerPatterns
 	}
-	if (opts.ConnectOptions != nil && (opts.ConnectOptions.TagsRegex != nil && *opts.ConnectOptions.TagsRegex != "")) && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
+	if (opts.VCSRepo != nil && (opts.VCSRepo.TagsRegex != nil && *opts.VCSRepo.TagsRegex != "")) && (opts.QueueAllRuns != nil && *opts.QueueAllRuns) {
 		return nil, ErrTagsRegexAndAlwaysTrigger
 	}
-	if len(opts.TriggerPatterns) > 0 && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
+	if len(opts.TriggerPatterns) > 0 && (opts.QueueAllRuns != nil && *opts.QueueAllRuns) {
 		return nil, ErrTriggerPatternsAndAlwaysTrigger
 	}
-	if opts.ConnectOptions != nil {
-		if err := ws.addConnection(opts.ConnectOptions); err != nil {
+	if opts.VCSRepo != nil {
+		if err := addConnection(ws, opts.VCSRepo); err != nil {
 			return nil, err
 		}
 	}
 	if opts.TriggerPatterns != nil {
-		if err := ws.setTriggerPatterns(opts.TriggerPatterns); err != nil {
+		if err := setTriggerPatterns(ws, opts.TriggerPatterns); err != nil {
 			return nil, fmt.Errorf("setting trigger patterns: %w", err)
 		}
 	}
-	return &ws, nil
+	return ws, nil
 }
 
 // ExecutionModePtr returns a pointer to an execution mode.
@@ -273,18 +243,16 @@ func ExecutionModePtr(m ExecutionMode) *ExecutionMode {
 	return &m
 }
 
-func (ws *Workspace) String() string { return ws.Organization + "/" + ws.Name }
-
 // ExecutionModes returns a list of possible execution modes
-func (ws *Workspace) ExecutionModes() []string {
+func ExecutionModes() []string {
 	return []string{"local", "remote", "agent"}
 }
 
 // LogValue implements slog.LogValuer.
-func (ws *Workspace) LogValue() slog.Value {
+func LogValue(ws *types.Workspace) slog.Value {
 	return slog.GroupValue(
 		slog.String("id", ws.ID),
-		slog.String("organization", ws.Organization),
+		slog.String("organization", ws.Organization.Name),
 		slog.String("name", ws.Name),
 	)
 }
@@ -292,11 +260,11 @@ func (ws *Workspace) LogValue() slog.Value {
 // Update updates the workspace with the given options. A boolean is returned to
 // indicate whether the workspace is to be connected to a repo (true),
 // disconnected from a repo (false), or neither (nil).
-func (ws *Workspace) Update(opts UpdateOptions) (*bool, error) {
+func Update(ws *types.Workspace, opts types.WorkspaceUpdateOptions) (*bool, error) {
 	var updated bool
 
 	if opts.Name != nil {
-		if err := ws.setName(*opts.Name); err != nil {
+		if err := setName(ws, *opts.Name); err != nil {
 			return nil, err
 		}
 		updated = true
@@ -313,7 +281,7 @@ func (ws *Workspace) Update(opts UpdateOptions) (*bool, error) {
 		ws.Description = *opts.Description
 		updated = true
 	}
-	if changed, err := ws.setExecutionModeAndAgentPoolID(opts.ExecutionMode, opts.AgentPoolID); err != nil {
+	if changed, err := setExecutionModeAndAgentPoolID(ws, opts.ExecutionMode, opts.AgentPoolID); err != nil {
 		return nil, err
 	} else if changed {
 		updated = true
@@ -343,7 +311,7 @@ func (ws *Workspace) Update(opts UpdateOptions) (*bool, error) {
 		updated = true
 	}
 	if opts.TerraformVersion != nil {
-		if err := ws.setTerraformVersion(*opts.TerraformVersion); err != nil {
+		if err := setTerraformVersion(ws, *opts.TerraformVersion); err != nil {
 			return nil, err
 		}
 		updated = true
@@ -362,67 +330,71 @@ func (ws *Workspace) Update(opts UpdateOptions) (*bool, error) {
 	// (a) tags-regex
 	// (b) trigger-patterns
 	// (c) always-trigger=true
-	if (opts.ConnectOptions != nil && (opts.ConnectOptions.TagsRegex != nil && *opts.ConnectOptions.TagsRegex != "")) && opts.TriggerPatterns != nil {
+	if (opts.VCSRepo != nil && (opts.VCSRepo.TagsRegex != nil && *opts.VCSRepo.TagsRegex != "")) && opts.TriggerPatterns != nil {
 		return nil, ErrTagsRegexAndTriggerPatterns
 	}
-	if (opts.ConnectOptions != nil && (opts.ConnectOptions.TagsRegex != nil && *opts.ConnectOptions.TagsRegex != "")) && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
+	if (opts.VCSRepo != nil && (opts.VCSRepo.TagsRegex != nil && *opts.VCSRepo.TagsRegex != "")) && (opts.QueueAllRuns != nil && *opts.QueueAllRuns) {
 		return nil, ErrTagsRegexAndAlwaysTrigger
 	}
-	if len(opts.TriggerPatterns) > 0 && (opts.AlwaysTrigger != nil && *opts.AlwaysTrigger) {
+	if len(opts.TriggerPatterns) > 0 && (opts.QueueAllRuns != nil && *opts.QueueAllRuns) {
 		return nil, ErrTriggerPatternsAndAlwaysTrigger
 	}
-	if opts.AlwaysTrigger != nil && *opts.AlwaysTrigger {
-		if ws.Connection != nil {
-			ws.Connection.TagsRegex = ""
+	if opts.QueueAllRuns != nil && *opts.QueueAllRuns {
+		if ws.VCSRepo != nil {
+			ws.VCSRepo.TagsRegex = ""
 		}
 		ws.TriggerPatterns = nil
 		updated = true
 	}
 	if opts.TriggerPatterns != nil {
-		if err := ws.setTriggerPatterns(opts.TriggerPatterns); err != nil {
+		if err := setTriggerPatterns(ws, opts.TriggerPatterns); err != nil {
 			return nil, fmt.Errorf("setting trigger patterns: %w", err)
 		}
-		if ws.Connection != nil {
-			ws.Connection.TagsRegex = ""
+		if ws.VCSRepo != nil {
+			ws.VCSRepo.TagsRegex = ""
 		}
 		updated = true
 	}
 	// determine whether to connect or disconnect workspace
-	if opts.Disconnect && opts.ConnectOptions != nil {
-		return nil, errors.New("connect options must be nil if disconnect is true")
-	}
-	var connect *bool
-	if opts.Disconnect {
-		if ws.Connection == nil {
-			return nil, errors.New("cannot disconnect an already disconnected workspace")
+	// FIXME
+	connect := internal.Bool(true)
+	/*
+		if opts.Disconnect && opts.ConnectOptions != nil {
+			return nil, errors.New("connect options must be nil if disconnect is true")
 		}
-		// workspace is to be disconnected
-		connect = internal.Bool(false)
-		updated = true
-	}
-	if opts.ConnectOptions != nil {
-		if ws.Connection == nil {
+		var connect *bool
+		if opts.Disconnect {
+			if ws.VCSRepo == nil {
+				return nil, errors.New("cannot disconnect an already disconnected workspace")
+			}
+			// workspace is to be disconnected
+			connect = internal.Bool(false)
+			updated = true
+		}
+	*/
+	if opts.VCSRepo != nil {
+		if ws.VCSRepo == nil {
 			// workspace is to be connected
-			if err := ws.addConnection(opts.ConnectOptions); err != nil {
+			if err := addConnection(ws, opts.VCSRepo); err != nil {
 				return nil, err
 			}
 			connect = internal.Bool(true)
 			updated = true
 		} else {
 			// modify existing connection
-			if opts.TagsRegex != nil && *opts.TagsRegex != "" {
-				if err := ws.setTagsRegex(*opts.TagsRegex); err != nil {
+			if opts.VCSRepo.TagsRegex != nil && *opts.VCSRepo.TagsRegex != "" {
+				if err := setTagsRegex(ws, *opts.VCSRepo.TagsRegex); err != nil {
 					return nil, fmt.Errorf("invalid tags-regex: %w", err)
 				}
 				ws.TriggerPatterns = nil
 				updated = true
 			}
-			if opts.Branch != nil {
-				ws.Connection.Branch = *opts.Branch
+			if opts.VCSRepo.Branch != nil {
+				ws.VCSRepo.Branch = *opts.VCSRepo.Branch
 				updated = true
 			}
-			if opts.AllowCLIApply != nil {
-				ws.Connection.AllowCLIApply = *opts.AllowCLIApply
+			if opts.QueueAllRuns != nil {
+				ws.QueueAllRuns = *opts.QueueAllRuns
 				updated = true
 			}
 		}
@@ -433,33 +405,27 @@ func (ws *Workspace) Update(opts UpdateOptions) (*bool, error) {
 	return connect, nil
 }
 
-func (ws *Workspace) addConnection(opts *ConnectOptions) error {
-	// must specify both repo and vcs provider ID
-	if opts.RepoPath == nil {
-		return &internal.MissingParameterError{Parameter: "repo_path"}
+func addConnection(ws *types.Workspace, opts *types.VCSRepoOptions) error {
+	if opts.Identifier == nil {
+		return &internal.MissingParameterError{Parameter: "identifier"}
 	}
-	if opts.VCSProviderID == nil {
-		return &internal.MissingParameterError{Parameter: "vcs_provider_id"}
+	if opts.OAuthTokenID == nil && opts.GHAInstallationID == nil {
+		return &internal.MissingParameterError{Parameter: "oauth_token_id"}
 	}
-	ws.Connection = &Connection{
-		Repo:          *opts.RepoPath,
-		VCSProviderID: *opts.VCSProviderID,
-	}
-	if opts.AllowCLIApply != nil {
-		ws.Connection.AllowCLIApply = *opts.AllowCLIApply
-	}
+	ws.VCSRepo = &types.VCSRepo{}
+
 	if opts.TagsRegex != nil && *opts.TagsRegex != "" {
-		if err := ws.setTagsRegex(*opts.TagsRegex); err != nil {
+		if err := setTagsRegex(ws, *opts.TagsRegex); err != nil {
 			return fmt.Errorf("invalid tags-regex: %w", err)
 		}
 	}
 	if opts.Branch != nil {
-		ws.Connection.Branch = *opts.Branch
+		ws.VCSRepo.Branch = *opts.Branch
 	}
 	return nil
 }
 
-func (ws *Workspace) setName(name string) error {
+func setName(ws *types.Workspace, name string) error {
 	if !internal.ReStringID.MatchString(name) {
 		return internal.ErrInvalidName
 	}
@@ -470,7 +436,7 @@ func (ws *Workspace) setName(name string) error {
 // setExecutionModeAndAgentPoolID sets the execution mode and/or the agent pool
 // ID. The two parameters are intimately related, hence the validation and
 // setting of the parameters is handled in tandem.
-func (ws *Workspace) setExecutionModeAndAgentPoolID(m *ExecutionMode, agentPoolID *string) (bool, error) {
+func setExecutionModeAndAgentPoolID(ws *types.Workspace, m *string, agentPoolID *string) (bool, error) {
 	if m == nil {
 		if agentPoolID == nil {
 			// neither specified; nothing more to be done
@@ -478,14 +444,20 @@ func (ws *Workspace) setExecutionModeAndAgentPoolID(m *ExecutionMode, agentPoolI
 		} else {
 			// agent pool ID can be set without specifying execution mode as long as
 			// existing execution mode is AgentExecutionMode
-			if ws.ExecutionMode != AgentExecutionMode {
+			if ws.ExecutionMode != string(AgentExecutionMode) {
 				return false, ErrNonAgentExecutionModeWithPool
+			}
+			ws.AgentPool = &types.AgentPool{
+				ID: *agentPoolID,
 			}
 		}
 	} else {
-		if *m == AgentExecutionMode {
+		if *m == string(AgentExecutionMode) {
 			if agentPoolID == nil {
 				return false, ErrAgentExecutionModeWithoutPool
+			}
+			ws.AgentPool = &types.AgentPool{
+				ID: *agentPoolID,
 			}
 		} else {
 			// mode is either remote or local; in either case no pool ID should be
@@ -494,15 +466,12 @@ func (ws *Workspace) setExecutionModeAndAgentPoolID(m *ExecutionMode, agentPoolI
 				return false, ErrNonAgentExecutionModeWithPool
 			}
 		}
-	}
-	ws.AgentPoolID = agentPoolID
-	if m != nil {
-		ws.ExecutionMode = *m
+		ws.ExecutionMode = string(*m)
 	}
 	return true, nil
 }
 
-func (ws *Workspace) setTerraformVersion(v string) error {
+func setTerraformVersion(ws *types.Workspace, v string) error {
 	if v == releases.LatestVersionString {
 		ws.TerraformVersion = v
 		return nil
@@ -523,15 +492,15 @@ func (ws *Workspace) setTerraformVersion(v string) error {
 	return nil
 }
 
-func (ws *Workspace) setTagsRegex(regex string) error {
+func setTagsRegex(ws *types.Workspace, regex string) error {
 	if _, err := regexp.Compile(regex); err != nil {
 		return ErrInvalidTagsRegex
 	}
-	ws.Connection.TagsRegex = regex
+	ws.VCSRepo.TagsRegex = regex
 	return nil
 }
 
-func (ws *Workspace) setTriggerPatterns(patterns []string) error {
+func setTriggerPatterns(ws *types.Workspace, patterns []string) error {
 	for _, patt := range patterns {
 		if _, err := glob.Compile(patt); err != nil {
 			return ErrInvalidTriggerPattern

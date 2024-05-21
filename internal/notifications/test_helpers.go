@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/run"
@@ -58,7 +59,7 @@ func (db *fakeCacheDB) listAll(context.Context) ([]*Config, error) {
 	return db.configs, nil
 }
 
-func (db *fakeWorkspaceService) Get(context.Context, string) (*workspace.Workspace, error) {
+func (db *fakeWorkspaceService) Get(context.Context, string) (*types.Workspace, error) {
 	return nil, nil
 }
 

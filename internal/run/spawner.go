@@ -7,10 +7,10 @@ import (
 	"regexp"
 
 	"github.com/gobwas/glob"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/configversion"
 	"github.com/tofutf/tofutf/internal/vcs"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 type (
@@ -24,7 +24,7 @@ type (
 	}
 
 	spawnerWorkspaceClient interface {
-		ListConnectedWorkspaces(ctx context.Context, vcsProviderID, repoPath string) ([]*workspace.Workspace, error)
+		ListConnectedWorkspaces(ctx context.Context, vcsProviderID, repoPath string) ([]*types.Workspace, error)
 	}
 
 	spawnerConfigClient interface {

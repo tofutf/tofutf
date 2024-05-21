@@ -1,10 +1,11 @@
 package tfeapi
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 
-	"github.com/DataDog/jsonapi"
-	"github.com/tofutf/tofutf/internal/resource"
+	"github.com/hashicorp/jsonapi"
 )
 
 const mediaType = "application/vnd.api+json"
@@ -22,28 +23,15 @@ func NewResponder() *Responder {
 	}
 }
 
-func (res *Responder) RespondWithPage(w http.ResponseWriter, r *http.Request, items any, pagination *resource.Pagination) {
-	meta := jsonapi.MarshalMeta(map[string]*resource.Pagination{
-		"pagination": pagination,
-	})
-	res.Respond(w, r, items, http.StatusOK, meta)
-}
-
-func (res *Responder) Respond(w http.ResponseWriter, r *http.Request, payload any, status int, opts ...jsonapi.MarshalOption) {
-	includes, err := res.addIncludes(r, payload)
-	if err != nil {
-		Error(w, err)
-		return
-	}
-	if len(includes) > 0 {
-		opts = append(opts, jsonapi.MarshalInclude(includes...))
-	}
-	b, err := jsonapi.Marshal(payload, opts...)
+func (res *Responder) Respond(w http.ResponseWriter, r *http.Request, payload any, status int) {
+	var b bytes.Buffer
+	bw := io.Writer(&b)
+	err := jsonapi.MarshalPayload(bw, payload)
 	if err != nil {
 		Error(w, err)
 		return
 	}
 	w.Header().Set("Content-type", mediaType)
 	w.WriteHeader(status)
-	w.Write(b) //nolint:errcheck
+	w.Write(b.Bytes()) //nolint:errcheck
 }

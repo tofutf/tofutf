@@ -66,7 +66,7 @@ func (a *tfe) createWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	opts := CreateOptions{
+	opts := types.WorkspaceCreateOptions{
 		AgentPoolID:          params.AgentPoolID,
 		AllowDestroyPlan:     params.AllowDestroyPlan,
 		AutoApply:            params.AutoApply,
@@ -86,7 +86,7 @@ func (a *tfe) createWorkspace(w http.ResponseWriter, r *http.Request) {
 		TriggerPatterns:            params.TriggerPatterns,
 		WorkingDirectory:           params.WorkingDirectory,
 		// convert from json:api structs to tag specs
-		Tags: toTagSpecs(params.Tags),
+		Tags: params.Tags,
 	}
 	// Always trigger runs if neither trigger patterns nor tags regex are set
 	if len(params.TriggerPatterns) == 0 && (params.VCSRepo == nil || params.VCSRepo.TagsRegex == nil) {
@@ -209,7 +209,10 @@ func (a *tfe) listWorkspaces(w http.ResponseWriter, r *http.Request) {
 		items[i] = to
 	}
 
-	a.RespondWithPage(w, r, items, page.Pagination)
+	a.RespondWithPage(w, r, types.WorkspaceList{
+		Items:      items,
+		Pagination: page.Pagination,
+	})
 }
 
 // updateWorkspaceByID updates a workspace using its ID.

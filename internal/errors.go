@@ -46,6 +46,8 @@ var (
 	// not a semantic version string (major.minor.patch).
 	ErrInvalidTerraformVersion = errors.New("invalid terraform version")
 
+	// ErrRequiredProject is returned when the project option is not present
+	ErrRequiredProject = errors.New("project is required")
 	// ErrRequiredOrg is returned when the organization option is not present
 	ErrRequiredOrg = errors.New("organization is required")
 

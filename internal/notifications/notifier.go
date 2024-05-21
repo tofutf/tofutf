@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/pubsub"
 	"github.com/tofutf/tofutf/internal/run"
 	"github.com/tofutf/tofutf/internal/sql"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // LockID guarantees only one notifier on a cluster is running at any
@@ -41,7 +41,7 @@ type (
 	}
 
 	notifierWorkspaceClient interface {
-		Get(ctx context.Context, workspaceID string) (*workspace.Workspace, error)
+		Get(ctx context.Context, workspaceID string) (*types.Workspace, error)
 	}
 
 	notifierRunClient interface {
@@ -129,7 +129,7 @@ func (s *Notifier) handleRun(ctx context.Context, r *run.Run) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var ws *workspace.Workspace
+	var ws *types.Workspace
 	for _, cfg := range s.configs {
 		if cfg.WorkspaceID != r.WorkspaceID {
 			// skip configs for other workspaces

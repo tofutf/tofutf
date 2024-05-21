@@ -94,7 +94,10 @@ func (a *tfe) listOrganizations(w http.ResponseWriter, r *http.Request) {
 	for i, from := range page.Items {
 		items[i] = a.toOrganization(from)
 	}
-	a.RespondWithPage(w, r, items, page.Pagination)
+	a.Respond(w, r, types.OrganizationList{
+		Items:      items,
+		Pagination: page.Pagination,
+	}, http.StatusOK)
 }
 
 func (a *tfe) updateOrganization(w http.ResponseWriter, r *http.Request) {
@@ -182,7 +185,9 @@ func (a *tfe) createOrganizationToken(w http.ResponseWriter, r *http.Request) {
 		ID:        ot.ID,
 		CreatedAt: ot.CreatedAt,
 		Token:     string(token),
-		ExpiredAt: *ot.Expiry,
+	}
+	if ot.Expiry != nil {
+		to.ExpiredAt = *ot.Expiry
 	}
 	a.Respond(w, r, to, http.StatusCreated)
 }

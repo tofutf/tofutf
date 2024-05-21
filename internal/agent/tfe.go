@@ -16,6 +16,13 @@ type tfe struct {
 	*tfeapi.Responder
 }
 
+type featureList struct {
+	Items []struct {
+		ID string `jsonapi:"primary,feature-sets"`
+	}
+	Pagination types.Pagination
+}
+
 func (a *tfe) addHandlers(r *mux.Router) {
 	r = r.PathPrefix(tfeapi.APIPrefixV2).Subrouter()
 
@@ -47,12 +54,18 @@ func (a *tfe) addHandlers(r *mux.Router) {
 	r.HandleFunc("/admin/feature-sets", func(w http.ResponseWriter, r *http.Request) {
 		// tests expect one feature set to be returned but don't check contents
 		// so return the bare minimum.
-		fs := []struct {
-			ID string `jsonapi:"primary,feature-sets"`
-		}{
-			{ID: "fs-123"},
+
+		fs := featureList{
+			Items: []struct {
+				ID string "jsonapi:\"primary,feature-sets\""
+			}{
+				{
+					ID: "fs-123",
+				},
+			},
+			Pagination: types.Pagination{},
 		}
-		a.RespondWithPage(w, r, &fs, &resource.Pagination{})
+		a.Respond(w, r, &fs)
 	})
 	// Tests don't check response so return empty response.
 	r.HandleFunc("/admin/organizations/{organization_name}/subscription", func(w http.ResponseWriter, r *http.Request) {})

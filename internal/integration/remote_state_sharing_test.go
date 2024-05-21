@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/run"
-	"github.com/tofutf/tofutf/internal/workspace"
 )
 
 // TestRemoteStateSharing demonstrates the use of terraform_remote_state, and
@@ -20,9 +20,13 @@ func TestRemoteStateSharing(t *testing.T) {
 
 	daemon, org, ctx := setup(t, nil)
 	// producer is the workspace sharing its state
-	producer, err := daemon.Workspaces.Create(ctx, workspace.CreateOptions{
-		Name:              internal.String("producer"),
-		Organization:      internal.String(org.Name),
+	producer, err := daemon.Workspaces.Create(ctx, types.WorkspaceCreateOptions{
+		Name: internal.String("producer"),
+		Project: &types.Project{
+			Organization: &types.Organization{
+				Name: org.Name,
+			},
+		},
 		GlobalRemoteState: internal.Bool(true),
 	})
 	require.NoError(t, err)

@@ -39,7 +39,7 @@ func (a *api) list(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	a.RespondWithPage(w, r, page.Items, page.Pagination)
+	a.Respond(w, r, page, http.StatusOK)
 }
 
 func (a *api) get(w http.ResponseWriter, r *http.Request) {

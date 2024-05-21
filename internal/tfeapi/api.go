@@ -3,13 +3,14 @@
 package tfeapi
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"path"
 	"strings"
 
-	"github.com/DataDog/jsonapi"
 	"github.com/gorilla/mux"
+	"github.com/hashicorp/jsonapi"
 )
 
 const (
@@ -30,7 +31,7 @@ func Unmarshal(r io.Reader, v any) error {
 	if err != nil {
 		return err
 	}
-	return jsonapi.Unmarshal(b, v)
+	return jsonapi.UnmarshalPayload(bytes.NewReader(b), v)
 }
 
 type Handlers struct{}

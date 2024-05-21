@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/DataDog/jsonapi"
 	tfe "github.com/hashicorp/go-tfe"
 	types "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/jsonapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tofutf/tofutf/internal"
@@ -49,7 +49,7 @@ func TestIntegration_WorkspaceAPI_IncludeOutputs(t *testing.T) {
 
 	b, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
-	err = jsonapi.Unmarshal(b, got)
+	err = jsonapi.UnmarshalPayload(bytes.NewReader(b), got)
 	require.NoError(t, err)
 
 	assert.Equal(t, sv.WorkspaceID, got.ID)

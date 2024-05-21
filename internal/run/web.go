@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/http/decode"
 	"github.com/tofutf/tofutf/internal/http/html"
@@ -41,7 +42,7 @@ type (
 	}
 
 	webWorkspaceClient interface {
-		Get(ctx context.Context, workspaceID string) (*workspace.Workspace, error)
+		Get(ctx context.Context, workspaceID string) (*types.Workspace, error)
 		GetPolicy(ctx context.Context, workspaceID string) (internal.WorkspacePolicy, error)
 	}
 )

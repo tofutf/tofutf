@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/gorilla/mux"
+	types "github.com/hashicorp/go-tfe"
 	"github.com/leg100/surl"
 	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/configversion"
@@ -593,10 +594,10 @@ func (s *Service) getLogs(ctx context.Context, runID string, phase internal.Phas
 	return s.db.findLogs(ctx, runID, phase)
 }
 
-func (s *Service) autoQueueRun(ctx context.Context, ws *workspace.Workspace) error {
+func (s *Service) autoQueueRun(ctx context.Context, ws *types.Workspace) error {
 	// Auto queue a run only if configured on the worspace and the workspace is
 	// a connected to a VCS repo.
-	if ws.QueueAllRuns && ws.Connection != nil {
+	if ws.QueueAllRuns && ws.VCSRepo != nil {
 		_, err := s.Create(ctx, ws.ID, CreateOptions{})
 		if err != nil {
 			return err

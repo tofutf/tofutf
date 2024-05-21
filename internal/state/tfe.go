@@ -150,7 +150,10 @@ func (a *tfe) listVersionsByName(w http.ResponseWriter, r *http.Request) {
 		tfeapi.Error(w, err)
 		return
 	}
-	a.RespondWithPage(w, r, items, page.Pagination)
+	a.Respond(w, r, types.StateVersionList{
+		Items:      items,
+		Pagination: page.Pagination,
+	}, http.StatusOK)
 }
 
 func (a *tfe) getCurrentVersion(w http.ResponseWriter, r *http.Request) {
@@ -306,7 +309,10 @@ func (a *tfe) listOutputs(w http.ResponseWriter, r *http.Request) {
 	for i, from := range page.Items {
 		items[i] = a.toOutput(from, false)
 	}
-	a.RespondWithPage(w, r, items, page.Pagination)
+	a.Respond(w, r, types.StateVersionOutputsList{
+		Items:      items,
+		Pagination: page.Pagination,
+	}, http.StatusOK)
 }
 
 func (a *tfe) getOutput(w http.ResponseWriter, r *http.Request) {

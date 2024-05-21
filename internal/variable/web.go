@@ -46,8 +46,8 @@ type (
 
 	// webWorkspaceClient provides web handlers with access to workspaces
 	webWorkspaceClient interface {
-		Get(ctx context.Context, workspaceID string) (*workspace.Workspace, error)
-		List(ctx context.Context, opts workspace.ListOptions) (*resource.Page[*workspace.Workspace], error)
+		Get(ctx context.Context, workspaceID string) (*types.Workspace, error)
+		List(ctx context.Context, opts workspace.ListOptions) (*resource.Page[*types.Workspace], error)
 		GetPolicy(ctx context.Context, workspaceID string) (internal.WorkspacePolicy, error)
 	}
 
@@ -125,7 +125,7 @@ func (h *web) newWorkspaceVariable(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Render("variable_new.tmpl", w, struct {
-		workspace.WorkspacePage
+		types.WorkspacePage
 		Variable   *Variable
 		EditMode   bool
 		FormAction string
@@ -208,7 +208,7 @@ func (h *web) listWorkspaceVariables(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	h.Render("variable_list.tmpl", w, struct {
-		workspace.WorkspacePage
+		types.WorkspacePage
 		WorkspaceVariableTable workspaceVariableTable
 		VariableSetTables      []setVariableTable
 		Policy                 internal.WorkspacePolicy
@@ -248,7 +248,7 @@ func (h *web) editWorkspaceVariable(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Render("variable_edit.tmpl", w, struct {
-		workspace.WorkspacePage
+		types.WorkspacePage
 		Variable   *Variable
 		EditMode   bool
 		FormAction string
@@ -657,7 +657,7 @@ func (h *web) deleteVariableSetVariable(w http.ResponseWriter, r *http.Request) 
 
 func (h *web) getAvailableWorkspaces(ctx context.Context, org string) ([]workspaceInfo, error) {
 	// retrieve names of all workspaces in org to show in dropdown widget
-	workspaces, err := resource.ListAll(func(opts resource.PageOptions) (*resource.Page[*workspace.Workspace], error) {
+	workspaces, err := resource.ListAll(func(opts resource.PageOptions) (*resource.Page[*types.Workspace], error) {
 		return h.workspaces.List(ctx, workspace.ListOptions{
 			Organization: &org,
 			PageOptions:  opts,

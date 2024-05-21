@@ -31,11 +31,11 @@ type (
 	}
 
 	workspaceClient interface {
-		List(ctx context.Context, opts workspace.ListOptions) (*resource.Page[*workspace.Workspace], error)
-		Watch(context.Context) (<-chan pubsub.Event[*workspace.Workspace], func())
-		Lock(ctx context.Context, workspaceID string, runID *string) (*workspace.Workspace, error)
-		Unlock(ctx context.Context, workspaceID string, runID *string, force bool) (*workspace.Workspace, error)
-		SetCurrentRun(ctx context.Context, workspaceID, runID string) (*workspace.Workspace, error)
+		List(ctx context.Context, opts workspace.ListOptions) (*resource.Page[*types.Workspace], error)
+		Watch(context.Context) (<-chan pubsub.Event[*types.Workspace], func())
+		Lock(ctx context.Context, workspaceID string, runID *string) (*types.Workspace, error)
+		Unlock(ctx context.Context, workspaceID string, runID *string, force bool) (*types.Workspace, error)
+		SetCurrentRun(ctx context.Context, workspaceID, runID string) (*types.Workspace, error)
 	}
 
 	runClient interface {
@@ -77,7 +77,7 @@ func (s *scheduler) Start(ctx context.Context) error {
 	defer unsubRuns()
 
 	// retrieve all existing workspaces
-	workspaces, err := resource.ListAll(func(opts resource.PageOptions) (*resource.Page[*workspace.Workspace], error) {
+	workspaces, err := resource.ListAll(func(opts resource.PageOptions) (*resource.Page[*types.Workspace], error) {
 		return s.workspaces.List(ctx, workspace.ListOptions{
 			PageOptions: opts,
 		})
@@ -97,10 +97,10 @@ func (s *scheduler) Start(ctx context.Context) error {
 	}
 
 	// feed in existing workspaces and then events to the scheduler for processing
-	workspaceQueue := make(chan pubsub.Event[*workspace.Workspace])
+	workspaceQueue := make(chan pubsub.Event[*types.Workspace])
 	go func() {
 		for _, ws := range workspaces {
-			workspaceQueue <- pubsub.Event[*workspace.Workspace]{
+			workspaceQueue <- pubsub.Event[*types.Workspace]{
 				Payload: ws,
 			}
 		}
@@ -146,7 +146,7 @@ func (s *scheduler) Start(ctx context.Context) error {
 	}
 }
 
-func (s *scheduler) handleWorkspaceEvent(ctx context.Context, event pubsub.Event[*workspace.Workspace]) error {
+func (s *scheduler) handleWorkspaceEvent(ctx context.Context, event pubsub.Event[*types.Workspace]) error {
 	if event.Type == pubsub.DeletedEvent {
 		delete(s.queues, event.Payload.ID)
 		return nil

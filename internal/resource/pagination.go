@@ -3,8 +3,8 @@ package resource
 import (
 	"math"
 
+	types "github.com/hashicorp/go-tfe"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/tofutf/tofutf/internal"
 	"github.com/tofutf/tofutf/internal/sql"
 )
 
@@ -18,19 +18,24 @@ type (
 	// Page is a segment of a result set.
 	Page[T any] struct {
 		Items []T
-		*Pagination
+		*types.Pagination
 	}
 
-	// Pagination provides metadata about a page.
-	Pagination struct {
-		CurrentPage  int  `json:"current-page"`
-		PreviousPage *int `json:"prev-page"`
-		NextPage     *int `json:"next-page"`
-		TotalPages   int  `json:"total-pages"`
-		TotalCount   int  `json:"total-count"`
-	}
+	/*
+	   // Pagination provides metadata about a page.
+
+	   	Pagination struct {
+	   		CurrentPage  int  `json:"current-page"`
+	   		PreviousPage *int `json:"prev-page"`
+	   		NextPage     *int `json:"next-page"`
+	   		TotalPages   int  `json:"total-pages"`
+	   		TotalCount   int  `json:"total-count"`
+	   	}
+
+	*/
 
 	// PageOptions are used to request a specific page.
+
 	PageOptions struct {
 		// The page number to request. The results vary based on the PageSize.
 		PageNumber int `schema:"page[number],omitempty"`
@@ -47,7 +52,7 @@ type (
 func NewPage[T any](resources []T, opts PageOptions, count *int64) *Page[T] {
 	opts = opts.normalize()
 
-	var metadata *Pagination
+	var metadata *types.Pagination
 
 	if count == nil {
 		metadata = newPagination(opts, int64(len(resources)))
@@ -88,16 +93,16 @@ func ListAll[T any](fn func(PageOptions) (*Page[T], error)) ([]T, error) {
 			break
 		}
 		all = append(all, page.Items...)
-		if page.NextPage == nil {
+		if page.NextPage == 0 {
 			break
 		}
-		opts.PageNumber = *page.NextPage
+		opts.PageNumber = page.NextPage
 	}
 	return all, nil
 }
 
-func newPagination(opts PageOptions, count int64) *Pagination {
-	pagination := Pagination{
+func newPagination(opts PageOptions, count int64) *types.Pagination {
+	pagination := types.Pagination{
 		CurrentPage: opts.PageNumber,
 		TotalCount:  int(count),
 	}
@@ -107,10 +112,10 @@ func newPagination(opts PageOptions, count int64) *Pagination {
 	pagination.TotalPages = int(math.Max(1, math.Ceil(pages)))
 
 	if opts.PageNumber > 1 {
-		pagination.PreviousPage = internal.Int(opts.PageNumber - 1)
+		pagination.PreviousPage = opts.PageNumber - 1
 	}
 	if opts.PageNumber < pagination.TotalPages {
-		pagination.NextPage = internal.Int(opts.PageNumber + 1)
+		pagination.NextPage = opts.PageNumber + 1
 	}
 
 	return &pagination
