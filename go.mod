@@ -9,7 +9,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.0.0
 	github.com/allegro/bigcache v1.2.1
 	github.com/antchfx/htmlquery v1.3.1
-	github.com/bradleyfalzon/ghinstallation/v2 v2.7.0
+	github.com/bradleyfalzon/ghinstallation/v2 v2.11.0
 	github.com/buildkite/terminal-to-html v3.2.0+incompatible
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
@@ -106,6 +106,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
+	github.com/google/go-github/v62 v62.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
