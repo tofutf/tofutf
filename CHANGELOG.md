@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0](https://github.com/tofutf/tofutf/compare/v0.9.1...v0.10.0) (2024-06-05)
+
+
+### Features
+
+* Add cmd/helm support for SkipTLSVerification flag ([#142](https://github.com/tofutf/tofutf/issues/142)) ([9feb4bd](https://github.com/tofutf/tofutf/commit/9feb4bd3cbecd47f39d0454bc43739f58404c5bc))
+* added otel tracing for sql and agents api ([#139](https://github.com/tofutf/tofutf/issues/139)) ([ffc125e](https://github.com/tofutf/tofutf/commit/ffc125e93fb2e71166e3e745d772a61cbad02079))
+* migrated to pgxv5 pggen fork ([#110](https://github.com/tofutf/tofutf/issues/110)) ([ab576aa](https://github.com/tofutf/tofutf/commit/ab576aa68934be9c19fe1c8ccf26e87cbc08fad9))
+
+
+### Bug Fixes
+
+* Correct SQL handling of unwrapped errors ([#165](https://github.com/tofutf/tofutf/issues/165)) ([c560190](https://github.com/tofutf/tofutf/commit/c5601906449e685f225f0e27fc0818ee401b39b3))
+
 ## [0.9.1](https://github.com/tofutf/tofutf/compare/v0.9.0...v0.9.1) (2024-04-04)
 
 
