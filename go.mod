@@ -36,7 +36,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/jaschaephraim/lrserver v0.0.0-20171129202958-50d19f603f71
-	github.com/leg100/surl v0.0.5
+	github.com/leg100/surl v0.0.6
 	github.com/lestrrat-go/jwx/v2 v2.0.21
 	github.com/mitchellh/iochan v1.0.0
 	github.com/mitchellh/mapstructure v1.5.0
@@ -121,7 +121,7 @@ require (
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/itchyny/base58-go v0.2.0 // indirect
+	github.com/itchyny/base58-go v0.2.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
