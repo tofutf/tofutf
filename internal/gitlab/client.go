@@ -152,7 +152,8 @@ func (g *Client) GetRepoTarball(ctx context.Context, opts vcs.GetRepoTarballOpti
 	// Gitlab tarball contents are contained within a top-level directory
 	// formatted <ref>-<sha>. We want the tarball without this directory,
 	// so we re-tar the contents without the top-level directory.
-	untarpath, err := os.MkdirTemp("", fmt.Sprintf("gitlab-%s-%s-*", owner, name))
+	normalizedName := strings.ReplaceAll(name, "/", "-")
+	untarpath, err := os.MkdirTemp("", fmt.Sprintf("gitlab-%s-%s-*", owner, normalizedName))
 	if err != nil {
 		return nil, "", err
 	}
