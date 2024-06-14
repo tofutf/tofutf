@@ -79,6 +79,27 @@ func TestClient_GetRepoTarball(t *testing.T) {
 	assert.FileExists(t, path.Join(dst, "bfile"))
 }
 
+func TestClient_GetRepoTarballSubGroup(t *testing.T) {
+	mux, client := setup(t)
+
+	mux.HandleFunc("/api/v4/projects/acme/subgroup/terraform/repository/archive.tar.gz", func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "GET", r.Method)
+		w.Write(testutils.ReadFile(t, "../testdata/gitlab.tar.gz")) //nolint:errcheck
+	})
+
+	got, ref, err := client.GetRepoTarball(context.Background(), vcs.GetRepoTarballOptions{
+		Repo: "acme/subgroup/terraform",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "0335fb07bb0244b7a169ee89d15c7703e4aaf7de", ref)
+
+	dst := t.TempDir()
+	err = internal.Unpack(bytes.NewReader(got), dst)
+	require.NoError(t, err)
+	assert.FileExists(t, path.Join(dst, "afile"))
+	assert.FileExists(t, path.Join(dst, "bfile"))
+}
+
 func TestClient_CreateWebhook(t *testing.T) {
 	mux, client := setup(t)
 
