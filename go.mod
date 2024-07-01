@@ -28,7 +28,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
-	github.com/gorilla/schema v1.3.0
+	github.com/gorilla/schema v1.4.1
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/hashicorp/go-tfe v1.50.0
 	github.com/hashicorp/hcl/v2 v2.20.1
