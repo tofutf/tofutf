@@ -59,17 +59,19 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 				return err
 			}
 
-			shutdown, err := otel.SetupOTelSDK(ctx)
-			if err != nil {
-				return err
-			}
-
-			defer func() {
-				err := shutdown(ctx)
+			if cfg.EnableOtel {
+				shutdown, err := otel.SetupOTelSDK(ctx)
 				if err != nil {
-					logger.Error("failed to shutdown cleanly", "err", err)
+					return err
 				}
-			}()
+
+				defer func() {
+					err := shutdown(ctx)
+					if err != nil {
+						logger.Error("failed to shutdown cleanly", "err", err)
+					}
+				}()
+			}
 
 			// Confer superuser privileges on all calls to service endpoints
 			ctx := internal.AddSubjectToContext(cmd.Context(), &internal.Superuser{Username: "app-user"})
@@ -127,6 +129,7 @@ func parseFlags(ctx context.Context, args []string, out io.Writer) error {
 
 	cmd.Flags().StringVar(&cfg.ProviderProxy.URL, "provider-proxy-url", "", "The URL of the provider registry to proxy provider registry requests to")
 	cmd.Flags().BoolVar(&cfg.ProviderProxy.IsArtifactory, "provider-proxy-is-artifactory", false, "Set to true if using artifactory as the backing provider registry")
+	cmd.Flags().BoolVar(&cfg.EnableOtel, "otel", false, "enable opentelemetry integration")
 
 	loggerConfig = xslog.NewConfigFromFlags(cmd.Flags())
 	cfg.AgentConfig = agent.NewConfigFromFlags(cmd.Flags())

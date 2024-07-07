@@ -174,6 +174,13 @@ OIDC scopes to request from OIDC provider.
 
 OIDC claim for mapping to an tofutf username. Must be one of `name`, `email`, or `sub`.
 
+## `--otel`
+
+* System: `tofutfd`
+* Default: false
+
+Enable open telemetry integration. The integration is configured via the normal otel environment variables.
+
 ## `--restrict-org-creation`
 
 * System: `tofutfd`
