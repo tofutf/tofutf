@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertTeamTokenSQL = `INSERT INTO team_tokens (
     team_token_id,

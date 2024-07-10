@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertConfigurationVersionSQL = `INSERT INTO configuration_versions (
     configuration_version_id,
@@ -123,15 +124,15 @@ type FindConfigurationVersionsByWorkspaceIDParams struct {
 }
 
 type FindConfigurationVersionsByWorkspaceIDRow struct {
-	ConfigurationVersionID               pgtype.Text                            `json:"configuration_version_id"`
-	CreatedAt                            pgtype.Timestamptz                     `json:"created_at"`
-	AutoQueueRuns                        pgtype.Bool                            `json:"auto_queue_runs"`
-	Source                               pgtype.Text                            `json:"source"`
-	Speculative                          pgtype.Bool                            `json:"speculative"`
-	Status                               pgtype.Text                            `json:"status"`
-	WorkspaceID                          pgtype.Text                            `json:"workspace_id"`
-	ConfigurationVersionStatusTimestamps []ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
-	IngressAttributes                    IngressAttributes                      `json:"ingress_attributes"`
+	ConfigurationVersionID               pgtype.Text                             `json:"configuration_version_id"`
+	CreatedAt                            pgtype.Timestamptz                      `json:"created_at"`
+	AutoQueueRuns                        pgtype.Bool                             `json:"auto_queue_runs"`
+	Source                               pgtype.Text                             `json:"source"`
+	Speculative                          pgtype.Bool                             `json:"speculative"`
+	Status                               pgtype.Text                             `json:"status"`
+	WorkspaceID                          pgtype.Text                             `json:"workspace_id"`
+	ConfigurationVersionStatusTimestamps []*ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
+	IngressAttributes                    *IngressAttributes                      `json:"ingress_attributes"`
 }
 
 // FindConfigurationVersionsByWorkspaceID implements Querier.FindConfigurationVersionsByWorkspaceID.
@@ -151,8 +152,8 @@ func (q *DBQuerier) FindConfigurationVersionsByWorkspaceID(ctx context.Context, 
 			&item.Speculative,   // 'speculative', 'Speculative', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
 			&item.Status,        // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,   // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ConfigurationVersionStatusTimestamps, // 'configuration_version_status_timestamps', 'ConfigurationVersionStatusTimestamps', '[]ConfigurationVersionStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ConfigurationVersionStatusTimestamps'
-			&item.IngressAttributes,                    // 'ingress_attributes', 'IngressAttributes', 'IngressAttributes', 'github.com/tofutf/tofutf/internal/sql/queries', 'IngressAttributes'
+			&item.ConfigurationVersionStatusTimestamps, // 'configuration_version_status_timestamps', 'ConfigurationVersionStatusTimestamps', '[]*ConfigurationVersionStatusTimestamps', '', '[]*ConfigurationVersionStatusTimestamps'
+			&item.IngressAttributes,                    // 'ingress_attributes', 'IngressAttributes', '*IngressAttributes', '', '*IngressAttributes'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -203,15 +204,15 @@ LEFT JOIN ingress_attributes USING (configuration_version_id)
 WHERE configuration_version_id = $1;`
 
 type FindConfigurationVersionByIDRow struct {
-	ConfigurationVersionID               pgtype.Text                            `json:"configuration_version_id"`
-	CreatedAt                            pgtype.Timestamptz                     `json:"created_at"`
-	AutoQueueRuns                        pgtype.Bool                            `json:"auto_queue_runs"`
-	Source                               pgtype.Text                            `json:"source"`
-	Speculative                          pgtype.Bool                            `json:"speculative"`
-	Status                               pgtype.Text                            `json:"status"`
-	WorkspaceID                          pgtype.Text                            `json:"workspace_id"`
-	ConfigurationVersionStatusTimestamps []ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
-	IngressAttributes                    IngressAttributes                      `json:"ingress_attributes"`
+	ConfigurationVersionID               pgtype.Text                             `json:"configuration_version_id"`
+	CreatedAt                            pgtype.Timestamptz                      `json:"created_at"`
+	AutoQueueRuns                        pgtype.Bool                             `json:"auto_queue_runs"`
+	Source                               pgtype.Text                             `json:"source"`
+	Speculative                          pgtype.Bool                             `json:"speculative"`
+	Status                               pgtype.Text                             `json:"status"`
+	WorkspaceID                          pgtype.Text                             `json:"workspace_id"`
+	ConfigurationVersionStatusTimestamps []*ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
+	IngressAttributes                    *IngressAttributes                      `json:"ingress_attributes"`
 }
 
 // FindConfigurationVersionByID implements Querier.FindConfigurationVersionByID.
@@ -231,8 +232,8 @@ func (q *DBQuerier) FindConfigurationVersionByID(ctx context.Context, configurat
 			&item.Speculative,   // 'speculative', 'Speculative', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
 			&item.Status,        // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,   // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ConfigurationVersionStatusTimestamps, // 'configuration_version_status_timestamps', 'ConfigurationVersionStatusTimestamps', '[]ConfigurationVersionStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ConfigurationVersionStatusTimestamps'
-			&item.IngressAttributes,                    // 'ingress_attributes', 'IngressAttributes', 'IngressAttributes', 'github.com/tofutf/tofutf/internal/sql/queries', 'IngressAttributes'
+			&item.ConfigurationVersionStatusTimestamps, // 'configuration_version_status_timestamps', 'ConfigurationVersionStatusTimestamps', '[]*ConfigurationVersionStatusTimestamps', '', '[]*ConfigurationVersionStatusTimestamps'
+			&item.IngressAttributes,                    // 'ingress_attributes', 'IngressAttributes', '*IngressAttributes', '', '*IngressAttributes'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -262,15 +263,15 @@ WHERE workspace_id = $1
 ORDER BY configuration_versions.created_at DESC;`
 
 type FindConfigurationVersionLatestByWorkspaceIDRow struct {
-	ConfigurationVersionID               pgtype.Text                            `json:"configuration_version_id"`
-	CreatedAt                            pgtype.Timestamptz                     `json:"created_at"`
-	AutoQueueRuns                        pgtype.Bool                            `json:"auto_queue_runs"`
-	Source                               pgtype.Text                            `json:"source"`
-	Speculative                          pgtype.Bool                            `json:"speculative"`
-	Status                               pgtype.Text                            `json:"status"`
-	WorkspaceID                          pgtype.Text                            `json:"workspace_id"`
-	ConfigurationVersionStatusTimestamps []ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
-	IngressAttributes                    IngressAttributes                      `json:"ingress_attributes"`
+	ConfigurationVersionID               pgtype.Text                             `json:"configuration_version_id"`
+	CreatedAt                            pgtype.Timestamptz                      `json:"created_at"`
+	AutoQueueRuns                        pgtype.Bool                             `json:"auto_queue_runs"`
+	Source                               pgtype.Text                             `json:"source"`
+	Speculative                          pgtype.Bool                             `json:"speculative"`
+	Status                               pgtype.Text                             `json:"status"`
+	WorkspaceID                          pgtype.Text                             `json:"workspace_id"`
+	ConfigurationVersionStatusTimestamps []*ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
+	IngressAttributes                    *IngressAttributes                      `json:"ingress_attributes"`
 }
 
 // FindConfigurationVersionLatestByWorkspaceID implements Querier.FindConfigurationVersionLatestByWorkspaceID.
@@ -290,8 +291,8 @@ func (q *DBQuerier) FindConfigurationVersionLatestByWorkspaceID(ctx context.Cont
 			&item.Speculative,   // 'speculative', 'Speculative', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
 			&item.Status,        // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,   // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ConfigurationVersionStatusTimestamps, // 'configuration_version_status_timestamps', 'ConfigurationVersionStatusTimestamps', '[]ConfigurationVersionStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ConfigurationVersionStatusTimestamps'
-			&item.IngressAttributes,                    // 'ingress_attributes', 'IngressAttributes', 'IngressAttributes', 'github.com/tofutf/tofutf/internal/sql/queries', 'IngressAttributes'
+			&item.ConfigurationVersionStatusTimestamps, // 'configuration_version_status_timestamps', 'ConfigurationVersionStatusTimestamps', '[]*ConfigurationVersionStatusTimestamps', '', '[]*ConfigurationVersionStatusTimestamps'
+			&item.IngressAttributes,                    // 'ingress_attributes', 'IngressAttributes', '*IngressAttributes', '', '*IngressAttributes'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -321,15 +322,15 @@ WHERE configuration_version_id = $1
 FOR UPDATE OF configuration_versions;`
 
 type FindConfigurationVersionByIDForUpdateRow struct {
-	ConfigurationVersionID               pgtype.Text                            `json:"configuration_version_id"`
-	CreatedAt                            pgtype.Timestamptz                     `json:"created_at"`
-	AutoQueueRuns                        pgtype.Bool                            `json:"auto_queue_runs"`
-	Source                               pgtype.Text                            `json:"source"`
-	Speculative                          pgtype.Bool                            `json:"speculative"`
-	Status                               pgtype.Text                            `json:"status"`
-	WorkspaceID                          pgtype.Text                            `json:"workspace_id"`
-	ConfigurationVersionStatusTimestamps []ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
-	IngressAttributes                    IngressAttributes                      `json:"ingress_attributes"`
+	ConfigurationVersionID               pgtype.Text                             `json:"configuration_version_id"`
+	CreatedAt                            pgtype.Timestamptz                      `json:"created_at"`
+	AutoQueueRuns                        pgtype.Bool                             `json:"auto_queue_runs"`
+	Source                               pgtype.Text                             `json:"source"`
+	Speculative                          pgtype.Bool                             `json:"speculative"`
+	Status                               pgtype.Text                             `json:"status"`
+	WorkspaceID                          pgtype.Text                             `json:"workspace_id"`
+	ConfigurationVersionStatusTimestamps []*ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
+	IngressAttributes                    *IngressAttributes                      `json:"ingress_attributes"`
 }
 
 // FindConfigurationVersionByIDForUpdate implements Querier.FindConfigurationVersionByIDForUpdate.
@@ -349,8 +350,8 @@ func (q *DBQuerier) FindConfigurationVersionByIDForUpdate(ctx context.Context, c
 			&item.Speculative,   // 'speculative', 'Speculative', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
 			&item.Status,        // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,   // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ConfigurationVersionStatusTimestamps, // 'configuration_version_status_timestamps', 'ConfigurationVersionStatusTimestamps', '[]ConfigurationVersionStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ConfigurationVersionStatusTimestamps'
-			&item.IngressAttributes,                    // 'ingress_attributes', 'IngressAttributes', 'IngressAttributes', 'github.com/tofutf/tofutf/internal/sql/queries', 'IngressAttributes'
+			&item.ConfigurationVersionStatusTimestamps, // 'configuration_version_status_timestamps', 'ConfigurationVersionStatusTimestamps', '[]*ConfigurationVersionStatusTimestamps', '', '[]*ConfigurationVersionStatusTimestamps'
+			&item.IngressAttributes,                    // 'ingress_attributes', 'IngressAttributes', '*IngressAttributes', '', '*IngressAttributes'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}

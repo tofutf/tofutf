@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertPhaseStatusTimestampSQL = `INSERT INTO phase_status_timestamps (
     run_id,

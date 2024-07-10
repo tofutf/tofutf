@@ -19,15 +19,15 @@ type (
 	}
 	// pgrow represents a database row for a vcs provider
 	pgrow struct {
-		VCSProviderID    pgtype.Text             `json:"vcs_provider_id"`
-		Token            pgtype.Text             `json:"token"`
-		CreatedAt        pgtype.Timestamptz      `json:"created_at"`
-		Name             pgtype.Text             `json:"name"`
-		VCSKind          pgtype.Text             `json:"vcs_kind"`
-		OrganizationName pgtype.Text             `json:"organization_name"`
-		GithubAppID      pgtype.Int8             `json:"github_app_id"`
-		GithubApp        pggen.GithubApps        `json:"github_app"`
-		GithubAppInstall pggen.GithubAppInstalls `json:"github_app_install"`
+		VCSProviderID    pgtype.Text              `json:"vcs_provider_id"`
+		Token            pgtype.Text              `json:"token"`
+		CreatedAt        pgtype.Timestamptz       `json:"created_at"`
+		Name             pgtype.Text              `json:"name"`
+		VCSKind          pgtype.Text              `json:"vcs_kind"`
+		OrganizationName pgtype.Text              `json:"organization_name"`
+		GithubAppID      pgtype.Int8              `json:"github_app_id"`
+		GithubApp        *pggen.GithubApps        `json:"github_app"`
+		GithubAppInstall *pggen.GithubAppInstalls `json:"github_app_install"`
 	}
 )
 
@@ -189,7 +189,7 @@ func (db *pgdb) toProvider(ctx context.Context, row pgrow) (*VCSProvider, error)
 		opts.Kind = &kind
 	}
 	var creds *github.InstallCredentials
-	if row.GithubApp != (pggen.GithubApps{}) {
+	if row.GithubApp != nil {
 		creds = &github.InstallCredentials{
 			ID: row.GithubAppInstall.InstallID.Int64,
 			AppCredentials: github.AppCredentials{

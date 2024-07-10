@@ -71,6 +71,14 @@ func New(ctx context.Context, opts Options) (*Pool, error) {
 	}
 
 	config.ConnConfig.Tracer = otelpgx.NewTracer()
+	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		err := pggen.Register(ctx, conn)
+		if err != nil {
+			return fmt.Errorf("failed to register pggen types: %w", err)
+		}
+
+		return nil
+	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {

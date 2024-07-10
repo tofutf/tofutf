@@ -26,13 +26,13 @@ type (
 	}
 
 	variableSetRow struct {
-		VariableSetID    pgtype.Text       `json:"variable_set_id"`
-		Global           pgtype.Bool       `json:"global"`
-		Name             pgtype.Text       `json:"name"`
-		Description      pgtype.Text       `json:"description"`
-		OrganizationName pgtype.Text       `json:"organization_name"`
-		Variables        []pggen.Variables `json:"variables"`
-		WorkspaceIds     []string          `json:"workspace_ids"`
+		VariableSetID    pgtype.Text        `json:"variable_set_id"`
+		Global           pgtype.Bool        `json:"global"`
+		Name             pgtype.Text        `json:"name"`
+		Description      pgtype.Text        `json:"description"`
+		OrganizationName pgtype.Text        `json:"organization_name"`
+		Variables        []*pggen.Variables `json:"variables"`
+		WorkspaceIds     []string           `json:"workspace_ids"`
 	}
 )
 
@@ -59,7 +59,7 @@ func (row variableSetRow) convert() *VariableSet {
 	}
 	set.Variables = make([]*Variable, len(row.Variables))
 	for i, v := range row.Variables {
-		set.Variables[i] = variableRow(v).convert()
+		set.Variables[i] = variableRow(*v).convert()
 	}
 	set.Workspaces = row.WorkspaceIds
 	return set
@@ -101,7 +101,7 @@ func (pdb *pgdb) getWorkspaceVariable(ctx context.Context, variableID string) (*
 
 		return &WorkspaceVariable{
 			WorkspaceID: row.WorkspaceID.String,
-			Variable:    variableRow(row.Variable).convert(),
+			Variable:    variableRow(*row.Variable).convert(),
 		}, nil
 	})
 }
@@ -115,7 +115,7 @@ func (pdb *pgdb) deleteWorkspaceVariable(ctx context.Context, variableID string)
 
 		return &WorkspaceVariable{
 			WorkspaceID: row.WorkspaceID.String,
-			Variable:    variableRow(row.Variable).convert(),
+			Variable:    variableRow(*row.Variable).convert(),
 		}, nil
 	})
 }

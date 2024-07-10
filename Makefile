@@ -4,9 +4,10 @@ GIT_COMMIT = $(shell git rev-parse HEAD)
 RANDOM_SUFFIX := $(shell cat /dev/urandom | tr -dc 'a-z0-9' | head -c5)
 
 # Provide some sane defaults for connecting to postgres.
-PGPASSWORD ?= $(shell kubectl get secrets postgres-postgresql -oyaml | yq '.data["password"]' -r | base64 -d)
-PGUSER ?= tofutf
-DBSTRING ?= postgres://$(PGUSER):$(PGPASSWORD)@localhost:5432/postgres
+PGDATABASE ?= postgres
+PGPASSWORD ?= $(shell kubectl get secrets tofutf-postgresql -oyaml | yq '.data["postgres-password"]' -r | base64 -d)
+PGUSER ?= 'postgres'
+DBSTRING ?= postgres://$(PGUSER):$(PGPASSWORD)@localhost:5432/$(PGDATABASE)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -103,9 +104,15 @@ sql: install-pggen
 install-goose:
 	@sh -c "which goose > /dev/null || go install github.com/pressly/goose/v3/cmd/goose@latest"
 
+# Install go-wrap
 .PHONY: install-gowrap
 install-gowrap:
 	@sh -c "which goose > /dev/null || go install github.com/hexdigest/gowrap/cmd/gowrap@latest"
+
+# Add bitnami repo to helm.
+.PHONY: helm-add-dependencies
+helm-add-dependencies:
+	@sh -c "helm repo list -o table | grep -q 'charts.bitnami.com' || helm repo add bitnami  https://charts.bitnami.com/bitnami"
 
 # Migrate SQL schema to latest version
 .PHONY: migrate

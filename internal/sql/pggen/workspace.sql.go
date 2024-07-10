@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertWorkspaceSQL = `INSERT INTO workspaces (
     workspace_id,
@@ -185,9 +186,9 @@ type FindWorkspacesRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   Users              `json:"user_lock"`
-	RunLock                    Runs               `json:"run_lock"`
-	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
+	UserLock                   *Users             `json:"user_lock"`
+	RunLock                    *Runs              `json:"run_lock"`
+	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
 }
 
 // FindWorkspaces implements Querier.FindWorkspaces.
@@ -232,9 +233,9 @@ func (q *DBQuerier) FindWorkspaces(ctx context.Context, params FindWorkspacesPar
 			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
 			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
-			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
-			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+			&item.UserLock,                   // 'user_lock', 'UserLock', '*Users', '', '*Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', '*Runs', '', '*Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', '*RepoConnections', '', '*RepoConnections'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -333,9 +334,9 @@ type FindWorkspacesByConnectionRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   Users              `json:"user_lock"`
-	RunLock                    Runs               `json:"run_lock"`
-	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
+	UserLock                   *Users             `json:"user_lock"`
+	RunLock                    *Runs              `json:"run_lock"`
+	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
 }
 
 // FindWorkspacesByConnection implements Querier.FindWorkspacesByConnection.
@@ -380,9 +381,9 @@ func (q *DBQuerier) FindWorkspacesByConnection(ctx context.Context, vcsProviderI
 			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
 			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
-			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
-			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+			&item.UserLock,                   // 'user_lock', 'UserLock', '*Users', '', '*Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', '*Runs', '', '*Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', '*RepoConnections', '', '*RepoConnections'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -458,9 +459,9 @@ type FindWorkspacesByUsernameRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   Users              `json:"user_lock"`
-	RunLock                    Runs               `json:"run_lock"`
-	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
+	UserLock                   *Users             `json:"user_lock"`
+	RunLock                    *Runs              `json:"run_lock"`
+	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
 }
 
 // FindWorkspacesByUsername implements Querier.FindWorkspacesByUsername.
@@ -505,9 +506,9 @@ func (q *DBQuerier) FindWorkspacesByUsername(ctx context.Context, params FindWor
 			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
 			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
-			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
-			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+			&item.UserLock,                   // 'user_lock', 'UserLock', '*Users', '', '*Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', '*Runs', '', '*Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', '*RepoConnections', '', '*RepoConnections'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -595,9 +596,9 @@ type FindWorkspaceByNameRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   Users              `json:"user_lock"`
-	RunLock                    Runs               `json:"run_lock"`
-	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
+	UserLock                   *Users             `json:"user_lock"`
+	RunLock                    *Runs              `json:"run_lock"`
+	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
 }
 
 // FindWorkspaceByName implements Querier.FindWorkspaceByName.
@@ -642,9 +643,9 @@ func (q *DBQuerier) FindWorkspaceByName(ctx context.Context, name pgtype.Text, o
 			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
 			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
-			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
-			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+			&item.UserLock,                   // 'user_lock', 'UserLock', '*Users', '', '*Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', '*Runs', '', '*Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', '*RepoConnections', '', '*RepoConnections'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -704,9 +705,9 @@ type FindWorkspaceByIDRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   Users              `json:"user_lock"`
-	RunLock                    Runs               `json:"run_lock"`
-	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
+	UserLock                   *Users             `json:"user_lock"`
+	RunLock                    *Runs              `json:"run_lock"`
+	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
 }
 
 // FindWorkspaceByID implements Querier.FindWorkspaceByID.
@@ -751,9 +752,9 @@ func (q *DBQuerier) FindWorkspaceByID(ctx context.Context, id pgtype.Text) (Find
 			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
 			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
-			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
-			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+			&item.UserLock,                   // 'user_lock', 'UserLock', '*Users', '', '*Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', '*Runs', '', '*Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', '*RepoConnections', '', '*RepoConnections'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -813,9 +814,9 @@ type FindWorkspaceByIDForUpdateRow struct {
 	AgentPoolID                pgtype.Text        `json:"agent_pool_id"`
 	Tags                       []string           `json:"tags"`
 	LatestRunStatus            pgtype.Text        `json:"latest_run_status"`
-	UserLock                   Users              `json:"user_lock"`
-	RunLock                    Runs               `json:"run_lock"`
-	WorkspaceConnection        RepoConnections    `json:"workspace_connection"`
+	UserLock                   *Users             `json:"user_lock"`
+	RunLock                    *Runs              `json:"run_lock"`
+	WorkspaceConnection        *RepoConnections   `json:"workspace_connection"`
 }
 
 // FindWorkspaceByIDForUpdate implements Querier.FindWorkspaceByIDForUpdate.
@@ -860,9 +861,9 @@ func (q *DBQuerier) FindWorkspaceByIDForUpdate(ctx context.Context, id pgtype.Te
 			&item.AgentPoolID,                // 'agent_pool_id', 'AgentPoolID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Tags,                       // 'tags', 'Tags', '[]string', '', '[]string'
 			&item.LatestRunStatus,            // 'latest_run_status', 'LatestRunStatus', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.UserLock,                   // 'user_lock', 'UserLock', 'Users', 'github.com/tofutf/tofutf/internal/sql/queries', 'Users'
-			&item.RunLock,                    // 'run_lock', 'RunLock', 'Runs', 'github.com/tofutf/tofutf/internal/sql/queries', 'Runs'
-			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
+			&item.UserLock,                   // 'user_lock', 'UserLock', '*Users', '', '*Users'
+			&item.RunLock,                    // 'run_lock', 'RunLock', '*Runs', '', '*Runs'
+			&item.WorkspaceConnection,        // 'workspace_connection', 'WorkspaceConnection', '*RepoConnections', '', '*RepoConnections'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}

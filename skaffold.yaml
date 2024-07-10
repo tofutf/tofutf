@@ -9,7 +9,7 @@ deploy:
       - name: tofutf
         chartPath: charts/tofutf
         valuesFiles:
-          - charts/tofutf/values.yaml
+          - charts/tofutf/values.yaml.tmpl
           - charts/tofutf/test-values.yaml
         version: 0.5.0-dev
         setValueTemplates:

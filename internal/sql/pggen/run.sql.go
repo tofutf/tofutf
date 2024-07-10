@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertRunSQL = `INSERT INTO runs (
     run_id,
@@ -223,38 +224,38 @@ type FindRunsParams struct {
 }
 
 type FindRunsRow struct {
-	RunID                  pgtype.Text             `json:"run_id"`
-	CreatedAt              pgtype.Timestamptz      `json:"created_at"`
-	CancelSignaledAt       pgtype.Timestamptz      `json:"cancel_signaled_at"`
-	IsDestroy              pgtype.Bool             `json:"is_destroy"`
-	PositionInQueue        pgtype.Int4             `json:"position_in_queue"`
-	Refresh                pgtype.Bool             `json:"refresh"`
-	RefreshOnly            pgtype.Bool             `json:"refresh_only"`
-	Source                 pgtype.Text             `json:"source"`
-	Status                 pgtype.Text             `json:"status"`
-	PlanStatus             pgtype.Text             `json:"plan_status"`
-	ApplyStatus            pgtype.Text             `json:"apply_status"`
-	ReplaceAddrs           []string                `json:"replace_addrs"`
-	TargetAddrs            []string                `json:"target_addrs"`
-	AutoApply              pgtype.Bool             `json:"auto_apply"`
-	PlanResourceReport     Report                  `json:"plan_resource_report"`
-	PlanOutputReport       Report                  `json:"plan_output_report"`
-	ApplyResourceReport    Report                  `json:"apply_resource_report"`
-	ConfigurationVersionID pgtype.Text             `json:"configuration_version_id"`
-	WorkspaceID            pgtype.Text             `json:"workspace_id"`
-	PlanOnly               pgtype.Bool             `json:"plan_only"`
-	CreatedBy              pgtype.Text             `json:"created_by"`
-	TerraformVersion       pgtype.Text             `json:"terraform_version"`
-	AllowEmptyApply        pgtype.Bool             `json:"allow_empty_apply"`
-	ExecutionMode          pgtype.Text             `json:"execution_mode"`
-	Latest                 pgtype.Bool             `json:"latest"`
-	OrganizationName       pgtype.Text             `json:"organization_name"`
-	CostEstimationEnabled  pgtype.Bool             `json:"cost_estimation_enabled"`
-	IngressAttributes      IngressAttributes       `json:"ingress_attributes"`
-	RunStatusTimestamps    []RunStatusTimestamps   `json:"run_status_timestamps"`
-	PlanStatusTimestamps   []PhaseStatusTimestamps `json:"plan_status_timestamps"`
-	ApplyStatusTimestamps  []PhaseStatusTimestamps `json:"apply_status_timestamps"`
-	RunVariables           []RunVariables          `json:"run_variables"`
+	RunID                  pgtype.Text              `json:"run_id"`
+	CreatedAt              pgtype.Timestamptz       `json:"created_at"`
+	CancelSignaledAt       pgtype.Timestamptz       `json:"cancel_signaled_at"`
+	IsDestroy              pgtype.Bool              `json:"is_destroy"`
+	PositionInQueue        pgtype.Int4              `json:"position_in_queue"`
+	Refresh                pgtype.Bool              `json:"refresh"`
+	RefreshOnly            pgtype.Bool              `json:"refresh_only"`
+	Source                 pgtype.Text              `json:"source"`
+	Status                 pgtype.Text              `json:"status"`
+	PlanStatus             pgtype.Text              `json:"plan_status"`
+	ApplyStatus            pgtype.Text              `json:"apply_status"`
+	ReplaceAddrs           []string                 `json:"replace_addrs"`
+	TargetAddrs            []string                 `json:"target_addrs"`
+	AutoApply              pgtype.Bool              `json:"auto_apply"`
+	PlanResourceReport     *Report                  `json:"plan_resource_report"`
+	PlanOutputReport       *Report                  `json:"plan_output_report"`
+	ApplyResourceReport    *Report                  `json:"apply_resource_report"`
+	ConfigurationVersionID pgtype.Text              `json:"configuration_version_id"`
+	WorkspaceID            pgtype.Text              `json:"workspace_id"`
+	PlanOnly               pgtype.Bool              `json:"plan_only"`
+	CreatedBy              pgtype.Text              `json:"created_by"`
+	TerraformVersion       pgtype.Text              `json:"terraform_version"`
+	AllowEmptyApply        pgtype.Bool              `json:"allow_empty_apply"`
+	ExecutionMode          pgtype.Text              `json:"execution_mode"`
+	Latest                 pgtype.Bool              `json:"latest"`
+	OrganizationName       pgtype.Text              `json:"organization_name"`
+	CostEstimationEnabled  pgtype.Bool              `json:"cost_estimation_enabled"`
+	IngressAttributes      *IngressAttributes       `json:"ingress_attributes"`
+	RunStatusTimestamps    []*RunStatusTimestamps   `json:"run_status_timestamps"`
+	PlanStatusTimestamps   []*PhaseStatusTimestamps `json:"plan_status_timestamps"`
+	ApplyStatusTimestamps  []*PhaseStatusTimestamps `json:"apply_status_timestamps"`
+	RunVariables           []*RunVariables          `json:"run_variables"`
 }
 
 // FindRuns implements Querier.FindRuns.
@@ -281,9 +282,9 @@ func (q *DBQuerier) FindRuns(ctx context.Context, params FindRunsParams) ([]Find
 			&item.ReplaceAddrs,           // 'replace_addrs', 'ReplaceAddrs', '[]string', '', '[]string'
 			&item.TargetAddrs,            // 'target_addrs', 'TargetAddrs', '[]string', '', '[]string'
 			&item.AutoApply,              // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.PlanResourceReport,     // 'plan_resource_report', 'PlanResourceReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
-			&item.PlanOutputReport,       // 'plan_output_report', 'PlanOutputReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
-			&item.ApplyResourceReport,    // 'apply_resource_report', 'ApplyResourceReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
+			&item.PlanResourceReport,     // 'plan_resource_report', 'PlanResourceReport', '*Report', '', '*Report'
+			&item.PlanOutputReport,       // 'plan_output_report', 'PlanOutputReport', '*Report', '', '*Report'
+			&item.ApplyResourceReport,    // 'apply_resource_report', 'ApplyResourceReport', '*Report', '', '*Report'
 			&item.ConfigurationVersionID, // 'configuration_version_id', 'ConfigurationVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,            // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.PlanOnly,               // 'plan_only', 'PlanOnly', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
@@ -294,11 +295,11 @@ func (q *DBQuerier) FindRuns(ctx context.Context, params FindRunsParams) ([]Find
 			&item.Latest,                 // 'latest', 'Latest', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
 			&item.OrganizationName,       // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CostEstimationEnabled,  // 'cost_estimation_enabled', 'CostEstimationEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.IngressAttributes,      // 'ingress_attributes', 'IngressAttributes', 'IngressAttributes', 'github.com/tofutf/tofutf/internal/sql/queries', 'IngressAttributes'
-			&item.RunStatusTimestamps,    // 'run_status_timestamps', 'RunStatusTimestamps', '[]RunStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]RunStatusTimestamps'
-			&item.PlanStatusTimestamps,   // 'plan_status_timestamps', 'PlanStatusTimestamps', '[]PhaseStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]PhaseStatusTimestamps'
-			&item.ApplyStatusTimestamps,  // 'apply_status_timestamps', 'ApplyStatusTimestamps', '[]PhaseStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]PhaseStatusTimestamps'
-			&item.RunVariables,           // 'run_variables', 'RunVariables', '[]RunVariables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]RunVariables'
+			&item.IngressAttributes,      // 'ingress_attributes', 'IngressAttributes', '*IngressAttributes', '', '*IngressAttributes'
+			&item.RunStatusTimestamps,    // 'run_status_timestamps', 'RunStatusTimestamps', '[]*RunStatusTimestamps', '', '[]*RunStatusTimestamps'
+			&item.PlanStatusTimestamps,   // 'plan_status_timestamps', 'PlanStatusTimestamps', '[]*PhaseStatusTimestamps', '', '[]*PhaseStatusTimestamps'
+			&item.ApplyStatusTimestamps,  // 'apply_status_timestamps', 'ApplyStatusTimestamps', '[]*PhaseStatusTimestamps', '', '[]*PhaseStatusTimestamps'
+			&item.RunVariables,           // 'run_variables', 'RunVariables', '[]*RunVariables', '', '[]*RunVariables'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -416,38 +417,38 @@ WHERE runs.run_id = $1
 ;`
 
 type FindRunByIDRow struct {
-	RunID                  pgtype.Text             `json:"run_id"`
-	CreatedAt              pgtype.Timestamptz      `json:"created_at"`
-	CancelSignaledAt       pgtype.Timestamptz      `json:"cancel_signaled_at"`
-	IsDestroy              pgtype.Bool             `json:"is_destroy"`
-	PositionInQueue        pgtype.Int4             `json:"position_in_queue"`
-	Refresh                pgtype.Bool             `json:"refresh"`
-	RefreshOnly            pgtype.Bool             `json:"refresh_only"`
-	Source                 pgtype.Text             `json:"source"`
-	Status                 pgtype.Text             `json:"status"`
-	PlanStatus             pgtype.Text             `json:"plan_status"`
-	ApplyStatus            pgtype.Text             `json:"apply_status"`
-	ReplaceAddrs           []string                `json:"replace_addrs"`
-	TargetAddrs            []string                `json:"target_addrs"`
-	AutoApply              pgtype.Bool             `json:"auto_apply"`
-	PlanResourceReport     Report                  `json:"plan_resource_report"`
-	PlanOutputReport       Report                  `json:"plan_output_report"`
-	ApplyResourceReport    Report                  `json:"apply_resource_report"`
-	ConfigurationVersionID pgtype.Text             `json:"configuration_version_id"`
-	WorkspaceID            pgtype.Text             `json:"workspace_id"`
-	PlanOnly               pgtype.Bool             `json:"plan_only"`
-	CreatedBy              pgtype.Text             `json:"created_by"`
-	TerraformVersion       pgtype.Text             `json:"terraform_version"`
-	AllowEmptyApply        pgtype.Bool             `json:"allow_empty_apply"`
-	ExecutionMode          pgtype.Text             `json:"execution_mode"`
-	Latest                 pgtype.Bool             `json:"latest"`
-	OrganizationName       pgtype.Text             `json:"organization_name"`
-	CostEstimationEnabled  pgtype.Bool             `json:"cost_estimation_enabled"`
-	IngressAttributes      IngressAttributes       `json:"ingress_attributes"`
-	RunStatusTimestamps    []RunStatusTimestamps   `json:"run_status_timestamps"`
-	PlanStatusTimestamps   []PhaseStatusTimestamps `json:"plan_status_timestamps"`
-	ApplyStatusTimestamps  []PhaseStatusTimestamps `json:"apply_status_timestamps"`
-	RunVariables           []RunVariables          `json:"run_variables"`
+	RunID                  pgtype.Text              `json:"run_id"`
+	CreatedAt              pgtype.Timestamptz       `json:"created_at"`
+	CancelSignaledAt       pgtype.Timestamptz       `json:"cancel_signaled_at"`
+	IsDestroy              pgtype.Bool              `json:"is_destroy"`
+	PositionInQueue        pgtype.Int4              `json:"position_in_queue"`
+	Refresh                pgtype.Bool              `json:"refresh"`
+	RefreshOnly            pgtype.Bool              `json:"refresh_only"`
+	Source                 pgtype.Text              `json:"source"`
+	Status                 pgtype.Text              `json:"status"`
+	PlanStatus             pgtype.Text              `json:"plan_status"`
+	ApplyStatus            pgtype.Text              `json:"apply_status"`
+	ReplaceAddrs           []string                 `json:"replace_addrs"`
+	TargetAddrs            []string                 `json:"target_addrs"`
+	AutoApply              pgtype.Bool              `json:"auto_apply"`
+	PlanResourceReport     *Report                  `json:"plan_resource_report"`
+	PlanOutputReport       *Report                  `json:"plan_output_report"`
+	ApplyResourceReport    *Report                  `json:"apply_resource_report"`
+	ConfigurationVersionID pgtype.Text              `json:"configuration_version_id"`
+	WorkspaceID            pgtype.Text              `json:"workspace_id"`
+	PlanOnly               pgtype.Bool              `json:"plan_only"`
+	CreatedBy              pgtype.Text              `json:"created_by"`
+	TerraformVersion       pgtype.Text              `json:"terraform_version"`
+	AllowEmptyApply        pgtype.Bool              `json:"allow_empty_apply"`
+	ExecutionMode          pgtype.Text              `json:"execution_mode"`
+	Latest                 pgtype.Bool              `json:"latest"`
+	OrganizationName       pgtype.Text              `json:"organization_name"`
+	CostEstimationEnabled  pgtype.Bool              `json:"cost_estimation_enabled"`
+	IngressAttributes      *IngressAttributes       `json:"ingress_attributes"`
+	RunStatusTimestamps    []*RunStatusTimestamps   `json:"run_status_timestamps"`
+	PlanStatusTimestamps   []*PhaseStatusTimestamps `json:"plan_status_timestamps"`
+	ApplyStatusTimestamps  []*PhaseStatusTimestamps `json:"apply_status_timestamps"`
+	RunVariables           []*RunVariables          `json:"run_variables"`
 }
 
 // FindRunByID implements Querier.FindRunByID.
@@ -474,9 +475,9 @@ func (q *DBQuerier) FindRunByID(ctx context.Context, runID pgtype.Text) (FindRun
 			&item.ReplaceAddrs,           // 'replace_addrs', 'ReplaceAddrs', '[]string', '', '[]string'
 			&item.TargetAddrs,            // 'target_addrs', 'TargetAddrs', '[]string', '', '[]string'
 			&item.AutoApply,              // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.PlanResourceReport,     // 'plan_resource_report', 'PlanResourceReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
-			&item.PlanOutputReport,       // 'plan_output_report', 'PlanOutputReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
-			&item.ApplyResourceReport,    // 'apply_resource_report', 'ApplyResourceReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
+			&item.PlanResourceReport,     // 'plan_resource_report', 'PlanResourceReport', '*Report', '', '*Report'
+			&item.PlanOutputReport,       // 'plan_output_report', 'PlanOutputReport', '*Report', '', '*Report'
+			&item.ApplyResourceReport,    // 'apply_resource_report', 'ApplyResourceReport', '*Report', '', '*Report'
 			&item.ConfigurationVersionID, // 'configuration_version_id', 'ConfigurationVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,            // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.PlanOnly,               // 'plan_only', 'PlanOnly', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
@@ -487,11 +488,11 @@ func (q *DBQuerier) FindRunByID(ctx context.Context, runID pgtype.Text) (FindRun
 			&item.Latest,                 // 'latest', 'Latest', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
 			&item.OrganizationName,       // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CostEstimationEnabled,  // 'cost_estimation_enabled', 'CostEstimationEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.IngressAttributes,      // 'ingress_attributes', 'IngressAttributes', 'IngressAttributes', 'github.com/tofutf/tofutf/internal/sql/queries', 'IngressAttributes'
-			&item.RunStatusTimestamps,    // 'run_status_timestamps', 'RunStatusTimestamps', '[]RunStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]RunStatusTimestamps'
-			&item.PlanStatusTimestamps,   // 'plan_status_timestamps', 'PlanStatusTimestamps', '[]PhaseStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]PhaseStatusTimestamps'
-			&item.ApplyStatusTimestamps,  // 'apply_status_timestamps', 'ApplyStatusTimestamps', '[]PhaseStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]PhaseStatusTimestamps'
-			&item.RunVariables,           // 'run_variables', 'RunVariables', '[]RunVariables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]RunVariables'
+			&item.IngressAttributes,      // 'ingress_attributes', 'IngressAttributes', '*IngressAttributes', '', '*IngressAttributes'
+			&item.RunStatusTimestamps,    // 'run_status_timestamps', 'RunStatusTimestamps', '[]*RunStatusTimestamps', '', '[]*RunStatusTimestamps'
+			&item.PlanStatusTimestamps,   // 'plan_status_timestamps', 'PlanStatusTimestamps', '[]*PhaseStatusTimestamps', '', '[]*PhaseStatusTimestamps'
+			&item.ApplyStatusTimestamps,  // 'apply_status_timestamps', 'ApplyStatusTimestamps', '[]*PhaseStatusTimestamps', '', '[]*PhaseStatusTimestamps'
+			&item.RunVariables,           // 'run_variables', 'RunVariables', '[]*RunVariables', '', '[]*RunVariables'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -567,38 +568,38 @@ FOR UPDATE OF runs, plans, applies
 ;`
 
 type FindRunByIDForUpdateRow struct {
-	RunID                  pgtype.Text             `json:"run_id"`
-	CreatedAt              pgtype.Timestamptz      `json:"created_at"`
-	CancelSignaledAt       pgtype.Timestamptz      `json:"cancel_signaled_at"`
-	IsDestroy              pgtype.Bool             `json:"is_destroy"`
-	PositionInQueue        pgtype.Int4             `json:"position_in_queue"`
-	Refresh                pgtype.Bool             `json:"refresh"`
-	RefreshOnly            pgtype.Bool             `json:"refresh_only"`
-	Source                 pgtype.Text             `json:"source"`
-	Status                 pgtype.Text             `json:"status"`
-	PlanStatus             pgtype.Text             `json:"plan_status"`
-	ApplyStatus            pgtype.Text             `json:"apply_status"`
-	ReplaceAddrs           []string                `json:"replace_addrs"`
-	TargetAddrs            []string                `json:"target_addrs"`
-	AutoApply              pgtype.Bool             `json:"auto_apply"`
-	PlanResourceReport     Report                  `json:"plan_resource_report"`
-	PlanOutputReport       Report                  `json:"plan_output_report"`
-	ApplyResourceReport    Report                  `json:"apply_resource_report"`
-	ConfigurationVersionID pgtype.Text             `json:"configuration_version_id"`
-	WorkspaceID            pgtype.Text             `json:"workspace_id"`
-	PlanOnly               pgtype.Bool             `json:"plan_only"`
-	CreatedBy              pgtype.Text             `json:"created_by"`
-	TerraformVersion       pgtype.Text             `json:"terraform_version"`
-	AllowEmptyApply        pgtype.Bool             `json:"allow_empty_apply"`
-	ExecutionMode          pgtype.Text             `json:"execution_mode"`
-	Latest                 pgtype.Bool             `json:"latest"`
-	OrganizationName       pgtype.Text             `json:"organization_name"`
-	CostEstimationEnabled  pgtype.Bool             `json:"cost_estimation_enabled"`
-	IngressAttributes      IngressAttributes       `json:"ingress_attributes"`
-	RunStatusTimestamps    []RunStatusTimestamps   `json:"run_status_timestamps"`
-	PlanStatusTimestamps   []PhaseStatusTimestamps `json:"plan_status_timestamps"`
-	ApplyStatusTimestamps  []PhaseStatusTimestamps `json:"apply_status_timestamps"`
-	RunVariables           []RunVariables          `json:"run_variables"`
+	RunID                  pgtype.Text              `json:"run_id"`
+	CreatedAt              pgtype.Timestamptz       `json:"created_at"`
+	CancelSignaledAt       pgtype.Timestamptz       `json:"cancel_signaled_at"`
+	IsDestroy              pgtype.Bool              `json:"is_destroy"`
+	PositionInQueue        pgtype.Int4              `json:"position_in_queue"`
+	Refresh                pgtype.Bool              `json:"refresh"`
+	RefreshOnly            pgtype.Bool              `json:"refresh_only"`
+	Source                 pgtype.Text              `json:"source"`
+	Status                 pgtype.Text              `json:"status"`
+	PlanStatus             pgtype.Text              `json:"plan_status"`
+	ApplyStatus            pgtype.Text              `json:"apply_status"`
+	ReplaceAddrs           []string                 `json:"replace_addrs"`
+	TargetAddrs            []string                 `json:"target_addrs"`
+	AutoApply              pgtype.Bool              `json:"auto_apply"`
+	PlanResourceReport     *Report                  `json:"plan_resource_report"`
+	PlanOutputReport       *Report                  `json:"plan_output_report"`
+	ApplyResourceReport    *Report                  `json:"apply_resource_report"`
+	ConfigurationVersionID pgtype.Text              `json:"configuration_version_id"`
+	WorkspaceID            pgtype.Text              `json:"workspace_id"`
+	PlanOnly               pgtype.Bool              `json:"plan_only"`
+	CreatedBy              pgtype.Text              `json:"created_by"`
+	TerraformVersion       pgtype.Text              `json:"terraform_version"`
+	AllowEmptyApply        pgtype.Bool              `json:"allow_empty_apply"`
+	ExecutionMode          pgtype.Text              `json:"execution_mode"`
+	Latest                 pgtype.Bool              `json:"latest"`
+	OrganizationName       pgtype.Text              `json:"organization_name"`
+	CostEstimationEnabled  pgtype.Bool              `json:"cost_estimation_enabled"`
+	IngressAttributes      *IngressAttributes       `json:"ingress_attributes"`
+	RunStatusTimestamps    []*RunStatusTimestamps   `json:"run_status_timestamps"`
+	PlanStatusTimestamps   []*PhaseStatusTimestamps `json:"plan_status_timestamps"`
+	ApplyStatusTimestamps  []*PhaseStatusTimestamps `json:"apply_status_timestamps"`
+	RunVariables           []*RunVariables          `json:"run_variables"`
 }
 
 // FindRunByIDForUpdate implements Querier.FindRunByIDForUpdate.
@@ -625,9 +626,9 @@ func (q *DBQuerier) FindRunByIDForUpdate(ctx context.Context, runID pgtype.Text)
 			&item.ReplaceAddrs,           // 'replace_addrs', 'ReplaceAddrs', '[]string', '', '[]string'
 			&item.TargetAddrs,            // 'target_addrs', 'TargetAddrs', '[]string', '', '[]string'
 			&item.AutoApply,              // 'auto_apply', 'AutoApply', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.PlanResourceReport,     // 'plan_resource_report', 'PlanResourceReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
-			&item.PlanOutputReport,       // 'plan_output_report', 'PlanOutputReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
-			&item.ApplyResourceReport,    // 'apply_resource_report', 'ApplyResourceReport', 'Report', 'github.com/tofutf/tofutf/internal/sql/queries', 'Report'
+			&item.PlanResourceReport,     // 'plan_resource_report', 'PlanResourceReport', '*Report', '', '*Report'
+			&item.PlanOutputReport,       // 'plan_output_report', 'PlanOutputReport', '*Report', '', '*Report'
+			&item.ApplyResourceReport,    // 'apply_resource_report', 'ApplyResourceReport', '*Report', '', '*Report'
 			&item.ConfigurationVersionID, // 'configuration_version_id', 'ConfigurationVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,            // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.PlanOnly,               // 'plan_only', 'PlanOnly', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
@@ -638,11 +639,11 @@ func (q *DBQuerier) FindRunByIDForUpdate(ctx context.Context, runID pgtype.Text)
 			&item.Latest,                 // 'latest', 'Latest', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
 			&item.OrganizationName,       // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CostEstimationEnabled,  // 'cost_estimation_enabled', 'CostEstimationEnabled', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.IngressAttributes,      // 'ingress_attributes', 'IngressAttributes', 'IngressAttributes', 'github.com/tofutf/tofutf/internal/sql/queries', 'IngressAttributes'
-			&item.RunStatusTimestamps,    // 'run_status_timestamps', 'RunStatusTimestamps', '[]RunStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]RunStatusTimestamps'
-			&item.PlanStatusTimestamps,   // 'plan_status_timestamps', 'PlanStatusTimestamps', '[]PhaseStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]PhaseStatusTimestamps'
-			&item.ApplyStatusTimestamps,  // 'apply_status_timestamps', 'ApplyStatusTimestamps', '[]PhaseStatusTimestamps', 'github.com/tofutf/tofutf/internal/sql/queries', '[]PhaseStatusTimestamps'
-			&item.RunVariables,           // 'run_variables', 'RunVariables', '[]RunVariables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]RunVariables'
+			&item.IngressAttributes,      // 'ingress_attributes', 'IngressAttributes', '*IngressAttributes', '', '*IngressAttributes'
+			&item.RunStatusTimestamps,    // 'run_status_timestamps', 'RunStatusTimestamps', '[]*RunStatusTimestamps', '', '[]*RunStatusTimestamps'
+			&item.PlanStatusTimestamps,   // 'plan_status_timestamps', 'PlanStatusTimestamps', '[]*PhaseStatusTimestamps', '', '[]*PhaseStatusTimestamps'
+			&item.ApplyStatusTimestamps,  // 'apply_status_timestamps', 'ApplyStatusTimestamps', '[]*PhaseStatusTimestamps', '', '[]*PhaseStatusTimestamps'
+			&item.RunVariables,           // 'run_variables', 'RunVariables', '[]*RunVariables', '', '[]*RunVariables'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}

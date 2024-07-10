@@ -18,7 +18,7 @@ type dbresult struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	SiteAdmin pgtype.Bool        `json:"site_admin"`
-	Teams     []pggen.Teams      `json:"teams"`
+	Teams     []*pggen.Teams     `json:"teams"`
 }
 
 func (result dbresult) toUser() *User {
@@ -30,7 +30,7 @@ func (result dbresult) toUser() *User {
 		SiteAdmin: result.SiteAdmin.Bool,
 	}
 	for _, tr := range result.Teams {
-		user.Teams = append(user.Teams, team.TeamRow(tr).ToTeam())
+		user.Teams = append(user.Teams, team.TeamRow(*tr).ToTeam())
 	}
 	return &user
 }

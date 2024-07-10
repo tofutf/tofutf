@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertWorkspaceVariableSQL = `INSERT INTO workspace_variables (
     variable_id,
@@ -79,7 +80,7 @@ WHERE variable_id = $1;`
 
 type FindWorkspaceVariableByVariableIDRow struct {
 	WorkspaceID pgtype.Text `json:"workspace_id"`
-	Variable    Variables   `json:"variable"`
+	Variable    *Variables  `json:"variable"`
 }
 
 // FindWorkspaceVariableByVariableID implements Querier.FindWorkspaceVariableByVariableID.
@@ -93,7 +94,7 @@ func (q *DBQuerier) FindWorkspaceVariableByVariableID(ctx context.Context, varia
 	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceVariableByVariableIDRow, error) {
 		var item FindWorkspaceVariableByVariableIDRow
 		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.Variable, // 'variable', 'Variable', 'Variables', 'github.com/tofutf/tofutf/internal/sql/queries', 'Variables'
+			&item.Variable, // 'variable', 'Variable', '*Variables', '', '*Variables'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -108,7 +109,7 @@ RETURNING wv.workspace_id, (v.*)::"variables" AS variable;`
 
 type DeleteWorkspaceVariableByIDRow struct {
 	WorkspaceID pgtype.Text `json:"workspace_id"`
-	Variable    Variables   `json:"variable"`
+	Variable    *Variables  `json:"variable"`
 }
 
 // DeleteWorkspaceVariableByID implements Querier.DeleteWorkspaceVariableByID.
@@ -122,7 +123,7 @@ func (q *DBQuerier) DeleteWorkspaceVariableByID(ctx context.Context, variableID 
 	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteWorkspaceVariableByIDRow, error) {
 		var item DeleteWorkspaceVariableByIDRow
 		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.Variable, // 'variable', 'Variable', 'Variables', 'github.com/tofutf/tofutf/internal/sql/queries', 'Variables'
+			&item.Variable, // 'variable', 'Variable', '*Variables', '', '*Variables'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}

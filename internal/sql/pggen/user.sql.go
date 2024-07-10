@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertUserSQL = `INSERT INTO users (
     user_id,
@@ -58,7 +59,7 @@ type FindUsersRow struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	SiteAdmin pgtype.Bool        `json:"site_admin"`
-	Teams     []Teams            `json:"teams"`
+	Teams     []*Teams           `json:"teams"`
 }
 
 // FindUsers implements Querier.FindUsers.
@@ -76,7 +77,7 @@ func (q *DBQuerier) FindUsers(ctx context.Context) ([]FindUsersRow, error) {
 			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+			&item.Teams,     // 'teams', 'Teams', '[]*Teams', '', '[]*Teams'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -104,7 +105,7 @@ type FindUsersByOrganizationRow struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	SiteAdmin pgtype.Bool        `json:"site_admin"`
-	Teams     []Teams            `json:"teams"`
+	Teams     []*Teams           `json:"teams"`
 }
 
 // FindUsersByOrganization implements Querier.FindUsersByOrganization.
@@ -122,7 +123,7 @@ func (q *DBQuerier) FindUsersByOrganization(ctx context.Context, organizationNam
 			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+			&item.Teams,     // 'teams', 'Teams', '[]*Teams', '', '[]*Teams'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -150,7 +151,7 @@ type FindUsersByTeamIDRow struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	SiteAdmin pgtype.Bool        `json:"site_admin"`
-	Teams     []Teams            `json:"teams"`
+	Teams     []*Teams           `json:"teams"`
 }
 
 // FindUsersByTeamID implements Querier.FindUsersByTeamID.
@@ -168,7 +169,7 @@ func (q *DBQuerier) FindUsersByTeamID(ctx context.Context, teamID pgtype.Text) (
 			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+			&item.Teams,     // 'teams', 'Teams', '[]*Teams', '', '[]*Teams'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -193,7 +194,7 @@ type FindUserByIDRow struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	SiteAdmin pgtype.Bool        `json:"site_admin"`
-	Teams     []Teams            `json:"teams"`
+	Teams     []*Teams           `json:"teams"`
 }
 
 // FindUserByID implements Querier.FindUserByID.
@@ -211,7 +212,7 @@ func (q *DBQuerier) FindUserByID(ctx context.Context, userID pgtype.Text) (FindU
 			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+			&item.Teams,     // 'teams', 'Teams', '[]*Teams', '', '[]*Teams'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -236,7 +237,7 @@ type FindUserByUsernameRow struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	SiteAdmin pgtype.Bool        `json:"site_admin"`
-	Teams     []Teams            `json:"teams"`
+	Teams     []*Teams           `json:"teams"`
 }
 
 // FindUserByUsername implements Querier.FindUserByUsername.
@@ -254,7 +255,7 @@ func (q *DBQuerier) FindUserByUsername(ctx context.Context, username pgtype.Text
 			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+			&item.Teams,     // 'teams', 'Teams', '[]*Teams', '', '[]*Teams'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -280,7 +281,7 @@ type FindUserByAuthenticationTokenIDRow struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	SiteAdmin pgtype.Bool        `json:"site_admin"`
-	Teams     []Teams            `json:"teams"`
+	Teams     []*Teams           `json:"teams"`
 }
 
 // FindUserByAuthenticationTokenID implements Querier.FindUserByAuthenticationTokenID.
@@ -298,7 +299,7 @@ func (q *DBQuerier) FindUserByAuthenticationTokenID(ctx context.Context, tokenID
 			&item.CreatedAt, // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.UpdatedAt, // 'updated_at', 'UpdatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
 			&item.SiteAdmin, // 'site_admin', 'SiteAdmin', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
-			&item.Teams,     // 'teams', 'Teams', '[]Teams', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Teams'
+			&item.Teams,     // 'teams', 'Teams', '[]*Teams', '', '[]*Teams'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}

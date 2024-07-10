@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertNotificationConfigurationSQL = `INSERT INTO notification_configurations (
     notification_configuration_id,
