@@ -48,6 +48,9 @@ type Config struct {
 	// skip checks for latest terraform version
 	DisableLatestChecker *bool
 
+	// EnableOtel enables the open telemetry integration.
+	EnableOtel bool
+
 	// ProviderProxy configures tofutf's built in provider proxy.
 	ProviderProxy struct {
 		URL           string
