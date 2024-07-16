@@ -16,7 +16,7 @@ require (
 	github.com/chromedp/chromedp v0.9.1
 	github.com/coreos/go-oidc/v3 v3.10.0
 	github.com/exaring/otelpgx v0.5.4
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20230830121038-6e30c5760c87
