@@ -175,7 +175,7 @@ func (s *Service) ListWorkspaceVariables(ctx context.Context, workspaceID string
 
 	vars, err := s.db.listWorkspaceVariables(ctx, workspaceID)
 	if err != nil {
-		s.logger.Error("err", err, "listing workspace variables", "subject", subject, "workspace_id", workspaceID)
+		s.logger.Error("listing workspace variables", "subject", subject, "workspace_id", workspaceID, slog.Any("err", err))
 		return nil, err
 	}
 
@@ -187,7 +187,7 @@ func (s *Service) ListWorkspaceVariables(ctx context.Context, workspaceID string
 func (s *Service) GetWorkspaceVariable(ctx context.Context, variableID string) (*WorkspaceVariable, error) {
 	wv, err := s.db.getWorkspaceVariable(ctx, variableID)
 	if err != nil {
-		s.logger.Error("err", err, "retrieving workspace variable", "variable_id", variableID)
+		s.logger.Error("retrieving workspace variable", "variable_id", variableID, slog.Any("err", err))
 		return nil, err
 	}
 
@@ -219,7 +219,7 @@ func (s *Service) DeleteWorkspaceVariable(ctx context.Context, variableID string
 		return nil
 	})
 	if err != nil {
-		s.logger.Error("err", err, "deleting workspace variable", "subject", subject, "variable_id", variableID)
+		s.logger.Error("deleting workspace variable", "subject", subject, "variable_id", variableID, slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Info("deleted workspace variable", "subject", subject, "workspace_id", wv.WorkspaceID, "variable", wv.Variable)
@@ -235,7 +235,7 @@ func (s *Service) createVariableSet(ctx context.Context, organization string, op
 
 	set, err := newSet(organization, opts)
 	if err != nil {
-		s.logger.Error("err", err, "constructing variable set", "subject", subject, "organization", organization)
+		s.logger.Error("constructing variable set", "subject", subject, "organization", organization, slog.Any("err", err))
 		return nil, err
 	}
 
@@ -249,7 +249,7 @@ func (s *Service) createVariableSet(ctx context.Context, organization string, op
 		return nil
 	})
 	if err != nil {
-		s.logger.Error("err", err, "creating variable set", "subject", subject, "set", set)
+		s.logger.Error("creating variable set", "subject", subject, "set", set, slog.Any("err", err))
 		return nil, err
 	}
 
@@ -289,7 +289,7 @@ func (s *Service) updateVariableSet(ctx context.Context, setID string, opts Upda
 		return s.db.updateVariableSet(ctx, &after)
 	})
 	if err != nil {
-		s.logger.Error("err", err, "updating variable set", "subject", subject, "set_id", setID)
+		s.logger.Error("updating variable set", "subject", subject, "set_id", setID, slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Info("updated variable set", "subject", subject, "before", before, "after", &after)
@@ -305,7 +305,7 @@ func (s *Service) listVariableSets(ctx context.Context, organization string) ([]
 
 	sets, err := s.db.listVariableSets(ctx, organization)
 	if err != nil {
-		s.logger.Error("err", err, "listing variable sets", "subject", subject, "organization", organization)
+		s.logger.Error("listing variable sets", "subject", subject, "organization", organization, slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Debug("listed variable sets", "subject", subject, "organization", organization, "count", len(sets))
@@ -321,7 +321,7 @@ func (s *Service) listWorkspaceVariableSets(ctx context.Context, workspaceID str
 
 	sets, err := s.db.listVariableSetsByWorkspace(ctx, workspaceID)
 	if err != nil {
-		s.logger.Error("err", err, "listing variable sets", "subject", subject, "workspace_id", workspaceID)
+		s.logger.Error("listing variable sets", "subject", subject, "workspace_id", workspaceID, slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Debug("listed variable sets", "subject", subject, "workspace_id", workspaceID, "count", len(sets))
@@ -332,13 +332,13 @@ func (s *Service) listWorkspaceVariableSets(ctx context.Context, workspaceID str
 func (s *Service) getVariableSet(ctx context.Context, setID string) (*VariableSet, error) {
 	set, err := s.db.getVariableSet(ctx, setID)
 	if err != nil {
-		s.logger.Error("err", err, "retrieving variable set", "set_id", setID)
+		s.logger.Error("retrieving variable set", "set_id", setID, slog.Any("err", err))
 		return nil, err
 	}
 
 	subject, err := s.organization.CanAccess(ctx, rbac.GetVariableSetAction, set.Organization)
 	if err != nil {
-		s.logger.Error("err", err, "retrieving variable set", "subject", subject, "set", set)
+		s.logger.Error("retrieving variable set", "subject", subject, "set", set, slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Debug("retrieved variable set", "subject", subject, "set", set)
@@ -349,7 +349,7 @@ func (s *Service) getVariableSet(ctx context.Context, setID string) (*VariableSe
 func (s *Service) getVariableSetByVariableID(ctx context.Context, variableID string) (*VariableSet, error) {
 	set, err := s.db.getVariableSetByVariableID(ctx, variableID)
 	if err != nil {
-		s.logger.Error("err", err, "retrieving variable set", "variable_id", variableID)
+		s.logger.Error("retrieving variable set", "variable_id", variableID, slog.Any("err", err))
 		return nil, err
 	}
 
@@ -366,7 +366,7 @@ func (s *Service) getVariableSetByVariableID(ctx context.Context, variableID str
 func (s *Service) deleteVariableSet(ctx context.Context, setID string) (*VariableSet, error) {
 	set, err := s.db.getVariableSet(ctx, setID)
 	if err != nil {
-		s.logger.Error("err", err, "retrieving variable set", "set_id", setID)
+		s.logger.Error("retrieving variable set", "set_id", setID, slog.Any("err", err))
 		return nil, err
 	}
 
@@ -376,7 +376,7 @@ func (s *Service) deleteVariableSet(ctx context.Context, setID string) (*Variabl
 	}
 
 	if err := s.db.deleteVariableSet(ctx, setID); err != nil {
-		s.logger.Error("err", err, "deleting variable set", "subject", subject, "set", set)
+		s.logger.Error("deleting variable set", "subject", subject, "set", set, slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Info("deleted variable set", "subject", subject, "set", set)
@@ -417,7 +417,7 @@ func (s *Service) createVariableSetVariable(ctx context.Context, setID string, o
 		return nil
 	})
 	if err != nil {
-		s.logger.Error("err", err, "adding variable to set", "set_id", setID)
+		s.logger.Error("adding variable to set", "set_id", setID, slog.Any("err", err))
 		return nil, err
 	}
 
@@ -461,7 +461,7 @@ func (s *Service) updateVariableSetVariable(ctx context.Context, variableID stri
 		return nil
 	})
 	if err != nil {
-		s.logger.Error("err", err, "updating variable set variable", "subject", subject, "variable_id", variableID)
+		s.logger.Error("updating variable set variable", "subject", subject, "variable_id", variableID, slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Info("updated variable set variable", "subject", subject, "set", set, "before", &before, "after", after)
@@ -483,7 +483,7 @@ func (s *Service) deleteVariableSetVariable(ctx context.Context, variableID stri
 	v := set.getVariable(variableID)
 
 	if err := s.db.deleteVariable(ctx, variableID); err != nil {
-		s.logger.Error("err", err, "deleting variable from set", "subject", subject, "variable", v, "set", set)
+		s.logger.Error("deleting variable from set", "subject", subject, "variable", v, "set", set, slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Info("deleted variable from set", "subject", subject, "variable", v, "set", set)
@@ -504,7 +504,7 @@ func (s *Service) applySetToWorkspaces(ctx context.Context, setID string, worksp
 	}
 
 	if err := s.db.createVariableSetWorkspaces(ctx, setID, workspaceIDs); err != nil {
-		s.logger.Error("err", err, "applying variable set to workspaces", "subject", subject, "set", set, "workspaces", workspaceIDs)
+		s.logger.Error("applying variable set to workspaces", "subject", subject, "set", set, "workspaces", workspaceIDs, slog.Any("err", err))
 		return err
 	}
 	s.logger.Info("applied variable set to workspaces", "subject", subject, "set", set, "workspaces", workspaceIDs)
@@ -525,7 +525,7 @@ func (s *Service) deleteSetFromWorkspaces(ctx context.Context, setID string, wor
 	}
 
 	if err := s.db.deleteVariableSetWorkspaces(ctx, setID, workspaceIDs); err != nil {
-		s.logger.Error("err", err, "removing variable set from workspaces", "subject", subject, "set", set, "workspaces", workspaceIDs)
+		s.logger.Error("removing variable set from workspaces", "subject", subject, "set", set, "workspaces", workspaceIDs, slog.Any("err", err))
 		return err
 	}
 	s.logger.Info("removed variable set from workspaces", "subject", subject, "set", set, "workspaces", workspaceIDs)
