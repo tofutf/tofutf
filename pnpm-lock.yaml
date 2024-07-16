@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@tailwindcss/typography':
-        specifier: ^0.5.12
-        version: 0.5.12(tailwindcss@3.4.5)
+        specifier: ^0.5.13
+        version: 0.5.13(tailwindcss@3.4.5)
       tailwindcss:
         specifier: ^3.4.5
         version: 3.4.5
@@ -59,8 +59,8 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
-  '@tailwindcss/typography@0.5.12':
-    resolution: {integrity: sha512-CNwpBpconcP7ppxmuq3qvaCxiRWnbhANpY/ruH4L5qs2GCiVDJXde/pjj2HWPV1+Q4G9+V/etrwUYopdcjAlyg==}
+  '@tailwindcss/typography@0.5.13':
+    resolution: {integrity: sha512-ADGcJ8dX21dVVHIwTRgzrcunY6YY9uSlAHHGVKvkA+vLc5qLwEszvKts40lx7z0qc4clpjclwLeK5rVCV2P/uw==}
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders'
 
@@ -499,7 +499,7 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@tailwindcss/typography@0.5.12(tailwindcss@3.4.5)':
+  '@tailwindcss/typography@0.5.13(tailwindcss@3.4.5)':
     dependencies:
       lodash.castarray: 4.4.0
       lodash.isplainobject: 4.0.6
