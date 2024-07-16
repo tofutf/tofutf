@@ -327,7 +327,7 @@ func (s *Service) FinishPhase(ctx context.Context, runID string, phase internal.
 		return nil
 	})
 	if err != nil {
-		s.logger.Error("finishing "+string(phase), "id", runID, "subject", "err", err)
+		s.logger.Error("finishing "+string(phase), "id", runID, "subject", slog.Any("err", err))
 		return nil, err
 	}
 	s.logger.Info("finished "+string(phase), "id", runID, "resource_changes", resourceReport, "output_changes", outputReport, "run_status", run.Status)
