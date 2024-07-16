@@ -146,7 +146,7 @@ func (g *Client) GetRepoTarball(ctx context.Context, opts vcs.GetRepoTarballOpti
 		SHA:    opts.Ref,
 	})
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("gitlab client failed to retrieve archive: %w", err)
 	}
 
 	// Gitlab tarball contents are contained within a top-level directory
