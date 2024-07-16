@@ -16,7 +16,7 @@ function start_caddy(){
 #    port_forward_local_port
 #
 function start_port_forward() {
-    coproc kubectl port-forward service/postgres-postgresql :5432 </dev/null 2>&1
+    coproc kubectl port-forward service/tofutf-postgresql :5432 </dev/null 2>&1
     port_forward_pid=$COPROC_PID
     while IFS='' read -r -t $PORT_FORWARD_TIMEOUT_SECONDS -u "${COPROC[0]}" LINE
     do
@@ -70,8 +70,8 @@ function kill_caddy() {
 trap kill_port_forward EXIT
 trap kill_caddy EXIT
 
-PGUSER=tofutf
-PGPASSWORD=$(kubectl get secrets postgres-postgresql -oyaml | yq '.data["password"]' -r | base64 -d)
+PGUSER=postgres
+PGPASSWORD=$(kubectl get secrets tofutf-postgresql -oyaml | yq '.data["postgres-password"]' -r | base64 -d)
 
 start_port_forward
 start_caddy
@@ -84,8 +84,9 @@ export OTF_LOG_HTTP_REQUESTS=true
 export OTF_SANDBOX=false
 export OTF_V=10
 export OTF_DATABASE="postgresql://$PGUSER:$PGPASSWORD@localhost:$port_forward_local_port/postgres"
-export OTF_OIDC_CLIENT_SECRET=$(kubectl get secrets tofutf-oidc-client-secret -oyaml | yq '.data.secret' -r | base64 -d)
+#export OTF_OIDC_CLIENT_SECRET=$(kubectl get secrets tofutf-oidc-client-secret -oyaml | yq '.data.secret' -r | base64 -d)
 export OTF_PROVIDER_PROXY_URL=https://registry.opentofu.org/v1/providers/
 export OTF_PROVIDER_PROXY_IS_ARTIFACTORY=false
+export OTF_SKIP_TLS_VERIFICATION=true
 
 air

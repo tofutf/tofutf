@@ -19,15 +19,15 @@ type (
 
 	// moduleRow is a row from a database query for modules.
 	moduleRow struct {
-		ModuleID         pgtype.Text            `json:"module_id"`
-		CreatedAt        pgtype.Timestamptz     `json:"created_at"`
-		UpdatedAt        pgtype.Timestamptz     `json:"updated_at"`
-		Name             pgtype.Text            `json:"name"`
-		Provider         pgtype.Text            `json:"provider"`
-		Status           pgtype.Text            `json:"status"`
-		OrganizationName pgtype.Text            `json:"organization_name"`
-		ModuleConnection pggen.RepoConnections  `json:"module_connection"`
-		Versions         []pggen.ModuleVersions `json:"versions"`
+		ModuleID         pgtype.Text             `json:"module_id"`
+		CreatedAt        pgtype.Timestamptz      `json:"created_at"`
+		UpdatedAt        pgtype.Timestamptz      `json:"updated_at"`
+		Name             pgtype.Text             `json:"name"`
+		Provider         pgtype.Text             `json:"provider"`
+		Status           pgtype.Text             `json:"status"`
+		OrganizationName pgtype.Text             `json:"organization_name"`
+		ModuleConnection *pggen.RepoConnections  `json:"module_connection"`
+		Versions         []*pggen.ModuleVersions `json:"versions"`
 	}
 )
 
@@ -190,7 +190,7 @@ func (row moduleRow) toModule() *Module {
 		Status:       ModuleStatus(row.Status.String),
 		Organization: row.OrganizationName.String,
 	}
-	if row.ModuleConnection != (pggen.RepoConnections{}) {
+	if row.ModuleConnection != nil {
 		module.Connection = &connections.Connection{
 			VCSProviderID: row.ModuleConnection.VCSProviderID.String,
 			Repo:          row.ModuleConnection.RepoPath.String,
@@ -212,7 +212,7 @@ func (row moduleRow) toModule() *Module {
 	return module
 }
 
-type byVersion []pggen.ModuleVersions
+type byVersion []*pggen.ModuleVersions
 
 func (v byVersion) Len() int      { return len(v) }
 func (v byVersion) Swap(i, j int) { v[i], v[j] = v[j], v[i] }

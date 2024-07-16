@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertVCSProviderSQL = `INSERT INTO vcs_providers (
     vcs_provider_id,
@@ -68,8 +69,8 @@ type FindVCSProvidersByOrganizationRow struct {
 	VCSKind          pgtype.Text        `json:"vcs_kind"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
 	GithubAppID      pgtype.Int8        `json:"github_app_id"`
-	GithubApp        GithubApps         `json:"github_app"`
-	GithubAppInstall GithubAppInstalls  `json:"github_app_install"`
+	GithubApp        *GithubApps        `json:"github_app"`
+	GithubAppInstall *GithubAppInstalls `json:"github_app_install"`
 }
 
 // FindVCSProvidersByOrganization implements Querier.FindVCSProvidersByOrganization.
@@ -89,8 +90,8 @@ func (q *DBQuerier) FindVCSProvidersByOrganization(ctx context.Context, organiza
 			&item.VCSKind,          // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.GithubAppID,      // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
-			&item.GithubApp,        // 'github_app', 'GithubApp', 'GithubApps', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubApps'
-			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', 'GithubAppInstalls', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubAppInstalls'
+			&item.GithubApp,        // 'github_app', 'GithubApp', '*GithubApps', '', '*GithubApps'
+			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', '*GithubAppInstalls', '', '*GithubAppInstalls'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -114,8 +115,8 @@ type FindVCSProvidersRow struct {
 	VCSKind          pgtype.Text        `json:"vcs_kind"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
 	GithubAppID      pgtype.Int8        `json:"github_app_id"`
-	GithubApp        GithubApps         `json:"github_app"`
-	GithubAppInstall GithubAppInstalls  `json:"github_app_install"`
+	GithubApp        *GithubApps        `json:"github_app"`
+	GithubAppInstall *GithubAppInstalls `json:"github_app_install"`
 }
 
 // FindVCSProviders implements Querier.FindVCSProviders.
@@ -135,8 +136,8 @@ func (q *DBQuerier) FindVCSProviders(ctx context.Context) ([]FindVCSProvidersRow
 			&item.VCSKind,          // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.GithubAppID,      // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
-			&item.GithubApp,        // 'github_app', 'GithubApp', 'GithubApps', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubApps'
-			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', 'GithubAppInstalls', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubAppInstalls'
+			&item.GithubApp,        // 'github_app', 'GithubApp', '*GithubApps', '', '*GithubApps'
+			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', '*GithubAppInstalls', '', '*GithubAppInstalls'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -161,8 +162,8 @@ type FindVCSProvidersByGithubAppInstallIDRow struct {
 	VCSKind          pgtype.Text        `json:"vcs_kind"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
 	GithubAppID      pgtype.Int8        `json:"github_app_id"`
-	GithubApp        GithubApps         `json:"github_app"`
-	GithubAppInstall GithubAppInstalls  `json:"github_app_install"`
+	GithubApp        *GithubApps        `json:"github_app"`
+	GithubAppInstall *GithubAppInstalls `json:"github_app_install"`
 }
 
 // FindVCSProvidersByGithubAppInstallID implements Querier.FindVCSProvidersByGithubAppInstallID.
@@ -182,8 +183,8 @@ func (q *DBQuerier) FindVCSProvidersByGithubAppInstallID(ctx context.Context, in
 			&item.VCSKind,          // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.GithubAppID,      // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
-			&item.GithubApp,        // 'github_app', 'GithubApp', 'GithubApps', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubApps'
-			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', 'GithubAppInstalls', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubAppInstalls'
+			&item.GithubApp,        // 'github_app', 'GithubApp', '*GithubApps', '', '*GithubApps'
+			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', '*GithubAppInstalls', '', '*GithubAppInstalls'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -208,8 +209,8 @@ type FindVCSProviderRow struct {
 	VCSKind          pgtype.Text        `json:"vcs_kind"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
 	GithubAppID      pgtype.Int8        `json:"github_app_id"`
-	GithubApp        GithubApps         `json:"github_app"`
-	GithubAppInstall GithubAppInstalls  `json:"github_app_install"`
+	GithubApp        *GithubApps        `json:"github_app"`
+	GithubAppInstall *GithubAppInstalls `json:"github_app_install"`
 }
 
 // FindVCSProvider implements Querier.FindVCSProvider.
@@ -229,8 +230,8 @@ func (q *DBQuerier) FindVCSProvider(ctx context.Context, vcsProviderID pgtype.Te
 			&item.VCSKind,          // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.GithubAppID,      // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
-			&item.GithubApp,        // 'github_app', 'GithubApp', 'GithubApps', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubApps'
-			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', 'GithubAppInstalls', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubAppInstalls'
+			&item.GithubApp,        // 'github_app', 'GithubApp', '*GithubApps', '', '*GithubApps'
+			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', '*GithubAppInstalls', '', '*GithubAppInstalls'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -256,8 +257,8 @@ type FindVCSProviderForUpdateRow struct {
 	VCSKind          pgtype.Text        `json:"vcs_kind"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
 	GithubAppID      pgtype.Int8        `json:"github_app_id"`
-	GithubApp        GithubApps         `json:"github_app"`
-	GithubAppInstall GithubAppInstalls  `json:"github_app_install"`
+	GithubApp        *GithubApps        `json:"github_app"`
+	GithubAppInstall *GithubAppInstalls `json:"github_app_install"`
 }
 
 // FindVCSProviderForUpdate implements Querier.FindVCSProviderForUpdate.
@@ -277,8 +278,8 @@ func (q *DBQuerier) FindVCSProviderForUpdate(ctx context.Context, vcsProviderID 
 			&item.VCSKind,          // 'vcs_kind', 'VCSKind', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.GithubAppID,      // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
-			&item.GithubApp,        // 'github_app', 'GithubApp', 'GithubApps', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubApps'
-			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', 'GithubAppInstalls', 'github.com/tofutf/tofutf/internal/sql/queries', 'GithubAppInstalls'
+			&item.GithubApp,        // 'github_app', 'GithubApp', '*GithubApps', '', '*GithubApps'
+			&item.GithubAppInstall, // 'github_app_install', 'GithubAppInstall', '*GithubAppInstalls', '', '*GithubAppInstalls'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}

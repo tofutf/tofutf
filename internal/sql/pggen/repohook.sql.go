@@ -11,6 +11,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertRepohookSQL = `WITH inserted AS (
     INSERT INTO repohooks (

@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertRepoConnectionSQL = `INSERT INTO repo_connections (
     vcs_provider_id,

@@ -161,15 +161,15 @@ func (db *pgdb) insertCVStatusTimestamp(ctx context.Context, cv *ConfigurationVe
 
 // pgRow represents the result of a database query for a configuration version.
 type pgRow struct {
-	ConfigurationVersionID               pgtype.Text                                  `json:"configuration_version_id"`
-	CreatedAt                            pgtype.Timestamptz                           `json:"created_at"`
-	AutoQueueRuns                        pgtype.Bool                                  `json:"auto_queue_runs"`
-	Source                               pgtype.Text                                  `json:"source"`
-	Speculative                          pgtype.Bool                                  `json:"speculative"`
-	Status                               pgtype.Text                                  `json:"status"`
-	WorkspaceID                          pgtype.Text                                  `json:"workspace_id"`
-	ConfigurationVersionStatusTimestamps []pggen.ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
-	IngressAttributes                    pggen.IngressAttributes                      `json:"ingress_attributes"`
+	ConfigurationVersionID               pgtype.Text                                   `json:"configuration_version_id"`
+	CreatedAt                            pgtype.Timestamptz                            `json:"created_at"`
+	AutoQueueRuns                        pgtype.Bool                                   `json:"auto_queue_runs"`
+	Source                               pgtype.Text                                   `json:"source"`
+	Speculative                          pgtype.Bool                                   `json:"speculative"`
+	Status                               pgtype.Text                                   `json:"status"`
+	WorkspaceID                          pgtype.Text                                   `json:"workspace_id"`
+	ConfigurationVersionStatusTimestamps []*pggen.ConfigurationVersionStatusTimestamps `json:"configuration_version_status_timestamps"`
+	IngressAttributes                    *pggen.IngressAttributes                      `json:"ingress_attributes"`
 }
 
 func (result pgRow) toConfigVersion() *ConfigurationVersion {
@@ -183,13 +183,13 @@ func (result pgRow) toConfigVersion() *ConfigurationVersion {
 		StatusTimestamps: unmarshalStatusTimestampRows(result.ConfigurationVersionStatusTimestamps),
 		WorkspaceID:      result.WorkspaceID.String,
 	}
-	if result.IngressAttributes != (pggen.IngressAttributes{}) {
+	if result.IngressAttributes != nil {
 		cv.IngressAttributes = NewIngressFromRow(result.IngressAttributes)
 	}
 	return &cv
 }
 
-func NewIngressFromRow(row pggen.IngressAttributes) *IngressAttributes {
+func NewIngressFromRow(row *pggen.IngressAttributes) *IngressAttributes {
 	return &IngressAttributes{
 		Branch:            row.Branch.String,
 		CommitSHA:         row.CommitSHA.String,
@@ -207,7 +207,7 @@ func NewIngressFromRow(row pggen.IngressAttributes) *IngressAttributes {
 	}
 }
 
-func unmarshalStatusTimestampRows(rows []pggen.ConfigurationVersionStatusTimestamps) (timestamps []ConfigurationVersionStatusTimestamp) {
+func unmarshalStatusTimestampRows(rows []*pggen.ConfigurationVersionStatusTimestamps) (timestamps []ConfigurationVersionStatusTimestamp) {
 	for _, ty := range rows {
 		timestamps = append(timestamps, ConfigurationVersionStatusTimestamp{
 			Status:    ConfigurationStatus(ty.Status.String),

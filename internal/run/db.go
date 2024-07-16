@@ -23,38 +23,38 @@ type (
 
 	// pgresult is the result of a database query for a run.
 	pgresult struct {
-		RunID                  pgtype.Text                   `json:"run_id"`
-		CreatedAt              pgtype.Timestamptz            `json:"created_at"`
-		CancelSignaledAt       pgtype.Timestamptz            `json:"cancel_signaled_at"`
-		IsDestroy              pgtype.Bool                   `json:"is_destroy"`
-		PositionInQueue        pgtype.Int4                   `json:"position_in_queue"`
-		Refresh                pgtype.Bool                   `json:"refresh"`
-		RefreshOnly            pgtype.Bool                   `json:"refresh_only"`
-		Source                 pgtype.Text                   `json:"source"`
-		Status                 pgtype.Text                   `json:"status"`
-		PlanStatus             pgtype.Text                   `json:"plan_status"`
-		ApplyStatus            pgtype.Text                   `json:"apply_status"`
-		ReplaceAddrs           []string                      `json:"replace_addrs"`
-		TargetAddrs            []string                      `json:"target_addrs"`
-		AutoApply              pgtype.Bool                   `json:"auto_apply"`
-		PlanResourceReport     pggen.Report                  `json:"plan_resource_report"`
-		PlanOutputReport       pggen.Report                  `json:"plan_output_report"`
-		ApplyResourceReport    pggen.Report                  `json:"apply_resource_report"`
-		ConfigurationVersionID pgtype.Text                   `json:"configuration_version_id"`
-		WorkspaceID            pgtype.Text                   `json:"workspace_id"`
-		PlanOnly               pgtype.Bool                   `json:"plan_only"`
-		CreatedBy              pgtype.Text                   `json:"created_by"`
-		TerraformVersion       pgtype.Text                   `json:"terraform_version"`
-		AllowEmptyApply        pgtype.Bool                   `json:"allow_empty_apply"`
-		ExecutionMode          pgtype.Text                   `json:"execution_mode"`
-		Latest                 pgtype.Bool                   `json:"latest"`
-		OrganizationName       pgtype.Text                   `json:"organization_name"`
-		CostEstimationEnabled  pgtype.Bool                   `json:"cost_estimation_enabled"`
-		IngressAttributes      pggen.IngressAttributes       `json:"ingress_attributes"`
-		RunStatusTimestamps    []pggen.RunStatusTimestamps   `json:"run_status_timestamps"`
-		PlanStatusTimestamps   []pggen.PhaseStatusTimestamps `json:"plan_status_timestamps"`
-		ApplyStatusTimestamps  []pggen.PhaseStatusTimestamps `json:"apply_status_timestamps"`
-		RunVariables           []pggen.RunVariables          `json:"run_variables"`
+		RunID                  pgtype.Text                    `json:"run_id"`
+		CreatedAt              pgtype.Timestamptz             `json:"created_at"`
+		CancelSignaledAt       pgtype.Timestamptz             `json:"cancel_signaled_at"`
+		IsDestroy              pgtype.Bool                    `json:"is_destroy"`
+		PositionInQueue        pgtype.Int4                    `json:"position_in_queue"`
+		Refresh                pgtype.Bool                    `json:"refresh"`
+		RefreshOnly            pgtype.Bool                    `json:"refresh_only"`
+		Source                 pgtype.Text                    `json:"source"`
+		Status                 pgtype.Text                    `json:"status"`
+		PlanStatus             pgtype.Text                    `json:"plan_status"`
+		ApplyStatus            pgtype.Text                    `json:"apply_status"`
+		ReplaceAddrs           []string                       `json:"replace_addrs"`
+		TargetAddrs            []string                       `json:"target_addrs"`
+		AutoApply              pgtype.Bool                    `json:"auto_apply"`
+		PlanResourceReport     *pggen.Report                  `json:"plan_resource_report"`
+		PlanOutputReport       *pggen.Report                  `json:"plan_output_report"`
+		ApplyResourceReport    *pggen.Report                  `json:"apply_resource_report"`
+		ConfigurationVersionID pgtype.Text                    `json:"configuration_version_id"`
+		WorkspaceID            pgtype.Text                    `json:"workspace_id"`
+		PlanOnly               pgtype.Bool                    `json:"plan_only"`
+		CreatedBy              pgtype.Text                    `json:"created_by"`
+		TerraformVersion       pgtype.Text                    `json:"terraform_version"`
+		AllowEmptyApply        pgtype.Bool                    `json:"allow_empty_apply"`
+		ExecutionMode          pgtype.Text                    `json:"execution_mode"`
+		Latest                 pgtype.Bool                    `json:"latest"`
+		OrganizationName       pgtype.Text                    `json:"organization_name"`
+		CostEstimationEnabled  pgtype.Bool                    `json:"cost_estimation_enabled"`
+		IngressAttributes      *pggen.IngressAttributes       `json:"ingress_attributes"`
+		RunStatusTimestamps    []*pggen.RunStatusTimestamps   `json:"run_status_timestamps"`
+		PlanStatusTimestamps   []*pggen.PhaseStatusTimestamps `json:"plan_status_timestamps"`
+		ApplyStatusTimestamps  []*pggen.PhaseStatusTimestamps `json:"apply_status_timestamps"`
+		RunVariables           []*pggen.RunVariables          `json:"run_variables"`
 	}
 )
 
@@ -84,14 +84,14 @@ func (result pgresult) toRun() *Run {
 			RunID:          result.RunID.String,
 			PhaseType:      internal.PlanPhase,
 			Status:         PhaseStatus(result.PlanStatus.String),
-			ResourceReport: reportFromDB(result.PlanResourceReport),
-			OutputReport:   reportFromDB(result.PlanOutputReport),
+			ResourceReport: reportFromDB(*result.PlanResourceReport),
+			OutputReport:   reportFromDB(*result.PlanOutputReport),
 		},
 		Apply: Phase{
 			RunID:          result.RunID.String,
 			PhaseType:      internal.ApplyPhase,
 			Status:         PhaseStatus(result.ApplyStatus.String),
-			ResourceReport: reportFromDB(result.ApplyResourceReport),
+			ResourceReport: reportFromDB(*result.ApplyResourceReport),
 		},
 	}
 	// convert run timestamps from db result and sort them according to
@@ -142,7 +142,7 @@ func (result pgresult) toRun() *Run {
 	if result.CancelSignaledAt.Valid {
 		run.CancelSignaledAt = internal.Time(result.CancelSignaledAt.Time.UTC())
 	}
-	if result.IngressAttributes != (pggen.IngressAttributes{}) {
+	if result.IngressAttributes != nil {
 		run.IngressAttributes = configversion.NewIngressFromRow(result.IngressAttributes)
 	}
 	return &run

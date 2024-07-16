@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertVariableSetSQL = `INSERT INTO variable_sets (
     variable_set_id,
@@ -64,13 +65,13 @@ FROM variable_sets vs
 WHERE organization_name = $1;`
 
 type FindVariableSetsByOrganizationRow struct {
-	VariableSetID    pgtype.Text `json:"variable_set_id"`
-	Global           pgtype.Bool `json:"global"`
-	Name             pgtype.Text `json:"name"`
-	Description      pgtype.Text `json:"description"`
-	OrganizationName pgtype.Text `json:"organization_name"`
-	Variables        []Variables `json:"variables"`
-	WorkspaceIds     []string    `json:"workspace_ids"`
+	VariableSetID    pgtype.Text  `json:"variable_set_id"`
+	Global           pgtype.Bool  `json:"global"`
+	Name             pgtype.Text  `json:"name"`
+	Description      pgtype.Text  `json:"description"`
+	OrganizationName pgtype.Text  `json:"organization_name"`
+	Variables        []*Variables `json:"variables"`
+	WorkspaceIds     []string     `json:"workspace_ids"`
 }
 
 // FindVariableSetsByOrganization implements Querier.FindVariableSetsByOrganization.
@@ -88,7 +89,7 @@ func (q *DBQuerier) FindVariableSetsByOrganization(ctx context.Context, organiza
 			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.Variables,        // 'variables', 'Variables', '[]*Variables', '', '[]*Variables'
 			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -137,13 +138,13 @@ WHERE vs.global IS true
 AND w.workspace_id = $1;`
 
 type FindVariableSetsByWorkspaceRow struct {
-	VariableSetID    pgtype.Text `json:"variable_set_id"`
-	Global           pgtype.Bool `json:"global"`
-	Name             pgtype.Text `json:"name"`
-	Description      pgtype.Text `json:"description"`
-	OrganizationName pgtype.Text `json:"organization_name"`
-	Variables        []Variables `json:"variables"`
-	WorkspaceIds     []string    `json:"workspace_ids"`
+	VariableSetID    pgtype.Text  `json:"variable_set_id"`
+	Global           pgtype.Bool  `json:"global"`
+	Name             pgtype.Text  `json:"name"`
+	Description      pgtype.Text  `json:"description"`
+	OrganizationName pgtype.Text  `json:"organization_name"`
+	Variables        []*Variables `json:"variables"`
+	WorkspaceIds     []string     `json:"workspace_ids"`
 }
 
 // FindVariableSetsByWorkspace implements Querier.FindVariableSetsByWorkspace.
@@ -161,7 +162,7 @@ func (q *DBQuerier) FindVariableSetsByWorkspace(ctx context.Context, workspaceID
 			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.Variables,        // 'variables', 'Variables', '[]*Variables', '', '[]*Variables'
 			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -189,13 +190,13 @@ FROM variable_sets vs
 WHERE vs.variable_set_id = $1;`
 
 type FindVariableSetBySetIDRow struct {
-	VariableSetID    pgtype.Text `json:"variable_set_id"`
-	Global           pgtype.Bool `json:"global"`
-	Name             pgtype.Text `json:"name"`
-	Description      pgtype.Text `json:"description"`
-	OrganizationName pgtype.Text `json:"organization_name"`
-	Variables        []Variables `json:"variables"`
-	WorkspaceIds     []string    `json:"workspace_ids"`
+	VariableSetID    pgtype.Text  `json:"variable_set_id"`
+	Global           pgtype.Bool  `json:"global"`
+	Name             pgtype.Text  `json:"name"`
+	Description      pgtype.Text  `json:"description"`
+	OrganizationName pgtype.Text  `json:"organization_name"`
+	Variables        []*Variables `json:"variables"`
+	WorkspaceIds     []string     `json:"workspace_ids"`
 }
 
 // FindVariableSetBySetID implements Querier.FindVariableSetBySetID.
@@ -213,7 +214,7 @@ func (q *DBQuerier) FindVariableSetBySetID(ctx context.Context, variableSetID pg
 			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.Variables,        // 'variables', 'Variables', '[]*Variables', '', '[]*Variables'
 			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -242,13 +243,13 @@ JOIN variable_set_variables vsv USING (variable_set_id)
 WHERE vsv.variable_id = $1;`
 
 type FindVariableSetByVariableIDRow struct {
-	VariableSetID    pgtype.Text `json:"variable_set_id"`
-	Global           pgtype.Bool `json:"global"`
-	Name             pgtype.Text `json:"name"`
-	Description      pgtype.Text `json:"description"`
-	OrganizationName pgtype.Text `json:"organization_name"`
-	Variables        []Variables `json:"variables"`
-	WorkspaceIds     []string    `json:"workspace_ids"`
+	VariableSetID    pgtype.Text  `json:"variable_set_id"`
+	Global           pgtype.Bool  `json:"global"`
+	Name             pgtype.Text  `json:"name"`
+	Description      pgtype.Text  `json:"description"`
+	OrganizationName pgtype.Text  `json:"organization_name"`
+	Variables        []*Variables `json:"variables"`
+	WorkspaceIds     []string     `json:"workspace_ids"`
 }
 
 // FindVariableSetByVariableID implements Querier.FindVariableSetByVariableID.
@@ -266,7 +267,7 @@ func (q *DBQuerier) FindVariableSetByVariableID(ctx context.Context, variableID 
 			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.Variables,        // 'variables', 'Variables', '[]*Variables', '', '[]*Variables'
 			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -295,13 +296,13 @@ WHERE variable_set_id = $1
 FOR UPDATE OF vs;`
 
 type FindVariableSetForUpdateRow struct {
-	VariableSetID    pgtype.Text `json:"variable_set_id"`
-	Global           pgtype.Bool `json:"global"`
-	Name             pgtype.Text `json:"name"`
-	Description      pgtype.Text `json:"description"`
-	OrganizationName pgtype.Text `json:"organization_name"`
-	Variables        []Variables `json:"variables"`
-	WorkspaceIds     []string    `json:"workspace_ids"`
+	VariableSetID    pgtype.Text  `json:"variable_set_id"`
+	Global           pgtype.Bool  `json:"global"`
+	Name             pgtype.Text  `json:"name"`
+	Description      pgtype.Text  `json:"description"`
+	OrganizationName pgtype.Text  `json:"organization_name"`
+	Variables        []*Variables `json:"variables"`
+	WorkspaceIds     []string     `json:"workspace_ids"`
 }
 
 // FindVariableSetForUpdate implements Querier.FindVariableSetForUpdate.
@@ -319,7 +320,7 @@ func (q *DBQuerier) FindVariableSetForUpdate(ctx context.Context, variableSetID 
 			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Description,      // 'description', 'Description', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.Variables,        // 'variables', 'Variables', '[]Variables', 'github.com/tofutf/tofutf/internal/sql/queries', '[]Variables'
+			&item.Variables,        // 'variables', 'Variables', '[]*Variables', '', '[]*Variables'
 			&item.WorkspaceIds,     // 'workspace_ids', 'WorkspaceIds', '[]string', '', '[]string'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

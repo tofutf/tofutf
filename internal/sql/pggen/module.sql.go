@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertModuleSQL = `INSERT INTO modules (
     module_id,
@@ -138,8 +139,8 @@ type ListModulesByOrganizationRow struct {
 	Provider         pgtype.Text        `json:"provider"`
 	Status           pgtype.Text        `json:"status"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
-	ModuleConnection RepoConnections    `json:"module_connection"`
-	Versions         []ModuleVersions   `json:"versions"`
+	ModuleConnection *RepoConnections   `json:"module_connection"`
+	Versions         []*ModuleVersions  `json:"versions"`
 }
 
 // ListModulesByOrganization implements Querier.ListModulesByOrganization.
@@ -159,8 +160,8 @@ func (q *DBQuerier) ListModulesByOrganization(ctx context.Context, organizationN
 			&item.Provider,         // 'provider', 'Provider', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
-			&item.Versions,         // 'versions', 'Versions', '[]ModuleVersions', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ModuleVersions'
+			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', '*RepoConnections', '', '*RepoConnections'
+			&item.Versions,         // 'versions', 'Versions', '[]*ModuleVersions', '', '[]*ModuleVersions'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -203,8 +204,8 @@ type FindModuleByNameRow struct {
 	Provider         pgtype.Text        `json:"provider"`
 	Status           pgtype.Text        `json:"status"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
-	ModuleConnection RepoConnections    `json:"module_connection"`
-	Versions         []ModuleVersions   `json:"versions"`
+	ModuleConnection *RepoConnections   `json:"module_connection"`
+	Versions         []*ModuleVersions  `json:"versions"`
 }
 
 // FindModuleByName implements Querier.FindModuleByName.
@@ -224,8 +225,8 @@ func (q *DBQuerier) FindModuleByName(ctx context.Context, params FindModuleByNam
 			&item.Provider,         // 'provider', 'Provider', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
-			&item.Versions,         // 'versions', 'Versions', '[]ModuleVersions', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ModuleVersions'
+			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', '*RepoConnections', '', '*RepoConnections'
+			&item.Versions,         // 'versions', 'Versions', '[]*ModuleVersions', '', '[]*ModuleVersions'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -260,8 +261,8 @@ type FindModuleByIDRow struct {
 	Provider         pgtype.Text        `json:"provider"`
 	Status           pgtype.Text        `json:"status"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
-	ModuleConnection RepoConnections    `json:"module_connection"`
-	Versions         []ModuleVersions   `json:"versions"`
+	ModuleConnection *RepoConnections   `json:"module_connection"`
+	Versions         []*ModuleVersions  `json:"versions"`
 }
 
 // FindModuleByID implements Querier.FindModuleByID.
@@ -281,8 +282,8 @@ func (q *DBQuerier) FindModuleByID(ctx context.Context, id pgtype.Text) (FindMod
 			&item.Provider,         // 'provider', 'Provider', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
-			&item.Versions,         // 'versions', 'Versions', '[]ModuleVersions', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ModuleVersions'
+			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', '*RepoConnections', '', '*RepoConnections'
+			&item.Versions,         // 'versions', 'Versions', '[]*ModuleVersions', '', '[]*ModuleVersions'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -318,8 +319,8 @@ type FindModuleByConnectionRow struct {
 	Provider         pgtype.Text        `json:"provider"`
 	Status           pgtype.Text        `json:"status"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
-	ModuleConnection RepoConnections    `json:"module_connection"`
-	Versions         []ModuleVersions   `json:"versions"`
+	ModuleConnection *RepoConnections   `json:"module_connection"`
+	Versions         []*ModuleVersions  `json:"versions"`
 }
 
 // FindModuleByConnection implements Querier.FindModuleByConnection.
@@ -339,8 +340,8 @@ func (q *DBQuerier) FindModuleByConnection(ctx context.Context, vcsProviderID pg
 			&item.Provider,         // 'provider', 'Provider', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
-			&item.Versions,         // 'versions', 'Versions', '[]ModuleVersions', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ModuleVersions'
+			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', '*RepoConnections', '', '*RepoConnections'
+			&item.Versions,         // 'versions', 'Versions', '[]*ModuleVersions', '', '[]*ModuleVersions'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -376,8 +377,8 @@ type FindModuleByModuleVersionIDRow struct {
 	Provider         pgtype.Text        `json:"provider"`
 	Status           pgtype.Text        `json:"status"`
 	OrganizationName pgtype.Text        `json:"organization_name"`
-	ModuleConnection RepoConnections    `json:"module_connection"`
-	Versions         []ModuleVersions   `json:"versions"`
+	ModuleConnection *RepoConnections   `json:"module_connection"`
+	Versions         []*ModuleVersions  `json:"versions"`
 }
 
 // FindModuleByModuleVersionID implements Querier.FindModuleByModuleVersionID.
@@ -397,8 +398,8 @@ func (q *DBQuerier) FindModuleByModuleVersionID(ctx context.Context, moduleVersi
 			&item.Provider,         // 'provider', 'Provider', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,           // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', 'RepoConnections', 'github.com/tofutf/tofutf/internal/sql/queries', 'RepoConnections'
-			&item.Versions,         // 'versions', 'Versions', '[]ModuleVersions', 'github.com/tofutf/tofutf/internal/sql/queries', '[]ModuleVersions'
+			&item.ModuleConnection, // 'module_connection', 'ModuleConnection', '*RepoConnections', '', '*RepoConnections'
+			&item.Versions,         // 'versions', 'Versions', '[]*ModuleVersions', '', '[]*ModuleVersions'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}

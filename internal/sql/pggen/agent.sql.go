@@ -13,6 +13,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 // Querier is a typesafe Go interface backed by SQL queries.
 type Querier interface {
@@ -485,23 +486,16 @@ type genericConn interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-
-	LoadType(ctx context.Context, typeName string) (*pgtype.Type, error)
-	TypeMap() *pgtype.Map
 }
 
 // NewQuerier creates a DBQuerier that implements Querier.
 func NewQuerier(ctx context.Context, conn genericConn) (*DBQuerier, error) {
-	if err := register(ctx, conn); err != nil {
-		return nil, fmt.Errorf("failed to create new querier: %w", err)
-	}
-
 	return &DBQuerier{
 		conn: conn,
 	}, nil
 }
 
-type typeHook func(ctx context.Context, conn genericConn) error
+type typeHook func(ctx context.Context, conn RegisterConn) error
 
 var typeHooks []typeHook
 
@@ -509,7 +503,13 @@ func addHook(hook typeHook) {
 	typeHooks = append(typeHooks, hook)
 }
 
-func register(ctx context.Context, conn genericConn) error {
+type RegisterConn interface {
+	LoadType(ctx context.Context, typeName string) (*pgtype.Type, error)
+	TypeMap() *pgtype.Map
+}
+
+func Register(ctx context.Context, conn RegisterConn) error {
+
 	for _, hook := range typeHooks {
 		if err := hook(ctx, conn); err != nil {
 			return err
@@ -681,7 +681,7 @@ type Variables struct {
 }
 
 // codec_newConfigurationVersionStatusTimestamps is a codec for the composite type of the same name
-func codec_newConfigurationVersionStatusTimestamps(conn genericConn) (pgtype.Codec, error) {
+func codec_newConfigurationVersionStatusTimestamps(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -721,7 +721,7 @@ func codec_newConfigurationVersionStatusTimestamps(conn genericConn) (pgtype.Cod
 
 func register_newConfigurationVersionStatusTimestamps(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -741,7 +741,7 @@ func init() {
 }
 
 // codec_newGithubAppInstalls is a codec for the composite type of the same name
-func codec_newGithubAppInstalls(conn genericConn) (pgtype.Codec, error) {
+func codec_newGithubAppInstalls(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("int8")
 	if !ok {
@@ -801,7 +801,7 @@ func codec_newGithubAppInstalls(conn genericConn) (pgtype.Codec, error) {
 
 func register_newGithubAppInstalls(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -821,7 +821,7 @@ func init() {
 }
 
 // codec_newGithubApps is a codec for the composite type of the same name
-func codec_newGithubApps(conn genericConn) (pgtype.Codec, error) {
+func codec_newGithubApps(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("int8")
 	if !ok {
@@ -881,7 +881,7 @@ func codec_newGithubApps(conn genericConn) (pgtype.Codec, error) {
 
 func register_newGithubApps(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -901,7 +901,7 @@ func init() {
 }
 
 // codec_newIngressAttributes is a codec for the composite type of the same name
-func codec_newIngressAttributes(conn genericConn) (pgtype.Codec, error) {
+func codec_newIngressAttributes(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1051,7 +1051,7 @@ func codec_newIngressAttributes(conn genericConn) (pgtype.Codec, error) {
 
 func register_newIngressAttributes(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1071,7 +1071,7 @@ func init() {
 }
 
 // codec_newModuleVersions is a codec for the composite type of the same name
-func codec_newModuleVersions(conn genericConn) (pgtype.Codec, error) {
+func codec_newModuleVersions(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1151,7 +1151,7 @@ func codec_newModuleVersions(conn genericConn) (pgtype.Codec, error) {
 
 func register_newModuleVersions(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1171,7 +1171,7 @@ func init() {
 }
 
 // codec_newPhaseStatusTimestamps is a codec for the composite type of the same name
-func codec_newPhaseStatusTimestamps(conn genericConn) (pgtype.Codec, error) {
+func codec_newPhaseStatusTimestamps(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1221,7 +1221,7 @@ func codec_newPhaseStatusTimestamps(conn genericConn) (pgtype.Codec, error) {
 
 func register_newPhaseStatusTimestamps(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1241,7 +1241,7 @@ func init() {
 }
 
 // codec_newRepoConnections is a codec for the composite type of the same name
-func codec_newRepoConnections(conn genericConn) (pgtype.Codec, error) {
+func codec_newRepoConnections(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1291,7 +1291,7 @@ func codec_newRepoConnections(conn genericConn) (pgtype.Codec, error) {
 
 func register_newRepoConnections(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1311,7 +1311,7 @@ func init() {
 }
 
 // codec_newReport is a codec for the composite type of the same name
-func codec_newReport(conn genericConn) (pgtype.Codec, error) {
+func codec_newReport(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("int4")
 	if !ok {
@@ -1351,7 +1351,7 @@ func codec_newReport(conn genericConn) (pgtype.Codec, error) {
 
 func register_newReport(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1371,7 +1371,7 @@ func init() {
 }
 
 // codec_newRunStatusTimestamps is a codec for the composite type of the same name
-func codec_newRunStatusTimestamps(conn genericConn) (pgtype.Codec, error) {
+func codec_newRunStatusTimestamps(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1411,7 +1411,7 @@ func codec_newRunStatusTimestamps(conn genericConn) (pgtype.Codec, error) {
 
 func register_newRunStatusTimestamps(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1431,7 +1431,7 @@ func init() {
 }
 
 // codec_newRunVariables is a codec for the composite type of the same name
-func codec_newRunVariables(conn genericConn) (pgtype.Codec, error) {
+func codec_newRunVariables(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1471,7 +1471,7 @@ func codec_newRunVariables(conn genericConn) (pgtype.Codec, error) {
 
 func register_newRunVariables(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1491,7 +1491,7 @@ func init() {
 }
 
 // codec_newRuns is a codec for the composite type of the same name
-func codec_newRuns(conn genericConn) (pgtype.Codec, error) {
+func codec_newRuns(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1691,7 +1691,7 @@ func codec_newRuns(conn genericConn) (pgtype.Codec, error) {
 
 func register_newRuns(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1711,7 +1711,7 @@ func init() {
 }
 
 // codec_newStateVersionOutputs is a codec for the composite type of the same name
-func codec_newStateVersionOutputs(conn genericConn) (pgtype.Codec, error) {
+func codec_newStateVersionOutputs(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1781,7 +1781,7 @@ func codec_newStateVersionOutputs(conn genericConn) (pgtype.Codec, error) {
 
 func register_newStateVersionOutputs(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1801,7 +1801,7 @@ func init() {
 }
 
 // codec_newTeams is a codec for the composite type of the same name
-func codec_newTeams(conn genericConn) (pgtype.Codec, error) {
+func codec_newTeams(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -1931,7 +1931,7 @@ func codec_newTeams(conn genericConn) (pgtype.Codec, error) {
 
 func register_newTeams(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -1951,7 +1951,7 @@ func init() {
 }
 
 // codec_newUsers is a codec for the composite type of the same name
-func codec_newUsers(conn genericConn) (pgtype.Codec, error) {
+func codec_newUsers(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -2011,7 +2011,7 @@ func codec_newUsers(conn genericConn) (pgtype.Codec, error) {
 
 func register_newUsers(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -2031,7 +2031,7 @@ func init() {
 }
 
 // codec_newVariables is a codec for the composite type of the same name
-func codec_newVariables(conn genericConn) (pgtype.Codec, error) {
+func codec_newVariables(conn RegisterConn) (pgtype.Codec, error) {
 
 	field0, ok := conn.TypeMap().TypeForName("text")
 	if !ok {
@@ -2121,7 +2121,7 @@ func codec_newVariables(conn genericConn) (pgtype.Codec, error) {
 
 func register_newVariables(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
@@ -2140,8 +2140,8 @@ func init() {
 	addHook(register_newVariables)
 }
 
-// codec_newConfigurationVersionStatusTimestampsArray is a codec for the composite type of the same name
-func codec_newConfigurationVersionStatusTimestampsArray(conn genericConn) (pgtype.Codec, error) {
+// codec_newConfigurationVersionStatusTimestampsPtrArray is a codec for the composite type of the same name
+func codec_newConfigurationVersionStatusTimestampsPtrArray(conn RegisterConn) (pgtype.Codec, error) {
 	elementType, ok := conn.TypeMap().TypeForName("configuration_version_status_timestamps")
 	if !ok {
 		return nil, fmt.Errorf("type not found: configuration_version_status_timestamps")
@@ -2152,16 +2152,16 @@ func codec_newConfigurationVersionStatusTimestampsArray(conn genericConn) (pgtyp
 	}, nil
 }
 
-func register_newConfigurationVersionStatusTimestampsArray(
+func register_newConfigurationVersionStatusTimestampsPtrArray(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
 		"\"_configuration_version_status_timestamps\"",
 	)
 	if err != nil {
-		return fmt.Errorf("newConfigurationVersionStatusTimestampsArray failed to load type: %w", err)
+		return fmt.Errorf("newConfigurationVersionStatusTimestampsPtrArray failed to load type: %w", err)
 	}
 
 	conn.TypeMap().RegisterType(t)
@@ -2170,11 +2170,11 @@ func register_newConfigurationVersionStatusTimestampsArray(
 }
 
 func init() {
-	addHook(register_newConfigurationVersionStatusTimestampsArray)
+	addHook(register_newConfigurationVersionStatusTimestampsPtrArray)
 }
 
-// codec_newModuleVersionsArray is a codec for the composite type of the same name
-func codec_newModuleVersionsArray(conn genericConn) (pgtype.Codec, error) {
+// codec_newModuleVersionsPtrArray is a codec for the composite type of the same name
+func codec_newModuleVersionsPtrArray(conn RegisterConn) (pgtype.Codec, error) {
 	elementType, ok := conn.TypeMap().TypeForName("module_versions")
 	if !ok {
 		return nil, fmt.Errorf("type not found: module_versions")
@@ -2185,16 +2185,16 @@ func codec_newModuleVersionsArray(conn genericConn) (pgtype.Codec, error) {
 	}, nil
 }
 
-func register_newModuleVersionsArray(
+func register_newModuleVersionsPtrArray(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
 		"\"_module_versions\"",
 	)
 	if err != nil {
-		return fmt.Errorf("newModuleVersionsArray failed to load type: %w", err)
+		return fmt.Errorf("newModuleVersionsPtrArray failed to load type: %w", err)
 	}
 
 	conn.TypeMap().RegisterType(t)
@@ -2203,11 +2203,11 @@ func register_newModuleVersionsArray(
 }
 
 func init() {
-	addHook(register_newModuleVersionsArray)
+	addHook(register_newModuleVersionsPtrArray)
 }
 
-// codec_newPhaseStatusTimestampsArray is a codec for the composite type of the same name
-func codec_newPhaseStatusTimestampsArray(conn genericConn) (pgtype.Codec, error) {
+// codec_newPhaseStatusTimestampsPtrArray is a codec for the composite type of the same name
+func codec_newPhaseStatusTimestampsPtrArray(conn RegisterConn) (pgtype.Codec, error) {
 	elementType, ok := conn.TypeMap().TypeForName("phase_status_timestamps")
 	if !ok {
 		return nil, fmt.Errorf("type not found: phase_status_timestamps")
@@ -2218,16 +2218,16 @@ func codec_newPhaseStatusTimestampsArray(conn genericConn) (pgtype.Codec, error)
 	}, nil
 }
 
-func register_newPhaseStatusTimestampsArray(
+func register_newPhaseStatusTimestampsPtrArray(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
 		"\"_phase_status_timestamps\"",
 	)
 	if err != nil {
-		return fmt.Errorf("newPhaseStatusTimestampsArray failed to load type: %w", err)
+		return fmt.Errorf("newPhaseStatusTimestampsPtrArray failed to load type: %w", err)
 	}
 
 	conn.TypeMap().RegisterType(t)
@@ -2236,11 +2236,11 @@ func register_newPhaseStatusTimestampsArray(
 }
 
 func init() {
-	addHook(register_newPhaseStatusTimestampsArray)
+	addHook(register_newPhaseStatusTimestampsPtrArray)
 }
 
-// codec_newRunStatusTimestampsArray is a codec for the composite type of the same name
-func codec_newRunStatusTimestampsArray(conn genericConn) (pgtype.Codec, error) {
+// codec_newRunStatusTimestampsPtrArray is a codec for the composite type of the same name
+func codec_newRunStatusTimestampsPtrArray(conn RegisterConn) (pgtype.Codec, error) {
 	elementType, ok := conn.TypeMap().TypeForName("run_status_timestamps")
 	if !ok {
 		return nil, fmt.Errorf("type not found: run_status_timestamps")
@@ -2251,16 +2251,16 @@ func codec_newRunStatusTimestampsArray(conn genericConn) (pgtype.Codec, error) {
 	}, nil
 }
 
-func register_newRunStatusTimestampsArray(
+func register_newRunStatusTimestampsPtrArray(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
 		"\"_run_status_timestamps\"",
 	)
 	if err != nil {
-		return fmt.Errorf("newRunStatusTimestampsArray failed to load type: %w", err)
+		return fmt.Errorf("newRunStatusTimestampsPtrArray failed to load type: %w", err)
 	}
 
 	conn.TypeMap().RegisterType(t)
@@ -2269,11 +2269,11 @@ func register_newRunStatusTimestampsArray(
 }
 
 func init() {
-	addHook(register_newRunStatusTimestampsArray)
+	addHook(register_newRunStatusTimestampsPtrArray)
 }
 
-// codec_newRunVariablesArray is a codec for the composite type of the same name
-func codec_newRunVariablesArray(conn genericConn) (pgtype.Codec, error) {
+// codec_newRunVariablesPtrArray is a codec for the composite type of the same name
+func codec_newRunVariablesPtrArray(conn RegisterConn) (pgtype.Codec, error) {
 	elementType, ok := conn.TypeMap().TypeForName("run_variables")
 	if !ok {
 		return nil, fmt.Errorf("type not found: run_variables")
@@ -2284,16 +2284,16 @@ func codec_newRunVariablesArray(conn genericConn) (pgtype.Codec, error) {
 	}, nil
 }
 
-func register_newRunVariablesArray(
+func register_newRunVariablesPtrArray(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
 		"\"_run_variables\"",
 	)
 	if err != nil {
-		return fmt.Errorf("newRunVariablesArray failed to load type: %w", err)
+		return fmt.Errorf("newRunVariablesPtrArray failed to load type: %w", err)
 	}
 
 	conn.TypeMap().RegisterType(t)
@@ -2302,11 +2302,11 @@ func register_newRunVariablesArray(
 }
 
 func init() {
-	addHook(register_newRunVariablesArray)
+	addHook(register_newRunVariablesPtrArray)
 }
 
-// codec_newStateVersionOutputsArray is a codec for the composite type of the same name
-func codec_newStateVersionOutputsArray(conn genericConn) (pgtype.Codec, error) {
+// codec_newStateVersionOutputsPtrArray is a codec for the composite type of the same name
+func codec_newStateVersionOutputsPtrArray(conn RegisterConn) (pgtype.Codec, error) {
 	elementType, ok := conn.TypeMap().TypeForName("state_version_outputs")
 	if !ok {
 		return nil, fmt.Errorf("type not found: state_version_outputs")
@@ -2317,16 +2317,16 @@ func codec_newStateVersionOutputsArray(conn genericConn) (pgtype.Codec, error) {
 	}, nil
 }
 
-func register_newStateVersionOutputsArray(
+func register_newStateVersionOutputsPtrArray(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
 		"\"_state_version_outputs\"",
 	)
 	if err != nil {
-		return fmt.Errorf("newStateVersionOutputsArray failed to load type: %w", err)
+		return fmt.Errorf("newStateVersionOutputsPtrArray failed to load type: %w", err)
 	}
 
 	conn.TypeMap().RegisterType(t)
@@ -2335,11 +2335,11 @@ func register_newStateVersionOutputsArray(
 }
 
 func init() {
-	addHook(register_newStateVersionOutputsArray)
+	addHook(register_newStateVersionOutputsPtrArray)
 }
 
-// codec_newTeamsArray is a codec for the composite type of the same name
-func codec_newTeamsArray(conn genericConn) (pgtype.Codec, error) {
+// codec_newTeamsPtrArray is a codec for the composite type of the same name
+func codec_newTeamsPtrArray(conn RegisterConn) (pgtype.Codec, error) {
 	elementType, ok := conn.TypeMap().TypeForName("teams")
 	if !ok {
 		return nil, fmt.Errorf("type not found: teams")
@@ -2350,16 +2350,16 @@ func codec_newTeamsArray(conn genericConn) (pgtype.Codec, error) {
 	}, nil
 }
 
-func register_newTeamsArray(
+func register_newTeamsPtrArray(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
 		"\"_teams\"",
 	)
 	if err != nil {
-		return fmt.Errorf("newTeamsArray failed to load type: %w", err)
+		return fmt.Errorf("newTeamsPtrArray failed to load type: %w", err)
 	}
 
 	conn.TypeMap().RegisterType(t)
@@ -2368,11 +2368,11 @@ func register_newTeamsArray(
 }
 
 func init() {
-	addHook(register_newTeamsArray)
+	addHook(register_newTeamsPtrArray)
 }
 
-// codec_newVariablesArray is a codec for the composite type of the same name
-func codec_newVariablesArray(conn genericConn) (pgtype.Codec, error) {
+// codec_newVariablesPtrArray is a codec for the composite type of the same name
+func codec_newVariablesPtrArray(conn RegisterConn) (pgtype.Codec, error) {
 	elementType, ok := conn.TypeMap().TypeForName("variables")
 	if !ok {
 		return nil, fmt.Errorf("type not found: variables")
@@ -2383,16 +2383,16 @@ func codec_newVariablesArray(conn genericConn) (pgtype.Codec, error) {
 	}, nil
 }
 
-func register_newVariablesArray(
+func register_newVariablesPtrArray(
 	ctx context.Context,
-	conn genericConn,
+	conn RegisterConn,
 ) error {
 	t, err := conn.LoadType(
 		ctx,
 		"\"_variables\"",
 	)
 	if err != nil {
-		return fmt.Errorf("newVariablesArray failed to load type: %w", err)
+		return fmt.Errorf("newVariablesPtrArray failed to load type: %w", err)
 	}
 
 	conn.TypeMap().RegisterType(t)
@@ -2401,7 +2401,7 @@ func register_newVariablesArray(
 }
 
 func init() {
-	addHook(register_newVariablesArray)
+	addHook(register_newVariablesPtrArray)
 }
 
 const insertAgentSQL = `INSERT INTO agents (

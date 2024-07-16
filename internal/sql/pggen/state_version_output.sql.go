@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertStateVersionOutputSQL = `INSERT INTO state_version_outputs (
     state_version_output_id,

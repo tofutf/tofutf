@@ -19,13 +19,13 @@ type (
 
 	// pgRow is a row from a postgres query for a state version.
 	pgRow struct {
-		StateVersionID      pgtype.Text                 `json:"state_version_id"`
-		CreatedAt           pgtype.Timestamptz          `json:"created_at"`
-		Serial              pgtype.Int4                 `json:"serial"`
-		State               []byte                      `json:"state"`
-		WorkspaceID         pgtype.Text                 `json:"workspace_id"`
-		Status              pgtype.Text                 `json:"status"`
-		StateVersionOutputs []pggen.StateVersionOutputs `json:"state_version_outputs"`
+		StateVersionID      pgtype.Text                  `json:"state_version_id"`
+		CreatedAt           pgtype.Timestamptz           `json:"created_at"`
+		Serial              pgtype.Int4                  `json:"serial"`
+		State               []byte                       `json:"state"`
+		WorkspaceID         pgtype.Text                  `json:"workspace_id"`
+		Status              pgtype.Text                  `json:"status"`
+		StateVersionOutputs []*pggen.StateVersionOutputs `json:"state_version_outputs"`
 	}
 )
 
@@ -40,7 +40,7 @@ func (row pgRow) toVersion() *Version {
 		Outputs:     make(map[string]*Output, len(row.StateVersionOutputs)),
 	}
 	for _, r := range row.StateVersionOutputs {
-		sv.Outputs[r.Name.String] = outputRow(r).toOutput()
+		sv.Outputs[r.Name.String] = outputRow(*r).toOutput()
 	}
 	return &sv
 }

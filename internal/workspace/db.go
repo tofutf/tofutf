@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tofutf/tofutf/internal"
@@ -18,41 +19,41 @@ type (
 
 	// pgresult represents the result of a database query for a workspace.
 	pgresult struct {
-		WorkspaceID                pgtype.Text           `json:"workspace_id"`
-		CreatedAt                  pgtype.Timestamptz    `json:"created_at"`
-		UpdatedAt                  pgtype.Timestamptz    `json:"updated_at"`
-		AllowDestroyPlan           pgtype.Bool           `json:"allow_destroy_plan"`
-		AutoApply                  pgtype.Bool           `json:"auto_apply"`
-		CanQueueDestroyPlan        pgtype.Bool           `json:"can_queue_destroy_plan"`
-		Description                pgtype.Text           `json:"description"`
-		Environment                pgtype.Text           `json:"environment"`
-		ExecutionMode              pgtype.Text           `json:"execution_mode"`
-		GlobalRemoteState          pgtype.Bool           `json:"global_remote_state"`
-		MigrationEnvironment       pgtype.Text           `json:"migration_environment"`
-		Name                       pgtype.Text           `json:"name"`
-		QueueAllRuns               pgtype.Bool           `json:"queue_all_runs"`
-		SpeculativeEnabled         pgtype.Bool           `json:"speculative_enabled"`
-		SourceName                 pgtype.Text           `json:"source_name"`
-		SourceURL                  pgtype.Text           `json:"source_url"`
-		StructuredRunOutputEnabled pgtype.Bool           `json:"structured_run_output_enabled"`
-		TerraformVersion           pgtype.Text           `json:"terraform_version"`
-		TriggerPrefixes            []string              `json:"trigger_prefixes"`
-		WorkingDirectory           pgtype.Text           `json:"working_directory"`
-		LockRunID                  pgtype.Text           `json:"lock_run_id"`
-		LatestRunID                pgtype.Text           `json:"latest_run_id"`
-		OrganizationName           pgtype.Text           `json:"organization_name"`
-		Branch                     pgtype.Text           `json:"branch"`
-		LockUsername               pgtype.Text           `json:"lock_username"`
-		CurrentStateVersionID      pgtype.Text           `json:"current_state_version_id"`
-		TriggerPatterns            []string              `json:"trigger_patterns"`
-		VCSTagsRegex               pgtype.Text           `json:"vcs_tags_regex"`
-		AllowCLIApply              pgtype.Bool           `json:"allow_cli_apply"`
-		AgentPoolID                pgtype.Text           `json:"agent_pool_id"`
-		Tags                       []string              `json:"tags"`
-		LatestRunStatus            pgtype.Text           `json:"latest_run_status"`
-		UserLock                   pggen.Users           `json:"user_lock"`
-		RunLock                    pggen.Runs            `json:"run_lock"`
-		WorkspaceConnection        pggen.RepoConnections `json:"workspace_connection"`
+		WorkspaceID                pgtype.Text            `json:"workspace_id"`
+		CreatedAt                  pgtype.Timestamptz     `json:"created_at"`
+		UpdatedAt                  pgtype.Timestamptz     `json:"updated_at"`
+		AllowDestroyPlan           pgtype.Bool            `json:"allow_destroy_plan"`
+		AutoApply                  pgtype.Bool            `json:"auto_apply"`
+		CanQueueDestroyPlan        pgtype.Bool            `json:"can_queue_destroy_plan"`
+		Description                pgtype.Text            `json:"description"`
+		Environment                pgtype.Text            `json:"environment"`
+		ExecutionMode              pgtype.Text            `json:"execution_mode"`
+		GlobalRemoteState          pgtype.Bool            `json:"global_remote_state"`
+		MigrationEnvironment       pgtype.Text            `json:"migration_environment"`
+		Name                       pgtype.Text            `json:"name"`
+		QueueAllRuns               pgtype.Bool            `json:"queue_all_runs"`
+		SpeculativeEnabled         pgtype.Bool            `json:"speculative_enabled"`
+		SourceName                 pgtype.Text            `json:"source_name"`
+		SourceURL                  pgtype.Text            `json:"source_url"`
+		StructuredRunOutputEnabled pgtype.Bool            `json:"structured_run_output_enabled"`
+		TerraformVersion           pgtype.Text            `json:"terraform_version"`
+		TriggerPrefixes            []string               `json:"trigger_prefixes"`
+		WorkingDirectory           pgtype.Text            `json:"working_directory"`
+		LockRunID                  pgtype.Text            `json:"lock_run_id"`
+		LatestRunID                pgtype.Text            `json:"latest_run_id"`
+		OrganizationName           pgtype.Text            `json:"organization_name"`
+		Branch                     pgtype.Text            `json:"branch"`
+		LockUsername               pgtype.Text            `json:"lock_username"`
+		CurrentStateVersionID      pgtype.Text            `json:"current_state_version_id"`
+		TriggerPatterns            []string               `json:"trigger_patterns"`
+		VCSTagsRegex               pgtype.Text            `json:"vcs_tags_regex"`
+		AllowCLIApply              pgtype.Bool            `json:"allow_cli_apply"`
+		AgentPoolID                pgtype.Text            `json:"agent_pool_id"`
+		Tags                       []string               `json:"tags"`
+		LatestRunStatus            pgtype.Text            `json:"latest_run_status"`
+		UserLock                   *pggen.Users           `json:"user_lock"`
+		RunLock                    *pggen.Runs            `json:"run_lock"`
+		WorkspaceConnection        *pggen.RepoConnections `json:"workspace_connection"`
 	}
 )
 
@@ -86,7 +87,7 @@ func (r pgresult) toWorkspace() (*Workspace, error) {
 		ws.AgentPoolID = &r.AgentPoolID.String
 	}
 
-	if r.WorkspaceConnection != (pggen.RepoConnections{}) {
+	if r.WorkspaceConnection != nil {
 		ws.Connection = &Connection{
 			AllowCLIApply: r.AllowCLIApply.Bool,
 			VCSProviderID: r.WorkspaceConnection.VCSProviderID.String,
@@ -105,12 +106,12 @@ func (r pgresult) toWorkspace() (*Workspace, error) {
 		}
 	}
 
-	if r.UserLock != (pggen.Users{}) {
+	if r.UserLock != nil {
 		ws.Lock = &Lock{
 			id:       r.UserLock.Username.String,
 			LockKind: UserLock,
 		}
-	} else if r.RunLock.RunID.Valid {
+	} else if r.RunLock != nil && r.RunLock.RunID.Valid {
 		ws.Lock = &Lock{
 			id:       r.RunLock.RunID.String,
 			LockKind: RunLock,
@@ -121,7 +122,7 @@ func (r pgresult) toWorkspace() (*Workspace, error) {
 }
 
 func (db *pgdb) create(ctx context.Context, ws *Workspace) error {
-	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
+	err := db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		params := pggen.InsertWorkspaceParams{
 			ID:                         sql.String(ws.ID),
 			CreatedAt:                  sql.Timestamptz(ws.CreatedAt),
@@ -158,10 +159,15 @@ func (db *pgdb) create(ctx context.Context, ws *Workspace) error {
 		_, err := q.InsertWorkspace(ctx, params)
 		return sql.Error(err)
 	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (db *pgdb) update(ctx context.Context, workspaceID string, fn func(*Workspace) error) (*Workspace, error) {
-	return sql.Tx(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
+	ws, err := sql.Tx(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
 		var err error
 		// retrieve workspace
 		result, err := q.FindWorkspaceByIDForUpdate(ctx, sql.String(workspaceID))
@@ -207,11 +213,16 @@ func (db *pgdb) update(ctx context.Context, workspaceID string, fn func(*Workspa
 		_, err = q.UpdateWorkspaceByID(ctx, params)
 		return ws, err
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ws, nil
 }
 
 // setCurrentRun sets the ID of the current run for the specified workspace.
 func (db *pgdb) setCurrentRun(ctx context.Context, workspaceID, runID string) (*Workspace, error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
+	ws, err := sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
 		_, err := q.UpdateWorkspaceLatestRun(ctx, sql.String(runID), sql.String(workspaceID))
 		if err != nil {
 			return nil, sql.Error(err)
@@ -219,10 +230,15 @@ func (db *pgdb) setCurrentRun(ctx context.Context, workspaceID, runID string) (*
 
 		return db.get(ctx, workspaceID)
 	})
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+
+	return ws, nil
 }
 
 func (db *pgdb) list(ctx context.Context, opts ListOptions) (*resource.Page[*Workspace], error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Workspace], error) {
+	ws, err := sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Workspace], error) {
 
 		// Organization name filter is optional - if not provided use a % which in
 		// SQL means match any organization.
@@ -265,10 +281,15 @@ func (db *pgdb) list(ctx context.Context, opts ListOptions) (*resource.Page[*Wor
 
 		return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int64)), nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ws, nil
 }
 
 func (db *pgdb) listByConnection(ctx context.Context, vcsProviderID, repoPath string) ([]*Workspace, error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Workspace, error) {
+	ws, err := sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]*Workspace, error) {
 		rows, err := q.FindWorkspacesByConnection(ctx, sql.String(vcsProviderID), sql.String(repoPath))
 		if err != nil {
 			return nil, err
@@ -285,10 +306,15 @@ func (db *pgdb) listByConnection(ctx context.Context, vcsProviderID, repoPath st
 
 		return items, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ws, nil
 }
 
 func (db *pgdb) listByUsername(ctx context.Context, username string, organization string, opts resource.PageOptions) (*resource.Page[*Workspace], error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Workspace], error) {
+	rp, err := sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*resource.Page[*Workspace], error) {
 		rows, err := q.FindWorkspacesByUsername(ctx, pggen.FindWorkspacesByUsernameParams{
 			OrganizationName: sql.String(organization),
 			Username:         sql.String(username),
@@ -315,35 +341,57 @@ func (db *pgdb) listByUsername(ctx context.Context, username string, organizatio
 
 		return resource.NewPage(items, opts, internal.Int64(count.Int64)), nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
+	return rp, nil
 }
 
 func (db *pgdb) get(ctx context.Context, workspaceID string) (*Workspace, error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
+	ws, err := sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
 		result, err := q.FindWorkspaceByID(ctx, sql.String(workspaceID))
 		if err != nil {
 			return nil, sql.Error(err)
 		}
 
-		return pgresult(result).toWorkspace()
-	})
+		ws, err := pgresult(result).toWorkspace()
+		if err != nil {
+			return nil, err
+		}
 
+		return ws, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ws, nil
 }
 
 func (db *pgdb) getByName(ctx context.Context, organization, workspace string) (*Workspace, error) {
-	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
+	ws, err := sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) (*Workspace, error) {
 		result, err := q.FindWorkspaceByName(ctx, sql.String(workspace), sql.String(organization))
 		if err != nil {
 			return nil, sql.Error(err)
 		}
 
-		return pgresult(result).toWorkspace()
-	})
+		ws, err := pgresult(result).toWorkspace()
+		if err != nil {
+			return nil, err
+		}
 
+		return ws, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ws, nil
 }
 
 func (db *pgdb) delete(ctx context.Context, workspaceID string) error {
-	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
+	err := db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteWorkspaceByID(ctx, sql.String(workspaceID))
 		if err != nil {
 			return sql.Error(err)
@@ -351,4 +399,9 @@ func (db *pgdb) delete(ctx context.Context, workspaceID string) error {
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

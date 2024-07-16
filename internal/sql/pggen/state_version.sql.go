@@ -12,6 +12,7 @@ import (
 )
 
 var _ genericConn = (*pgx.Conn)(nil)
+var _ RegisterConn = (*pgx.Conn)(nil)
 
 const insertStateVersionSQL = `INSERT INTO state_versions (
     state_version_id,
@@ -97,13 +98,13 @@ type FindStateVersionsByWorkspaceIDParams struct {
 }
 
 type FindStateVersionsByWorkspaceIDRow struct {
-	StateVersionID      pgtype.Text           `json:"state_version_id"`
-	CreatedAt           pgtype.Timestamptz    `json:"created_at"`
-	Serial              pgtype.Int4           `json:"serial"`
-	State               []byte                `json:"state"`
-	WorkspaceID         pgtype.Text           `json:"workspace_id"`
-	Status              pgtype.Text           `json:"status"`
-	StateVersionOutputs []StateVersionOutputs `json:"state_version_outputs"`
+	StateVersionID      pgtype.Text            `json:"state_version_id"`
+	CreatedAt           pgtype.Timestamptz     `json:"created_at"`
+	Serial              pgtype.Int4            `json:"serial"`
+	State               []byte                 `json:"state"`
+	WorkspaceID         pgtype.Text            `json:"workspace_id"`
+	Status              pgtype.Text            `json:"status"`
+	StateVersionOutputs []*StateVersionOutputs `json:"state_version_outputs"`
 }
 
 // FindStateVersionsByWorkspaceID implements Querier.FindStateVersionsByWorkspaceID.
@@ -122,7 +123,7 @@ func (q *DBQuerier) FindStateVersionsByWorkspaceID(ctx context.Context, params F
 			&item.State,               // 'state', 'State', '[]byte', '', '[]byte'
 			&item.WorkspaceID,         // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,              // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]StateVersionOutputs', 'github.com/tofutf/tofutf/internal/sql/queries', '[]StateVersionOutputs'
+			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]*StateVersionOutputs', '', '[]*StateVersionOutputs'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -163,13 +164,13 @@ GROUP BY state_versions.state_version_id
 ;`
 
 type FindStateVersionByIDRow struct {
-	StateVersionID      pgtype.Text           `json:"state_version_id"`
-	CreatedAt           pgtype.Timestamptz    `json:"created_at"`
-	Serial              pgtype.Int4           `json:"serial"`
-	State               []byte                `json:"state"`
-	WorkspaceID         pgtype.Text           `json:"workspace_id"`
-	Status              pgtype.Text           `json:"status"`
-	StateVersionOutputs []StateVersionOutputs `json:"state_version_outputs"`
+	StateVersionID      pgtype.Text            `json:"state_version_id"`
+	CreatedAt           pgtype.Timestamptz     `json:"created_at"`
+	Serial              pgtype.Int4            `json:"serial"`
+	State               []byte                 `json:"state"`
+	WorkspaceID         pgtype.Text            `json:"workspace_id"`
+	Status              pgtype.Text            `json:"status"`
+	StateVersionOutputs []*StateVersionOutputs `json:"state_version_outputs"`
 }
 
 // FindStateVersionByID implements Querier.FindStateVersionByID.
@@ -188,7 +189,7 @@ func (q *DBQuerier) FindStateVersionByID(ctx context.Context, id pgtype.Text) (F
 			&item.State,               // 'state', 'State', '[]byte', '', '[]byte'
 			&item.WorkspaceID,         // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,              // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]StateVersionOutputs', 'github.com/tofutf/tofutf/internal/sql/queries', '[]StateVersionOutputs'
+			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]*StateVersionOutputs', '', '[]*StateVersionOutputs'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -209,13 +210,13 @@ FOR UPDATE OF sv
 ;`
 
 type FindStateVersionByIDForUpdateRow struct {
-	StateVersionID      pgtype.Text           `json:"state_version_id"`
-	CreatedAt           pgtype.Timestamptz    `json:"created_at"`
-	Serial              pgtype.Int4           `json:"serial"`
-	State               []byte                `json:"state"`
-	WorkspaceID         pgtype.Text           `json:"workspace_id"`
-	Status              pgtype.Text           `json:"status"`
-	StateVersionOutputs []StateVersionOutputs `json:"state_version_outputs"`
+	StateVersionID      pgtype.Text            `json:"state_version_id"`
+	CreatedAt           pgtype.Timestamptz     `json:"created_at"`
+	Serial              pgtype.Int4            `json:"serial"`
+	State               []byte                 `json:"state"`
+	WorkspaceID         pgtype.Text            `json:"workspace_id"`
+	Status              pgtype.Text            `json:"status"`
+	StateVersionOutputs []*StateVersionOutputs `json:"state_version_outputs"`
 }
 
 // FindStateVersionByIDForUpdate implements Querier.FindStateVersionByIDForUpdate.
@@ -234,7 +235,7 @@ func (q *DBQuerier) FindStateVersionByIDForUpdate(ctx context.Context, id pgtype
 			&item.State,               // 'state', 'State', '[]byte', '', '[]byte'
 			&item.WorkspaceID,         // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,              // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]StateVersionOutputs', 'github.com/tofutf/tofutf/internal/sql/queries', '[]StateVersionOutputs'
+			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]*StateVersionOutputs', '', '[]*StateVersionOutputs'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
@@ -253,13 +254,13 @@ GROUP BY sv.state_version_id
 ;`
 
 type FindCurrentStateVersionByWorkspaceIDRow struct {
-	StateVersionID      pgtype.Text           `json:"state_version_id"`
-	CreatedAt           pgtype.Timestamptz    `json:"created_at"`
-	Serial              pgtype.Int4           `json:"serial"`
-	State               []byte                `json:"state"`
-	WorkspaceID         pgtype.Text           `json:"workspace_id"`
-	Status              pgtype.Text           `json:"status"`
-	StateVersionOutputs []StateVersionOutputs `json:"state_version_outputs"`
+	StateVersionID      pgtype.Text            `json:"state_version_id"`
+	CreatedAt           pgtype.Timestamptz     `json:"created_at"`
+	Serial              pgtype.Int4            `json:"serial"`
+	State               []byte                 `json:"state"`
+	WorkspaceID         pgtype.Text            `json:"workspace_id"`
+	Status              pgtype.Text            `json:"status"`
+	StateVersionOutputs []*StateVersionOutputs `json:"state_version_outputs"`
 }
 
 // FindCurrentStateVersionByWorkspaceID implements Querier.FindCurrentStateVersionByWorkspaceID.
@@ -278,7 +279,7 @@ func (q *DBQuerier) FindCurrentStateVersionByWorkspaceID(ctx context.Context, wo
 			&item.State,               // 'state', 'State', '[]byte', '', '[]byte'
 			&item.WorkspaceID,         // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,              // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
-			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]StateVersionOutputs', 'github.com/tofutf/tofutf/internal/sql/queries', '[]StateVersionOutputs'
+			&item.StateVersionOutputs, // 'state_version_outputs', 'StateVersionOutputs', '[]*StateVersionOutputs', '', '[]*StateVersionOutputs'
 		); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
 		}
