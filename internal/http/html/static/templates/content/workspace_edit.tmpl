@@ -112,7 +112,7 @@
             <div class="flex flex-col gap-2">
               <div class="flex gap-2 items-center">
                 <label for="new_path">Path</label>
-                <input @keydown.enter.prevent="addPattern" class="text-input grow" x-model="newPath" placeholder="e.g. /modules" type="text" id="new_path">
+                <input @keydown.enter.prevent="addPattern" class="text-input grow" x-model="newPath" placeholder="e.g. folder/modules" type="text" id="new_path">
                 <button @click="addPattern" type="button" id="add-pattern" class="btn w-40">Add pattern</button>
               </div>
               <template x-for="path in paths">
