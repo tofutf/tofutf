@@ -14,8 +14,8 @@ type Report struct {
 	Destructions int `json:"destructions"`
 }
 
-func reportFromDB(row pggen.Report) *Report {
-	if row == (pggen.Report{}) {
+func reportFromDB(row *pggen.Report) *Report {
+	if row == nil {
 		return nil
 	}
 
