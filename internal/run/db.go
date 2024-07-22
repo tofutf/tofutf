@@ -84,14 +84,14 @@ func (result pgresult) toRun() *Run {
 			RunID:          result.RunID.String,
 			PhaseType:      internal.PlanPhase,
 			Status:         PhaseStatus(result.PlanStatus.String),
-			ResourceReport: reportFromDB(*result.PlanResourceReport),
-			OutputReport:   reportFromDB(*result.PlanOutputReport),
+			ResourceReport: reportFromDB(result.PlanResourceReport),
+			OutputReport:   reportFromDB(result.PlanOutputReport),
 		},
 		Apply: Phase{
 			RunID:          result.RunID.String,
 			PhaseType:      internal.ApplyPhase,
 			Status:         PhaseStatus(result.ApplyStatus.String),
-			ResourceReport: reportFromDB(*result.ApplyResourceReport),
+			ResourceReport: reportFromDB(result.ApplyResourceReport),
 		},
 	}
 	// convert run timestamps from db result and sort them according to
