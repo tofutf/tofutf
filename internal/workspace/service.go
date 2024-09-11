@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/gorilla/mux"
@@ -215,7 +216,7 @@ func (s *Service) List(ctx context.Context, opts ListOptions) (*resource.Page[*W
 	} else {
 		// check if subject has perms to list workspaces in organization
 		_, err := s.organization.CanAccess(ctx, rbac.ListWorkspacesAction, *opts.Organization)
-		if err == internal.ErrAccessNotPermitted {
+		if errors.Is(err, internal.ErrAccessNotPermitted) {
 			// user does not have org-wide perms; fallback to listing workspaces
 			// for which they have workspace-level perms.
 			subject, err := internal.SubjectFromContext(ctx)

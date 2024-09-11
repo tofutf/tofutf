@@ -107,9 +107,10 @@ func NewService(opts Options) *Service {
 	// username.
 	opts.TokensService.RegisterUISubjectGetterOrCreator(func(ctx context.Context, username string) (internal.Subject, error) {
 		user, err := svc.GetUser(ctx, UserSpec{Username: &username})
-		if err == internal.ErrResourceNotFound {
+		if errors.Is(err, internal.ErrResourceNotFound) {
 			user, err = svc.Create(ctx, username)
 		}
+
 		return user, err
 
 	})
@@ -298,7 +299,7 @@ func (a *Service) RemoveTeamMembership(ctx context.Context, teamID string, usern
 func (a *Service) SetSiteAdmins(ctx context.Context, usernames ...string) error {
 	for _, username := range usernames {
 		_, err := a.db.getUser(ctx, UserSpec{Username: &username})
-		if err == internal.ErrResourceNotFound {
+		if errors.Is(err, internal.ErrResourceNotFound) {
 			if _, err = a.Create(ctx, username); err != nil {
 				return err
 			}

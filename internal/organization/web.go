@@ -2,6 +2,7 @@ package organization
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -83,7 +84,7 @@ func (a *web) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org, err := a.svc.Create(r.Context(), opts)
-	if err == internal.ErrResourceAlreadyExists {
+	if errors.Is(err, internal.ErrResourceAlreadyExists) {
 		html.FlashError(w, "organization already exists: "+*opts.Name)
 		http.Redirect(w, r, paths.NewOrganization(), http.StatusFound)
 		return

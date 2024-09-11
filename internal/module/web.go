@@ -258,7 +258,7 @@ func (h *webHandlers) newModuleRepo(w http.ResponseWriter, r *http.Request) {
 	filtered := make([]string, 0, len(results))
 	for _, res := range results {
 		_, _, err := Repo(res).Split()
-		if err == ErrInvalidModuleRepo {
+		if errors.Is(err, ErrInvalidModuleRepo) {
 			continue // skip repo
 		} else if err != nil {
 			h.Error(w, err.Error(), http.StatusInternalServerError)

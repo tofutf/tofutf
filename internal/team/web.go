@@ -2,6 +2,7 @@ package team
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -71,7 +72,7 @@ func (h *webHandlers) createTeam(w http.ResponseWriter, r *http.Request) {
 	team, err := h.teams.Create(r.Context(), *params.Organization, CreateTeamOptions{
 		Name: params.Name,
 	})
-	if err == internal.ErrResourceAlreadyExists {
+	if errors.Is(err, internal.ErrResourceAlreadyExists) {
 		html.FlashError(w, "team already exists")
 		http.Redirect(w, r, paths.NewTeam(*params.Organization), http.StatusFound)
 		return
