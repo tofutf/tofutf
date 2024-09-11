@@ -338,7 +338,7 @@ func checkResponseCode(r *http.Response) error {
 		return fmt.Errorf("unable to decode errors payload: %s: %w", string(contents), err)
 	}
 	if len(payload.Errors) == 0 {
-		return fmt.Errorf(r.Status)
+		return fmt.Errorf("%s", r.Status)
 	}
 	// Parse and format the errors.
 	var errs []string
@@ -349,5 +349,5 @@ func checkResponseCode(r *http.Response) error {
 			errs = append(errs, fmt.Sprintf("%s: %s", e.Title, e.Detail))
 		}
 	}
-	return fmt.Errorf(strings.Join(errs, "\n"))
+	return fmt.Errorf("%s", strings.Join(errs, "\n"))
 }
