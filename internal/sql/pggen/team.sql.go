@@ -145,7 +145,7 @@ func (q *DBQuerier) FindTeamByName(ctx context.Context, name pgtype.Text, organi
 		return FindTeamByNameRow{}, fmt.Errorf("query FindTeamByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTeamByNameRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindTeamByNameRow, error) {
 		var item FindTeamByNameRow
 		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -194,7 +194,7 @@ func (q *DBQuerier) FindTeamByID(ctx context.Context, teamID pgtype.Text) (FindT
 		return FindTeamByIDRow{}, fmt.Errorf("query FindTeamByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTeamByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindTeamByIDRow, error) {
 		var item FindTeamByIDRow
 		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -244,7 +244,7 @@ func (q *DBQuerier) FindTeamByTokenID(ctx context.Context, tokenID pgtype.Text) 
 		return FindTeamByTokenIDRow{}, fmt.Errorf("query FindTeamByTokenID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTeamByTokenIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindTeamByTokenIDRow, error) {
 		var item FindTeamByTokenIDRow
 		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -294,7 +294,7 @@ func (q *DBQuerier) FindTeamByIDForUpdate(ctx context.Context, teamID pgtype.Tex
 		return FindTeamByIDForUpdateRow{}, fmt.Errorf("query FindTeamByIDForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTeamByIDForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindTeamByIDForUpdateRow, error) {
 		var item FindTeamByIDForUpdateRow
 		if err := row.Scan(&item.TeamID, // 'team_id', 'TeamID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,                            // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -350,7 +350,7 @@ func (q *DBQuerier) UpdateTeamByID(ctx context.Context, params UpdateTeamByIDPar
 		return pgtype.Text{}, fmt.Errorf("query UpdateTeamByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -373,7 +373,7 @@ func (q *DBQuerier) DeleteTeamByID(ctx context.Context, teamID pgtype.Text) (pgt
 		return pgtype.Text{}, fmt.Errorf("query DeleteTeamByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

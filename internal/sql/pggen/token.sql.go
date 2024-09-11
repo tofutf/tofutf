@@ -96,7 +96,7 @@ func (q *DBQuerier) FindTokenByID(ctx context.Context, tokenID pgtype.Text) (Fin
 		return FindTokenByIDRow{}, fmt.Errorf("query FindTokenByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTokenByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindTokenByIDRow, error) {
 		var item FindTokenByIDRow
 		if err := row.Scan(&item.TokenID, // 'token_id', 'TokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,   // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -123,7 +123,7 @@ func (q *DBQuerier) DeleteTokenByID(ctx context.Context, tokenID pgtype.Text) (p
 		return pgtype.Text{}, fmt.Errorf("query DeleteTokenByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

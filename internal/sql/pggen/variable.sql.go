@@ -79,7 +79,7 @@ func (q *DBQuerier) FindVariable(ctx context.Context, variableID pgtype.Text) (F
 		return FindVariableRow{}, fmt.Errorf("query FindVariable: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVariableRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindVariableRow, error) {
 		var item FindVariableRow
 		if err := row.Scan(&item.VariableID, // 'variable_id', 'VariableID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Key,         // 'key', 'Key', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -128,7 +128,7 @@ func (q *DBQuerier) UpdateVariableByID(ctx context.Context, params UpdateVariabl
 		return pgtype.Text{}, fmt.Errorf("query UpdateVariableByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -162,7 +162,7 @@ func (q *DBQuerier) DeleteVariableByID(ctx context.Context, variableID pgtype.Te
 		return DeleteVariableByIDRow{}, fmt.Errorf("query DeleteVariableByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableByIDRow, error) {
 		var item DeleteVariableByIDRow
 		if err := row.Scan(&item.VariableID, // 'variable_id', 'VariableID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Key,         // 'key', 'Key', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

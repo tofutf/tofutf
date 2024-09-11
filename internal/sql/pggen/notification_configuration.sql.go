@@ -169,7 +169,7 @@ func (q *DBQuerier) FindNotificationConfiguration(ctx context.Context, notificat
 		return FindNotificationConfigurationRow{}, fmt.Errorf("query FindNotificationConfiguration: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindNotificationConfigurationRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindNotificationConfigurationRow, error) {
 		var item FindNotificationConfigurationRow
 		if err := row.Scan(&item.NotificationConfigurationID, // 'notification_configuration_id', 'NotificationConfigurationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -213,7 +213,7 @@ func (q *DBQuerier) FindNotificationConfigurationForUpdate(ctx context.Context, 
 		return FindNotificationConfigurationForUpdateRow{}, fmt.Errorf("query FindNotificationConfigurationForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindNotificationConfigurationForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindNotificationConfigurationForUpdateRow, error) {
 		var item FindNotificationConfigurationForUpdateRow
 		if err := row.Scan(&item.NotificationConfigurationID, // 'notification_configuration_id', 'NotificationConfigurationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,       // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -259,7 +259,7 @@ func (q *DBQuerier) UpdateNotificationConfigurationByID(ctx context.Context, par
 		return pgtype.Text{}, fmt.Errorf("query UpdateNotificationConfigurationByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -281,7 +281,7 @@ func (q *DBQuerier) DeleteNotificationConfigurationByID(ctx context.Context, not
 		return pgtype.Text{}, fmt.Errorf("query DeleteNotificationConfigurationByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

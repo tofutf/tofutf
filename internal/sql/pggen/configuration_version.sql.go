@@ -83,7 +83,7 @@ func (q *DBQuerier) InsertConfigurationVersionStatusTimestamp(ctx context.Contex
 		return InsertConfigurationVersionStatusTimestampRow{}, fmt.Errorf("query InsertConfigurationVersionStatusTimestamp: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (InsertConfigurationVersionStatusTimestampRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (InsertConfigurationVersionStatusTimestampRow, error) {
 		var item InsertConfigurationVersionStatusTimestampRow
 		if err := row.Scan(&item.ConfigurationVersionID, // 'configuration_version_id', 'ConfigurationVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Status,    // 'status', 'Status', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -174,7 +174,7 @@ func (q *DBQuerier) CountConfigurationVersionsByWorkspaceID(ctx context.Context,
 		return pgtype.Int8{}, fmt.Errorf("query CountConfigurationVersionsByWorkspaceID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
 		var item pgtype.Int8
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -223,7 +223,7 @@ func (q *DBQuerier) FindConfigurationVersionByID(ctx context.Context, configurat
 		return FindConfigurationVersionByIDRow{}, fmt.Errorf("query FindConfigurationVersionByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindConfigurationVersionByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindConfigurationVersionByIDRow, error) {
 		var item FindConfigurationVersionByIDRow
 		if err := row.Scan(&item.ConfigurationVersionID, // 'configuration_version_id', 'ConfigurationVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,     // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -282,7 +282,7 @@ func (q *DBQuerier) FindConfigurationVersionLatestByWorkspaceID(ctx context.Cont
 		return FindConfigurationVersionLatestByWorkspaceIDRow{}, fmt.Errorf("query FindConfigurationVersionLatestByWorkspaceID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindConfigurationVersionLatestByWorkspaceIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindConfigurationVersionLatestByWorkspaceIDRow, error) {
 		var item FindConfigurationVersionLatestByWorkspaceIDRow
 		if err := row.Scan(&item.ConfigurationVersionID, // 'configuration_version_id', 'ConfigurationVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,     // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -341,7 +341,7 @@ func (q *DBQuerier) FindConfigurationVersionByIDForUpdate(ctx context.Context, c
 		return FindConfigurationVersionByIDForUpdateRow{}, fmt.Errorf("query FindConfigurationVersionByIDForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindConfigurationVersionByIDForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindConfigurationVersionByIDForUpdateRow, error) {
 		var item FindConfigurationVersionByIDForUpdateRow
 		if err := row.Scan(&item.ConfigurationVersionID, // 'configuration_version_id', 'ConfigurationVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,     // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -372,7 +372,7 @@ func (q *DBQuerier) DownloadConfigurationVersion(ctx context.Context, configurat
 		return nil, fmt.Errorf("query DownloadConfigurationVersion: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
 		var item []byte
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -395,7 +395,7 @@ func (q *DBQuerier) UpdateConfigurationVersionErroredByID(ctx context.Context, i
 		return pgtype.Text{}, fmt.Errorf("query UpdateConfigurationVersionErroredByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -419,7 +419,7 @@ func (q *DBQuerier) UpdateConfigurationVersionConfigByID(ctx context.Context, co
 		return pgtype.Text{}, fmt.Errorf("query UpdateConfigurationVersionConfigByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -441,7 +441,7 @@ func (q *DBQuerier) DeleteConfigurationVersionByID(ctx context.Context, id pgtyp
 		return pgtype.Text{}, fmt.Errorf("query DeleteConfigurationVersionByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

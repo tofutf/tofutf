@@ -71,7 +71,7 @@ func (q *DBQuerier) FindStateVersionOutputByID(ctx context.Context, id pgtype.Te
 		return FindStateVersionOutputByIDRow{}, fmt.Errorf("query FindStateVersionOutputByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionOutputByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionOutputByIDRow, error) {
 		var item FindStateVersionOutputByIDRow
 		if err := row.Scan(&item.StateVersionOutputID, // 'state_version_output_id', 'StateVersionOutputID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,           // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

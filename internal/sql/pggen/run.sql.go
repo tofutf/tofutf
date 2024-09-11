@@ -341,7 +341,7 @@ func (q *DBQuerier) CountRuns(ctx context.Context, params CountRunsParams) (pgty
 		return pgtype.Int8{}, fmt.Errorf("query CountRuns: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
 		var item pgtype.Int8
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -459,7 +459,7 @@ func (q *DBQuerier) FindRunByID(ctx context.Context, runID pgtype.Text) (FindRun
 		return FindRunByIDRow{}, fmt.Errorf("query FindRunByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindRunByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindRunByIDRow, error) {
 		var item FindRunByIDRow
 		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,              // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -610,7 +610,7 @@ func (q *DBQuerier) FindRunByIDForUpdate(ctx context.Context, runID pgtype.Text)
 		return FindRunByIDForUpdateRow{}, fmt.Errorf("query FindRunByIDForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindRunByIDForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindRunByIDForUpdateRow, error) {
 		var item FindRunByIDForUpdateRow
 		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,              // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -665,7 +665,7 @@ func (q *DBQuerier) PutLockFile(ctx context.Context, lockFile []byte, runID pgty
 		return pgtype.Text{}, fmt.Errorf("query PutLockFile: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -687,7 +687,7 @@ func (q *DBQuerier) GetLockFileByID(ctx context.Context, runID pgtype.Text) ([]b
 		return nil, fmt.Errorf("query GetLockFileByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
 		var item []byte
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -711,7 +711,7 @@ func (q *DBQuerier) UpdateRunStatus(ctx context.Context, status pgtype.Text, id 
 		return pgtype.Text{}, fmt.Errorf("query UpdateRunStatus: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -735,7 +735,7 @@ func (q *DBQuerier) UpdateCancelSignaledAt(ctx context.Context, cancelSignaledAt
 		return pgtype.Text{}, fmt.Errorf("query UpdateCancelSignaledAt: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -758,7 +758,7 @@ func (q *DBQuerier) DeleteRunByID(ctx context.Context, runID pgtype.Text) (pgtyp
 		return pgtype.Text{}, fmt.Errorf("query DeleteRunByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

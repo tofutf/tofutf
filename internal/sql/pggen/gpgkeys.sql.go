@@ -144,7 +144,7 @@ func (q *DBQuerier) GetGPGKey(ctx context.Context, keyID pgtype.Text, organizati
 		return GetGPGKeyRow{}, fmt.Errorf("query GetGPGKey: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (GetGPGKeyRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (GetGPGKeyRow, error) {
 		var item GetGPGKeyRow
 		if err := row.Scan(&item.ID, // 'id', 'ID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.OrganizationName, // 'organization_name', 'OrganizationName', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

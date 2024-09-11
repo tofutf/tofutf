@@ -2482,7 +2482,7 @@ func (q *DBQuerier) UpdateAgent(ctx context.Context, params UpdateAgentParams) (
 		return UpdateAgentRow{}, fmt.Errorf("query UpdateAgent: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (UpdateAgentRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (UpdateAgentRow, error) {
 		var item UpdateAgentRow
 		if err := row.Scan(&item.AgentID, // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2742,7 +2742,7 @@ func (q *DBQuerier) FindAgentByID(ctx context.Context, agentID pgtype.Text) (Fin
 		return FindAgentByIDRow{}, fmt.Errorf("query FindAgentByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindAgentByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindAgentByIDRow, error) {
 		var item FindAgentByIDRow
 		if err := row.Scan(&item.AgentID, // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2793,7 +2793,7 @@ func (q *DBQuerier) FindAgentByIDForUpdate(ctx context.Context, agentID pgtype.T
 		return FindAgentByIDForUpdateRow{}, fmt.Errorf("query FindAgentByIDForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindAgentByIDForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindAgentByIDForUpdateRow, error) {
 		var item FindAgentByIDForUpdateRow
 		if err := row.Scan(&item.AgentID, // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -2837,7 +2837,7 @@ func (q *DBQuerier) DeleteAgent(ctx context.Context, agentID pgtype.Text) (Delet
 		return DeleteAgentRow{}, fmt.Errorf("query DeleteAgent: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteAgentRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteAgentRow, error) {
 		var item DeleteAgentRow
 		if err := row.Scan(&item.AgentID, // 'agent_id', 'AgentID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,         // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

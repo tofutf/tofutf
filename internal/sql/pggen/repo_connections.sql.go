@@ -63,7 +63,7 @@ func (q *DBQuerier) DeleteWorkspaceConnectionByID(ctx context.Context, workspace
 		return DeleteWorkspaceConnectionByIDRow{}, fmt.Errorf("query DeleteWorkspaceConnectionByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteWorkspaceConnectionByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteWorkspaceConnectionByIDRow, error) {
 		var item DeleteWorkspaceConnectionByIDRow
 		if err := row.Scan(&item.ModuleID, // 'module_id', 'ModuleID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,   // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -96,7 +96,7 @@ func (q *DBQuerier) DeleteModuleConnectionByID(ctx context.Context, moduleID pgt
 		return DeleteModuleConnectionByIDRow{}, fmt.Errorf("query DeleteModuleConnectionByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteModuleConnectionByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteModuleConnectionByIDRow, error) {
 		var item DeleteModuleConnectionByIDRow
 		if err := row.Scan(&item.ModuleID, // 'module_id', 'ModuleID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID,   // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

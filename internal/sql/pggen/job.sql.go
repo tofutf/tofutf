@@ -125,7 +125,7 @@ func (q *DBQuerier) FindJob(ctx context.Context, runID pgtype.Text, phase pgtype
 		return FindJobRow{}, fmt.Errorf("query FindJob: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindJobRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindJobRow, error) {
 		var item FindJobRow
 		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Phase,            // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -178,7 +178,7 @@ func (q *DBQuerier) FindJobForUpdate(ctx context.Context, runID pgtype.Text, pha
 		return FindJobForUpdateRow{}, fmt.Errorf("query FindJobForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindJobForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindJobForUpdateRow, error) {
 		var item FindJobForUpdateRow
 		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Phase,            // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -333,7 +333,7 @@ func (q *DBQuerier) UpdateJob(ctx context.Context, params UpdateJobParams) (Upda
 		return UpdateJobRow{}, fmt.Errorf("query UpdateJob: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (UpdateJobRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (UpdateJobRow, error) {
 		var item UpdateJobRow
 		if err := row.Scan(&item.RunID, // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Phase,    // 'phase', 'Phase', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

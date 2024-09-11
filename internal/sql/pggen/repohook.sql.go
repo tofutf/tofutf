@@ -64,7 +64,7 @@ func (q *DBQuerier) InsertRepohook(ctx context.Context, params InsertRepohookPar
 		return InsertRepohookRow{}, fmt.Errorf("query InsertRepohook: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (InsertRepohookRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (InsertRepohookRow, error) {
 		var item InsertRepohookRow
 		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
 			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -100,7 +100,7 @@ func (q *DBQuerier) UpdateRepohookVCSID(ctx context.Context, vcsID pgtype.Text, 
 		return UpdateRepohookVCSIDRow{}, fmt.Errorf("query UpdateRepohookVCSID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (UpdateRepohookVCSIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (UpdateRepohookVCSIDRow, error) {
 		var item UpdateRepohookVCSIDRow
 		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
 			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -184,7 +184,7 @@ func (q *DBQuerier) FindRepohookByID(ctx context.Context, repohookID pgtype.UUID
 		return FindRepohookByIDRow{}, fmt.Errorf("query FindRepohookByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindRepohookByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindRepohookByIDRow, error) {
 		var item FindRepohookByIDRow
 		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
 			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -311,7 +311,7 @@ func (q *DBQuerier) DeleteRepohookByID(ctx context.Context, repohookID pgtype.UU
 		return DeleteRepohookByIDRow{}, fmt.Errorf("query DeleteRepohookByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteRepohookByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteRepohookByIDRow, error) {
 		var item DeleteRepohookByIDRow
 		if err := row.Scan(&item.RepohookID, // 'repohook_id', 'RepohookID', 'pgtype.UUID', 'github.com/jackc/pgx/v5/pgtype', 'UUID'
 			&item.VCSID,         // 'vcs_id', 'VCSID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

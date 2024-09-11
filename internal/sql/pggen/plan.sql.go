@@ -46,7 +46,7 @@ func (q *DBQuerier) UpdatePlanStatusByID(ctx context.Context, status pgtype.Text
 		return pgtype.Text{}, fmt.Errorf("query UpdatePlanStatusByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -88,7 +88,7 @@ func (q *DBQuerier) UpdatePlannedChangesByID(ctx context.Context, params UpdateP
 		return pgtype.Text{}, fmt.Errorf("query UpdatePlannedChangesByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -110,7 +110,7 @@ func (q *DBQuerier) GetPlanBinByID(ctx context.Context, runID pgtype.Text) ([]by
 		return nil, fmt.Errorf("query GetPlanBinByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
 		var item []byte
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -132,7 +132,7 @@ func (q *DBQuerier) GetPlanJSONByID(ctx context.Context, runID pgtype.Text) ([]b
 		return nil, fmt.Errorf("query GetPlanJSONByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
 		var item []byte
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -155,7 +155,7 @@ func (q *DBQuerier) UpdatePlanBinByID(ctx context.Context, planBin []byte, runID
 		return pgtype.Text{}, fmt.Errorf("query UpdatePlanBinByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -178,7 +178,7 @@ func (q *DBQuerier) UpdatePlanJSONByID(ctx context.Context, planJSON []byte, run
 		return pgtype.Text{}, fmt.Errorf("query UpdatePlanJSONByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

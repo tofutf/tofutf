@@ -145,7 +145,7 @@ func (q *DBQuerier) CountStateVersionsByWorkspaceID(ctx context.Context, workspa
 		return pgtype.Int8{}, fmt.Errorf("query CountStateVersionsByWorkspaceID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
 		var item pgtype.Int8
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -181,7 +181,7 @@ func (q *DBQuerier) FindStateVersionByID(ctx context.Context, id pgtype.Text) (F
 		return FindStateVersionByIDRow{}, fmt.Errorf("query FindStateVersionByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionByIDRow, error) {
 		var item FindStateVersionByIDRow
 		if err := row.Scan(&item.StateVersionID, // 'state_version_id', 'StateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -227,7 +227,7 @@ func (q *DBQuerier) FindStateVersionByIDForUpdate(ctx context.Context, id pgtype
 		return FindStateVersionByIDForUpdateRow{}, fmt.Errorf("query FindStateVersionByIDForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionByIDForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindStateVersionByIDForUpdateRow, error) {
 		var item FindStateVersionByIDForUpdateRow
 		if err := row.Scan(&item.StateVersionID, // 'state_version_id', 'StateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -271,7 +271,7 @@ func (q *DBQuerier) FindCurrentStateVersionByWorkspaceID(ctx context.Context, wo
 		return FindCurrentStateVersionByWorkspaceIDRow{}, fmt.Errorf("query FindCurrentStateVersionByWorkspaceID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindCurrentStateVersionByWorkspaceIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindCurrentStateVersionByWorkspaceIDRow, error) {
 		var item FindCurrentStateVersionByWorkspaceIDRow
 		if err := row.Scan(&item.StateVersionID, // 'state_version_id', 'StateVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,           // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -300,7 +300,7 @@ func (q *DBQuerier) FindStateVersionStateByID(ctx context.Context, id pgtype.Tex
 		return nil, fmt.Errorf("query FindStateVersionStateByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
 		var item []byte
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -323,7 +323,7 @@ func (q *DBQuerier) DeleteStateVersionByID(ctx context.Context, stateVersionID p
 		return pgtype.Text{}, fmt.Errorf("query DeleteStateVersionByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
