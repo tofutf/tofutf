@@ -67,7 +67,7 @@ func NewClient(config Config) (*Client, error) {
 	}
 	baseURL, err := url.Parse(addr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid address: %v", err)
+		return nil, fmt.Errorf("invalid address: %w", err)
 	}
 	baseURL.Path = config.BasePath
 	if !strings.HasSuffix(baseURL.Path, "/") {

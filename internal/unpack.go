@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,7 +22,7 @@ func Unpack(r io.Reader, dst string) error {
 	// Unpackage contents to the destination directory.
 	for {
 		header, err := tr.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

@@ -501,7 +501,9 @@ listloop:
 
 			pageFiles, resp, err := g.client.PullRequests.ListFiles(ctx, owner, name, pull, &opts)
 			if err != nil {
-				ghErr, ok := err.(*github.ErrorResponse)
+				var ghErr *github.ErrorResponse
+				ok := errors.As(err, &ghErr)
+
 				if ok && ghErr.Response.StatusCode == 404 {
 					// (hopefully) transient 404, retry after backoff
 					continue

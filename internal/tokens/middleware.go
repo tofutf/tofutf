@@ -156,10 +156,11 @@ func (m *middleware) validateBearer(ctx context.Context, bearer string) (interna
 
 func (m *middleware) validateUIRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (internal.Subject, bool) {
 	cookie, err := r.Cookie(SessionCookie)
-	if err == http.ErrNoCookie {
+	if errors.Is(err, http.ErrNoCookie) {
 		html.FlashSuccess(w, "you need to login to access the requested page")
 		return nil, false
 	}
+
 	// parse jwt from cookie and verify signature
 	token, err := jwt.Parse([]byte(cookie.Value), jwt.WithKey(jwa.HS256, m.key))
 	if err != nil {

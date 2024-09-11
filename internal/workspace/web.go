@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -226,7 +227,7 @@ func (h *webHandlers) createWorkspace(w http.ResponseWriter, r *http.Request) {
 		Name:         params.Name,
 		Organization: params.Organization,
 	})
-	if err == internal.ErrResourceAlreadyExists {
+	if errors.Is(err, internal.ErrResourceAlreadyExists) {
 		html.FlashError(w, "workspace already exists: "+*params.Name)
 		http.Redirect(w, r, paths.NewWorkspace(*params.Organization), http.StatusFound)
 		return

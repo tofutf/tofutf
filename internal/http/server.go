@@ -156,7 +156,7 @@ func (s *Server) Start(ctx context.Context, ln net.Listener) (err error) {
 	// Block until server stops listening or context is cancelled.
 	select {
 	case err := <-errch:
-		if err == http.ErrServerClosed {
+		if errors.Is(err, http.ErrServerClosed) {
 			return nil
 		}
 		return err
