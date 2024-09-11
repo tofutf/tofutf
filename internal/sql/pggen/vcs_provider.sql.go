@@ -221,7 +221,7 @@ func (q *DBQuerier) FindVCSProvider(ctx context.Context, vcsProviderID pgtype.Te
 		return FindVCSProviderRow{}, fmt.Errorf("query FindVCSProvider: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVCSProviderRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindVCSProviderRow, error) {
 		var item FindVCSProviderRow
 		if err := row.Scan(&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Token,            // 'token', 'Token', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -269,7 +269,7 @@ func (q *DBQuerier) FindVCSProviderForUpdate(ctx context.Context, vcsProviderID 
 		return FindVCSProviderForUpdateRow{}, fmt.Errorf("query FindVCSProviderForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVCSProviderForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindVCSProviderForUpdateRow, error) {
 		var item FindVCSProviderForUpdateRow
 		if err := row.Scan(&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Token,            // 'token', 'Token', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -317,7 +317,7 @@ func (q *DBQuerier) UpdateVCSProvider(ctx context.Context, params UpdateVCSProvi
 		return UpdateVCSProviderRow{}, fmt.Errorf("query UpdateVCSProvider: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (UpdateVCSProviderRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (UpdateVCSProviderRow, error) {
 		var item UpdateVCSProviderRow
 		if err := row.Scan(&item.VCSProviderID, // 'vcs_provider_id', 'VCSProviderID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Token,            // 'token', 'Token', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -347,7 +347,7 @@ func (q *DBQuerier) DeleteVCSProviderByID(ctx context.Context, vcsProviderID pgt
 		return pgtype.Text{}, fmt.Errorf("query DeleteVCSProviderByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

@@ -91,7 +91,7 @@ func (q *DBQuerier) FindWorkspaceVariableByVariableID(ctx context.Context, varia
 		return FindWorkspaceVariableByVariableIDRow{}, fmt.Errorf("query FindWorkspaceVariableByVariableID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceVariableByVariableIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceVariableByVariableIDRow, error) {
 		var item FindWorkspaceVariableByVariableIDRow
 		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Variable, // 'variable', 'Variable', '*Variables', '', '*Variables'
@@ -120,7 +120,7 @@ func (q *DBQuerier) DeleteWorkspaceVariableByID(ctx context.Context, variableID 
 		return DeleteWorkspaceVariableByIDRow{}, fmt.Errorf("query DeleteWorkspaceVariableByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteWorkspaceVariableByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteWorkspaceVariableByIDRow, error) {
 		var item DeleteWorkspaceVariableByIDRow
 		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Variable, // 'variable', 'Variable', '*Variables', '', '*Variables'

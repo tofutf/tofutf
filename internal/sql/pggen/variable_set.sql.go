@@ -207,7 +207,7 @@ func (q *DBQuerier) FindVariableSetBySetID(ctx context.Context, variableSetID pg
 		return FindVariableSetBySetIDRow{}, fmt.Errorf("query FindVariableSetBySetID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetBySetIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetBySetIDRow, error) {
 		var item FindVariableSetBySetIDRow
 		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
@@ -260,7 +260,7 @@ func (q *DBQuerier) FindVariableSetByVariableID(ctx context.Context, variableID 
 		return FindVariableSetByVariableIDRow{}, fmt.Errorf("query FindVariableSetByVariableID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetByVariableIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetByVariableIDRow, error) {
 		var item FindVariableSetByVariableIDRow
 		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
@@ -313,7 +313,7 @@ func (q *DBQuerier) FindVariableSetForUpdate(ctx context.Context, variableSetID 
 		return FindVariableSetForUpdateRow{}, fmt.Errorf("query FindVariableSetForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindVariableSetForUpdateRow, error) {
 		var item FindVariableSetForUpdateRow
 		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
@@ -352,7 +352,7 @@ func (q *DBQuerier) UpdateVariableSetByID(ctx context.Context, params UpdateVari
 		return pgtype.Text{}, fmt.Errorf("query UpdateVariableSetByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -382,7 +382,7 @@ func (q *DBQuerier) DeleteVariableSetByID(ctx context.Context, variableSetID pgt
 		return DeleteVariableSetByIDRow{}, fmt.Errorf("query DeleteVariableSetByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetByIDRow, error) {
 		var item DeleteVariableSetByIDRow
 		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Global,           // 'global', 'Global', 'pgtype.Bool', 'github.com/jackc/pgx/v5/pgtype', 'Bool'
@@ -433,7 +433,7 @@ func (q *DBQuerier) DeleteVariableSetVariable(ctx context.Context, variableSetID
 		return DeleteVariableSetVariableRow{}, fmt.Errorf("query DeleteVariableSetVariable: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetVariableRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetVariableRow, error) {
 		var item DeleteVariableSetVariableRow
 		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.VariableID, // 'variable_id', 'VariableID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -481,7 +481,7 @@ func (q *DBQuerier) DeleteVariableSetWorkspace(ctx context.Context, variableSetI
 		return DeleteVariableSetWorkspaceRow{}, fmt.Errorf("query DeleteVariableSetWorkspace: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetWorkspaceRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteVariableSetWorkspaceRow, error) {
 		var item DeleteVariableSetWorkspaceRow
 		if err := row.Scan(&item.VariableSetID, // 'variable_set_id', 'VariableSetID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

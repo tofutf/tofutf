@@ -96,7 +96,7 @@ func (q *DBQuerier) InsertModuleVersion(ctx context.Context, params InsertModule
 		return InsertModuleVersionRow{}, fmt.Errorf("query InsertModuleVersion: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (InsertModuleVersionRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (InsertModuleVersionRow, error) {
 		var item InsertModuleVersionRow
 		if err := row.Scan(&item.ModuleVersionID, // 'module_version_id', 'ModuleVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,     // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -216,7 +216,7 @@ func (q *DBQuerier) FindModuleByName(ctx context.Context, params FindModuleByNam
 		return FindModuleByNameRow{}, fmt.Errorf("query FindModuleByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindModuleByNameRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindModuleByNameRow, error) {
 		var item FindModuleByNameRow
 		if err := row.Scan(&item.ModuleID, // 'module_id', 'ModuleID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -273,7 +273,7 @@ func (q *DBQuerier) FindModuleByID(ctx context.Context, id pgtype.Text) (FindMod
 		return FindModuleByIDRow{}, fmt.Errorf("query FindModuleByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindModuleByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindModuleByIDRow, error) {
 		var item FindModuleByIDRow
 		if err := row.Scan(&item.ModuleID, // 'module_id', 'ModuleID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -331,7 +331,7 @@ func (q *DBQuerier) FindModuleByConnection(ctx context.Context, vcsProviderID pg
 		return FindModuleByConnectionRow{}, fmt.Errorf("query FindModuleByConnection: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindModuleByConnectionRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindModuleByConnectionRow, error) {
 		var item FindModuleByConnectionRow
 		if err := row.Scan(&item.ModuleID, // 'module_id', 'ModuleID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -389,7 +389,7 @@ func (q *DBQuerier) FindModuleByModuleVersionID(ctx context.Context, moduleVersi
 		return FindModuleByModuleVersionIDRow{}, fmt.Errorf("query FindModuleByModuleVersionID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindModuleByModuleVersionIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindModuleByModuleVersionIDRow, error) {
 		var item FindModuleByModuleVersionIDRow
 		if err := row.Scan(&item.ModuleID, // 'module_id', 'ModuleID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -421,7 +421,7 @@ func (q *DBQuerier) UpdateModuleStatusByID(ctx context.Context, status pgtype.Te
 		return pgtype.Text{}, fmt.Errorf("query UpdateModuleStatusByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -447,7 +447,7 @@ func (q *DBQuerier) InsertModuleTarball(ctx context.Context, tarball []byte, mod
 		return pgtype.Text{}, fmt.Errorf("query InsertModuleTarball: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -469,7 +469,7 @@ func (q *DBQuerier) FindModuleTarball(ctx context.Context, moduleVersionID pgtyp
 		return nil, fmt.Errorf("query FindModuleTarball: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
 		var item []byte
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -510,7 +510,7 @@ func (q *DBQuerier) UpdateModuleVersionStatusByID(ctx context.Context, params Up
 		return UpdateModuleVersionStatusByIDRow{}, fmt.Errorf("query UpdateModuleVersionStatusByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (UpdateModuleVersionStatusByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (UpdateModuleVersionStatusByIDRow, error) {
 		var item UpdateModuleVersionStatusByIDRow
 		if err := row.Scan(&item.ModuleVersionID, // 'module_version_id', 'ModuleVersionID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Version,     // 'version', 'Version', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -540,7 +540,7 @@ func (q *DBQuerier) DeleteModuleByID(ctx context.Context, moduleID pgtype.Text) 
 		return pgtype.Text{}, fmt.Errorf("query DeleteModuleByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -563,7 +563,7 @@ func (q *DBQuerier) DeleteModuleVersionByID(ctx context.Context, moduleVersionID
 		return pgtype.Text{}, fmt.Errorf("query DeleteModuleVersionByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

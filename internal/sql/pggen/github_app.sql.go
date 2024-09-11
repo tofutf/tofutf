@@ -65,7 +65,7 @@ func (q *DBQuerier) FindGithubApp(ctx context.Context) (FindGithubAppRow, error)
 		return FindGithubAppRow{}, fmt.Errorf("query FindGithubApp: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindGithubAppRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindGithubAppRow, error) {
 		var item FindGithubAppRow
 		if err := row.Scan(&item.GithubAppID, // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
 			&item.WebhookSecret, // 'webhook_secret', 'WebhookSecret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -100,7 +100,7 @@ func (q *DBQuerier) DeleteGithubApp(ctx context.Context, githubAppID pgtype.Int8
 		return DeleteGithubAppRow{}, fmt.Errorf("query DeleteGithubApp: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (DeleteGithubAppRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (DeleteGithubAppRow, error) {
 		var item DeleteGithubAppRow
 		if err := row.Scan(&item.GithubAppID, // 'github_app_id', 'GithubAppID', 'pgtype.Int8', 'github.com/jackc/pgx/v5/pgtype', 'Int8'
 			&item.WebhookSecret, // 'webhook_secret', 'WebhookSecret', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

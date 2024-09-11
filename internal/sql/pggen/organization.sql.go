@@ -74,7 +74,7 @@ func (q *DBQuerier) FindOrganizationNameByWorkspaceID(ctx context.Context, works
 		return pgtype.Text{}, fmt.Errorf("query FindOrganizationNameByWorkspaceID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -106,7 +106,7 @@ func (q *DBQuerier) FindOrganizationByName(ctx context.Context, name pgtype.Text
 		return FindOrganizationByNameRow{}, fmt.Errorf("query FindOrganizationByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByNameRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByNameRow, error) {
 		var item FindOrganizationByNameRow
 		if err := row.Scan(&item.OrganizationID, // 'organization_id', 'OrganizationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -148,7 +148,7 @@ func (q *DBQuerier) FindOrganizationByID(ctx context.Context, organizationID pgt
 		return FindOrganizationByIDRow{}, fmt.Errorf("query FindOrganizationByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByIDRow, error) {
 		var item FindOrganizationByIDRow
 		if err := row.Scan(&item.OrganizationID, // 'organization_id', 'OrganizationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -194,7 +194,7 @@ func (q *DBQuerier) FindOrganizationByNameForUpdate(ctx context.Context, name pg
 		return FindOrganizationByNameForUpdateRow{}, fmt.Errorf("query FindOrganizationByNameForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByNameForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationByNameForUpdateRow, error) {
 		var item FindOrganizationByNameForUpdateRow
 		if err := row.Scan(&item.OrganizationID, // 'organization_id', 'OrganizationID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -279,7 +279,7 @@ func (q *DBQuerier) CountOrganizations(ctx context.Context, names []string) (pgt
 		return pgtype.Int8{}, fmt.Errorf("query CountOrganizations: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
 		var item pgtype.Int8
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -321,7 +321,7 @@ func (q *DBQuerier) UpdateOrganizationByName(ctx context.Context, params UpdateO
 		return pgtype.Text{}, fmt.Errorf("query UpdateOrganizationByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -343,7 +343,7 @@ func (q *DBQuerier) DeleteOrganizationByName(ctx context.Context, name pgtype.Te
 		return pgtype.Text{}, fmt.Errorf("query DeleteOrganizationByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

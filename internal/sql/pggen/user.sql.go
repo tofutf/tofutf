@@ -205,7 +205,7 @@ func (q *DBQuerier) FindUserByID(ctx context.Context, userID pgtype.Text) (FindU
 		return FindUserByIDRow{}, fmt.Errorf("query FindUserByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindUserByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindUserByIDRow, error) {
 		var item FindUserByIDRow
 		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -248,7 +248,7 @@ func (q *DBQuerier) FindUserByUsername(ctx context.Context, username pgtype.Text
 		return FindUserByUsernameRow{}, fmt.Errorf("query FindUserByUsername: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindUserByUsernameRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindUserByUsernameRow, error) {
 		var item FindUserByUsernameRow
 		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -292,7 +292,7 @@ func (q *DBQuerier) FindUserByAuthenticationTokenID(ctx context.Context, tokenID
 		return FindUserByAuthenticationTokenIDRow{}, fmt.Errorf("query FindUserByAuthenticationTokenID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindUserByAuthenticationTokenIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindUserByAuthenticationTokenIDRow, error) {
 		var item FindUserByAuthenticationTokenIDRow
 		if err := row.Scan(&item.UserID, // 'user_id', 'UserID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Username,  // 'username', 'Username', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -367,7 +367,7 @@ func (q *DBQuerier) DeleteUserByID(ctx context.Context, userID pgtype.Text) (pgt
 		return pgtype.Text{}, fmt.Errorf("query DeleteUserByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -390,7 +390,7 @@ func (q *DBQuerier) DeleteUserByUsername(ctx context.Context, username pgtype.Te
 		return pgtype.Text{}, fmt.Errorf("query DeleteUserByUsername: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

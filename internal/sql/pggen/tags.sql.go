@@ -60,7 +60,7 @@ func (q *DBQuerier) InsertWorkspaceTag(ctx context.Context, tagID pgtype.Text, w
 		return pgtype.Text{}, fmt.Errorf("query InsertWorkspaceTag: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -87,7 +87,7 @@ func (q *DBQuerier) InsertWorkspaceTagByName(ctx context.Context, workspaceID pg
 		return pgtype.Text{}, fmt.Errorf("query InsertWorkspaceTagByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -218,7 +218,7 @@ func (q *DBQuerier) FindTagByName(ctx context.Context, name pgtype.Text, organiz
 		return FindTagByNameRow{}, fmt.Errorf("query FindTagByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTagByNameRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindTagByNameRow, error) {
 		var item FindTagByNameRow
 		if err := row.Scan(&item.TagID, // 'tag_id', 'TagID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -258,7 +258,7 @@ func (q *DBQuerier) FindTagByID(ctx context.Context, tagID pgtype.Text, organiza
 		return FindTagByIDRow{}, fmt.Errorf("query FindTagByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindTagByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindTagByIDRow, error) {
 		var item FindTagByIDRow
 		if err := row.Scan(&item.TagID, // 'tag_id', 'TagID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.Name,             // 'name', 'Name', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
@@ -284,7 +284,7 @@ func (q *DBQuerier) CountTags(ctx context.Context, organizationName pgtype.Text)
 		return pgtype.Int8{}, fmt.Errorf("query CountTags: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
 		var item pgtype.Int8
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -306,7 +306,7 @@ func (q *DBQuerier) CountWorkspaceTags(ctx context.Context, workspaceID pgtype.T
 		return pgtype.Int8{}, fmt.Errorf("query CountWorkspaceTags: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
 		var item pgtype.Int8
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -330,7 +330,7 @@ func (q *DBQuerier) DeleteTag(ctx context.Context, tagID pgtype.Text, organizati
 		return pgtype.Text{}, fmt.Errorf("query DeleteTag: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -354,7 +354,7 @@ func (q *DBQuerier) DeleteWorkspaceTag(ctx context.Context, workspaceID pgtype.T
 		return pgtype.Text{}, fmt.Errorf("query DeleteWorkspaceTag: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

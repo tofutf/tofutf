@@ -72,7 +72,7 @@ func (q *DBQuerier) InsertLogChunk(ctx context.Context, params InsertLogChunkPar
 		return pgtype.Int4{}, fmt.Errorf("query InsertLogChunk: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int4, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int4, error) {
 		var item pgtype.Int4
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -101,7 +101,7 @@ func (q *DBQuerier) FindLogs(ctx context.Context, runID pgtype.Text, phase pgtyp
 		return nil, fmt.Errorf("query FindLogs: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) ([]byte, error) {
 		var item []byte
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -136,7 +136,7 @@ func (q *DBQuerier) FindLogChunkByID(ctx context.Context, chunkID pgtype.Int4) (
 		return FindLogChunkByIDRow{}, fmt.Errorf("query FindLogChunkByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindLogChunkByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindLogChunkByIDRow, error) {
 		var item FindLogChunkByIDRow
 		if err := row.Scan(&item.ChunkID, // 'chunk_id', 'ChunkID', 'pgtype.Int4', 'github.com/jackc/pgx/v5/pgtype', 'Int4'
 			&item.RunID,  // 'run_id', 'RunID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'

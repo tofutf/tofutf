@@ -271,7 +271,7 @@ func (q *DBQuerier) CountWorkspaces(ctx context.Context, params CountWorkspacesP
 		return pgtype.Int8{}, fmt.Errorf("query CountWorkspaces: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
 		var item pgtype.Int8
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -534,7 +534,7 @@ func (q *DBQuerier) CountWorkspacesByUsername(ctx context.Context, organizationN
 		return pgtype.Int8{}, fmt.Errorf("query CountWorkspacesByUsername: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Int8, error) {
 		var item pgtype.Int8
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -609,7 +609,7 @@ func (q *DBQuerier) FindWorkspaceByName(ctx context.Context, name pgtype.Text, o
 		return FindWorkspaceByNameRow{}, fmt.Errorf("query FindWorkspaceByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByNameRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByNameRow, error) {
 		var item FindWorkspaceByNameRow
 		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -718,7 +718,7 @@ func (q *DBQuerier) FindWorkspaceByID(ctx context.Context, id pgtype.Text) (Find
 		return FindWorkspaceByIDRow{}, fmt.Errorf("query FindWorkspaceByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByIDRow, error) {
 		var item FindWorkspaceByIDRow
 		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -827,7 +827,7 @@ func (q *DBQuerier) FindWorkspaceByIDForUpdate(ctx context.Context, id pgtype.Te
 		return FindWorkspaceByIDForUpdateRow{}, fmt.Errorf("query FindWorkspaceByIDForUpdate: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByIDForUpdateRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindWorkspaceByIDForUpdateRow, error) {
 		var item FindWorkspaceByIDForUpdateRow
 		if err := row.Scan(&item.WorkspaceID, // 'workspace_id', 'WorkspaceID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,                  // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -924,7 +924,7 @@ func (q *DBQuerier) UpdateWorkspaceByID(ctx context.Context, params UpdateWorksp
 		return pgtype.Text{}, fmt.Errorf("query UpdateWorkspaceByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -982,7 +982,7 @@ func (q *DBQuerier) UpdateWorkspaceCurrentStateVersionID(ctx context.Context, st
 		return pgtype.Text{}, fmt.Errorf("query UpdateWorkspaceCurrentStateVersionID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

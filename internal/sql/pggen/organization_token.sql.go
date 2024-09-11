@@ -97,7 +97,7 @@ func (q *DBQuerier) FindOrganizationTokensByName(ctx context.Context, organizati
 		return FindOrganizationTokensByNameRow{}, fmt.Errorf("query FindOrganizationTokensByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationTokensByNameRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationTokensByNameRow, error) {
 		var item FindOrganizationTokensByNameRow
 		if err := row.Scan(&item.OrganizationTokenID, // 'organization_token_id', 'OrganizationTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -129,7 +129,7 @@ func (q *DBQuerier) FindOrganizationTokensByID(ctx context.Context, organization
 		return FindOrganizationTokensByIDRow{}, fmt.Errorf("query FindOrganizationTokensByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationTokensByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindOrganizationTokensByIDRow, error) {
 		var item FindOrganizationTokensByIDRow
 		if err := row.Scan(&item.OrganizationTokenID, // 'organization_token_id', 'OrganizationTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,        // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -155,7 +155,7 @@ func (q *DBQuerier) DeleteOrganiationTokenByName(ctx context.Context, organizati
 		return pgtype.Text{}, fmt.Errorf("query DeleteOrganiationTokenByName: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

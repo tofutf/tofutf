@@ -95,7 +95,7 @@ func (q *DBQuerier) DeleteTeamTokenByID(ctx context.Context, teamID pgtype.Text)
 		return pgtype.Text{}, fmt.Errorf("query DeleteTeamTokenByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

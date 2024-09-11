@@ -57,7 +57,7 @@ func (q *DBQuerier) UpdateAppliedChangesByID(ctx context.Context, params UpdateA
 		return pgtype.Text{}, fmt.Errorf("query UpdateAppliedChangesByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
@@ -80,7 +80,7 @@ func (q *DBQuerier) UpdateApplyStatusByID(ctx context.Context, status pgtype.Tex
 		return pgtype.Text{}, fmt.Errorf("query UpdateApplyStatusByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)

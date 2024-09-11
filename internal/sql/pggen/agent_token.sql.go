@@ -63,7 +63,7 @@ func (q *DBQuerier) FindAgentTokenByID(ctx context.Context, agentTokenID pgtype.
 		return FindAgentTokenByIDRow{}, fmt.Errorf("query FindAgentTokenByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (FindAgentTokenByIDRow, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (FindAgentTokenByIDRow, error) {
 		var item FindAgentTokenByIDRow
 		if err := row.Scan(&item.AgentTokenID, // 'agent_token_id', 'AgentTokenID', 'pgtype.Text', 'github.com/jackc/pgx/v5/pgtype', 'Text'
 			&item.CreatedAt,   // 'created_at', 'CreatedAt', 'pgtype.Timestamptz', 'github.com/jackc/pgx/v5/pgtype', 'Timestamptz'
@@ -124,7 +124,7 @@ func (q *DBQuerier) DeleteAgentTokenByID(ctx context.Context, agentTokenID pgtyp
 		return pgtype.Text{}, fmt.Errorf("query DeleteAgentTokenByID: %w", err)
 	}
 
-	return pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
+	return pgx.CollectOneRow(rows, func(row pgx.CollectableRow) (pgtype.Text, error) {
 		var item pgtype.Text
 		if err := row.Scan(&item); err != nil {
 			return item, fmt.Errorf("failed to scan: %w", err)
