@@ -84,10 +84,12 @@ func (s *Service) Create(ctx context.Context, workspaceID string, opts CreateOpt
 		s.logger.Error("constructing configuration version", "id", cv.ID, "subject", subject, "err", err)
 		return nil, err
 	}
+
 	if err := s.db.CreateConfigurationVersion(ctx, cv); err != nil {
 		s.logger.Error("creating configuration version", "id", cv.ID, "subject", subject, "err", err)
 		return nil, err
 	}
+
 	s.logger.Info("created configuration version", "id", cv.ID, "subject", subject)
 	return cv, nil
 }
@@ -119,6 +121,7 @@ func (s *Service) Get(ctx context.Context, cvID string) (*ConfigurationVersion, 
 		s.logger.Error("retrieving configuration version", "id", cvID, "subject", subject, "err", err)
 		return nil, err
 	}
+
 	s.logger.Debug("retrieved configuration version", "id", cvID, "subject", subject)
 	return cv, nil
 }
@@ -134,6 +137,7 @@ func (s *Service) GetLatest(ctx context.Context, workspaceID string) (*Configura
 		s.logger.Error("retrieving latest configuration version", "workspace_id", workspaceID, "subject", subject, "err", err)
 		return nil, err
 	}
+
 	s.logger.Debug("retrieved latest configuration version", "workspace_id", workspaceID, "subject", subject)
 	return cv, nil
 }
@@ -149,6 +153,7 @@ func (s *Service) Delete(ctx context.Context, cvID string) error {
 		s.logger.Error("deleting configuration version", "id", cvID, "subject", subject, "err", err)
 		return err
 	}
+
 	s.logger.Debug("deleted configuration version", "id", cvID, "subject", subject)
 	return nil
 }
@@ -158,5 +163,11 @@ func (s *Service) canAccess(ctx context.Context, action rbac.Action, cvID string
 	if err != nil {
 		return nil, err
 	}
-	return s.workspace.CanAccess(ctx, action, cv.WorkspaceID)
+
+	subject, err := s.workspace.CanAccess(ctx, action, cv.WorkspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return subject, nil
 }

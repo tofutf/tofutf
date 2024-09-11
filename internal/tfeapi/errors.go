@@ -8,18 +8,19 @@ import (
 	"github.com/tofutf/tofutf/internal"
 )
 
-var codes = map[error]int{
-	internal.ErrResourceNotFound:        http.StatusNotFound,
-	internal.ErrAccessNotPermitted:      http.StatusForbidden,
-	internal.ErrInvalidTerraformVersion: http.StatusUnprocessableEntity,
-	internal.ErrResourceAlreadyExists:   http.StatusConflict,
-	internal.ErrConflict:                http.StatusConflict,
-}
-
 func lookupHTTPCode(err error) int {
-	if v, ok := codes[err]; ok {
-		return v
+	if errors.Is(err, internal.ErrResourceNotFound) {
+		return http.StatusNotFound
+	} else if errors.Is(err, internal.ErrAccessNotPermitted) {
+		return http.StatusForbidden
+	} else if errors.Is(err, internal.ErrInvalidTerraformVersion) {
+		return http.StatusUnprocessableEntity
+	} else if errors.Is(err, internal.ErrResourceAlreadyExists) {
+		return http.StatusConflict
+	} else if errors.Is(err, internal.ErrConflict) {
+		return http.StatusConflict
 	}
+
 	return http.StatusInternalServerError
 }
 
