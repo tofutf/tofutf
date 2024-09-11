@@ -22,6 +22,6 @@ jobs:
         uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
         with:
           egress-policy: audit
-      - uses: step-security/action-semantic-pull-request@b7cd9b10bdd0e92fedf4fda525ff9cf433ca3c1c # v1.0.1
+      - uses: step-security/action-semantic-pull-request@cc51624c7660c6b0e604869f8f7201c630fccaf0 # v5.5.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
