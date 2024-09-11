@@ -27,7 +27,7 @@ func (db *pgdb) CreateConfigurationVersion(ctx context.Context, cv *Configuratio
 			WorkspaceID:   sql.String(cv.WorkspaceID),
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to insert configuration version: %w", err)
 		}
 
 		if cv.IngressAttributes != nil {
@@ -49,7 +49,7 @@ func (db *pgdb) CreateConfigurationVersion(ctx context.Context, cv *Configuratio
 				ConfigurationVersionID: sql.String(cv.ID),
 			})
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to insert ingress attribute: %w", err)
 			}
 		}
 
@@ -66,13 +66,14 @@ func (db *pgdb) UploadConfigurationVersion(ctx context.Context, id string, fn fu
 		// select ...for update
 		result, err := q.FindConfigurationVersionByIDForUpdate(ctx, sql.String(id))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to find configuration version to modify: %w", err)
 		}
 		cv := pgRow(result).toConfigVersion()
 
 		if err := fn(cv, newConfigUploader(q, cv.ID)); err != nil {
-			return err
+			return fmt.Errorf("failed to mutate configuration version: %w", err)
 		}
+
 		return nil
 	})
 }
@@ -85,18 +86,19 @@ func (db *pgdb) ListConfigurationVersions(ctx context.Context, workspaceID strin
 			Offset:      opts.GetOffset(),
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to list configuration versions in workspace: %w", err)
 		}
 
 		count, err := q.CountConfigurationVersionsByWorkspaceID(ctx, sql.String(workspaceID))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to count configuration versions in workspace: %w", err)
 		}
 
 		items := make([]*ConfigurationVersion, len(rows))
 		for i, r := range rows {
 			items[i] = pgRow(r).toConfigVersion()
 		}
+
 		return resource.NewPage(items, opts.PageOptions, internal.Int64(count.Int64)), nil
 	})
 }
@@ -106,18 +108,20 @@ func (db *pgdb) GetConfigurationVersion(ctx context.Context, opts ConfigurationV
 		if opts.ID != nil {
 			result, err := q.FindConfigurationVersionByID(ctx, sql.String(*opts.ID))
 			if err != nil {
-				return nil, sql.Error(err)
+				return nil, fmt.Errorf("failed to find configuration by id: %w", sql.Error(err))
 			}
+
 			return pgRow(result).toConfigVersion(), nil
 		} else if opts.WorkspaceID != nil {
 			result, err := q.FindConfigurationVersionLatestByWorkspaceID(ctx, sql.String(*opts.WorkspaceID))
 			if err != nil {
-				return nil, sql.Error(err)
+				return nil, fmt.Errorf("failed to find configuration by workspace id: %w", sql.Error(err))
 			}
+
 			return pgRow(result).toConfigVersion(), nil
-		} else {
-			return nil, fmt.Errorf("no configuration version spec provided")
 		}
+
+		return nil, fmt.Errorf("no configuration version spec provided")
 	})
 }
 
@@ -125,7 +129,7 @@ func (db *pgdb) GetConfig(ctx context.Context, id string) ([]byte, error) {
 	return sql.Query(ctx, db.Pool, func(ctx context.Context, q pggen.Querier) ([]byte, error) {
 		cfg, err := q.DownloadConfigurationVersion(ctx, sql.String(id))
 		if err != nil {
-			return nil, sql.Error(err)
+			return nil, fmt.Errorf("failed to download configuration version tarball: %w", sql.Error(err))
 		}
 
 		return cfg, nil
@@ -136,7 +140,7 @@ func (db *pgdb) DeleteConfigurationVersion(ctx context.Context, id string) error
 	return db.Pool.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		_, err := q.DeleteConfigurationVersionByID(ctx, sql.String(id))
 		if err != nil {
-			return sql.Error(err)
+			return fmt.Errorf("failed to delete configuration version by id: %w", sql.Error(err))
 		}
 
 		return nil
@@ -147,7 +151,7 @@ func (db *pgdb) insertCVStatusTimestamp(ctx context.Context, cv *ConfigurationVe
 	return db.Query(ctx, func(ctx context.Context, q pggen.Querier) error {
 		sts, err := cv.StatusTimestamp(cv.Status)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get status timestamp: %w", err)
 		}
 
 		_, err = q.InsertConfigurationVersionStatusTimestamp(ctx, pggen.InsertConfigurationVersionStatusTimestampParams{
@@ -155,7 +159,11 @@ func (db *pgdb) insertCVStatusTimestamp(ctx context.Context, cv *ConfigurationVe
 			Status:    sql.String(string(cv.Status)),
 			Timestamp: sql.Timestamptz(sts),
 		})
-		return err
+		if err != nil {
+			return fmt.Errorf("failed to insert configuration version status timestamp: %w", err)
+		}
+
+		return nil
 	})
 }
 

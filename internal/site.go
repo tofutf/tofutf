@@ -20,6 +20,7 @@ func (a *SiteAuthorizer) CanAccess(ctx context.Context, action rbac.Action, _ st
 	if subj.CanAccessSite(action) {
 		return subj, nil
 	}
+
 	a.Logger.Error("unauthorized action", "action", action, "subject", subj)
 	return nil, ErrAccessNotPermitted
 }
