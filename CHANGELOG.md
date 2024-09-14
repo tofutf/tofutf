@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.10.0](https://github.com/tofutf/tofutf/compare/v0.9.1...v0.10.0) (2024-09-14)
+
+
+### Features
+
+* Add cmd/helm support for SkipTLSVerification flag ([#142](https://github.com/tofutf/tofutf/issues/142)) ([9feb4bd](https://github.com/tofutf/tofutf/commit/9feb4bd3cbecd47f39d0454bc43739f58404c5bc))
+* add verbose error messages to configversion service ([#325](https://github.com/tofutf/tofutf/issues/325)) ([97a974f](https://github.com/tofutf/tofutf/commit/97a974f4797977e23b75099f34a0ff7d499712f4))
+* added otel tracing for sql and agents api ([#139](https://github.com/tofutf/tofutf/issues/139)) ([ffc125e](https://github.com/tofutf/tofutf/commit/ffc125e93fb2e71166e3e745d772a61cbad02079))
+* build arm and 386 artifacts ([#334](https://github.com/tofutf/tofutf/issues/334)) ([e8274a5](https://github.com/tofutf/tofutf/commit/e8274a5ea1648eda3a24c895389476ab0b45b18c))
+* migrated to pgxv5 pggen fork ([#110](https://github.com/tofutf/tofutf/issues/110)) ([ab576aa](https://github.com/tofutf/tofutf/commit/ab576aa68934be9c19fe1c8ccf26e87cbc08fad9))
+* moved otel to an optional flag ([#251](https://github.com/tofutf/tofutf/issues/251)) ([601e799](https://github.com/tofutf/tofutf/commit/601e799a06b0cae79ffbf141d28c5475f40ec69d))
+* tweaked vcs trigger example pattern for ux ([#257](https://github.com/tofutf/tofutf/issues/257)) ([236e061](https://github.com/tofutf/tofutf/commit/236e061ffc65afd237d84a37cddd397c7237444c))
+
+
+### Bug Fixes
+
+* add arm and 386 arch testdata ([#241](https://github.com/tofutf/tofutf/issues/241)) ([ac1fee8](https://github.com/tofutf/tofutf/commit/ac1fee86f08672f602ddc561eae24ae9fa349e2e))
+* Correct SQL handling of unwrapped errors ([#165](https://github.com/tofutf/tofutf/issues/165)) ([c560190](https://github.com/tofutf/tofutf/commit/c5601906449e685f225f0e27fc0818ee401b39b3))
+* fix npe in workspaces with resource reports ([#272](https://github.com/tofutf/tofutf/issues/272)) ([fe19f0e](https://github.com/tofutf/tofutf/commit/fe19f0e9edfc576183b53e2a255ed9de72bf1279))
+* normalize gitlab temp directory name ([#223](https://github.com/tofutf/tofutf/issues/223)) ([24f5686](https://github.com/tofutf/tofutf/commit/24f56862f874f2f8d4c1ee1a6e1849f6de3db4a0))
+* upgrading pggen and other misc change ([#250](https://github.com/tofutf/tofutf/issues/250)) ([cf2977d](https://github.com/tofutf/tofutf/commit/cf2977dc4c0ee8a3a5493fbcdab234e68b259ed4))
+
 ## [0.9.1](https://github.com/tofutf/tofutf/compare/v0.9.0...v0.9.1) (2024-04-04)
 
 
