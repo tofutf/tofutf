@@ -3,6 +3,8 @@ defaultBaseImage: ghcr.io/tofutf/tofutf/tofutf-base:v1.0.0
 defaultPlatforms:
   - linux/arm64
   - linux/amd64
+  - linux/arm
+  - linux/386
 
 builds:
   - id: tofutfd
